@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from app.models import BoundingBox, Layer, SciencePoint, TerrainMetadata
+from app.models import BoundingBox, Layer, LegendEntry, SciencePoint, TerrainMetadata
 
 KACHELN_STANDARD = Path(__file__).resolve().parent.parent / "data" / "tiles"
 
@@ -48,26 +48,78 @@ def terrain_metadaten(ordner: Path) -> TerrainMetadata:
     )
 
 
-LAYERS = [
+LAYER_KATALOG = [
     Layer(
-        id="mola",
-        name="MOLA Hoehenmodell",
-        description="Globales Hoehenmodell des Mars Orbiter Laser Altimeter",
-        source_url="https://pds-geosciences.wustl.edu/missions/mgs/megdr.html",
+        id="ctx_dem",
+        name="CTX Hoehenmodell (20 m)",
+        description="Hoehenmodell des Jezero-Kraters aus MRO-CTX-Stereobildern, an MOLA gebunden. Grundlage des Routings",
+        source_url="https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic",
+        kind="hoehe",
+        unit="m",
+        tile_set="ctx_dem",
     ),
     Layer(
-        id="hirise",
-        name="HiRISE",
-        description="Hochaufloesende Orbitalbilder des Mars Reconnaissance Orbiter",
-        source_url="https://www.uahirise.org/",
+        id="hirise_dem",
+        name="HiRISE Hoehenmodell (1 m)",
+        description="Hochaufloesendes Hoehenmodell der Landestelle und der westlichen Kraterkante aus MRO-HiRISE-Stereobildern",
+        source_url="https://astrogeology.usgs.gov/search/map/mars-sample-return-terrain-relative-navigation-hirise-dtm-mosaic",
+        kind="hoehe",
+        unit="m",
+        tile_set="hirise_dem",
     ),
     Layer(
-        id="ctx",
-        name="CTX",
-        description="Kontextbilder des Mars Reconnaissance Orbiter",
-        source_url="https://murray-lab.caltech.edu/CTX/",
+        id="slope_ctx",
+        name="Steigung (aus CTX-DEM)",
+        description="Hangneigung in Grad, aus dem CTX-DEM per Zentraldifferenz berechnet. Gleiche Grundlage wie das Routing, dort gelten ab 15 Grad Sperrzellen",
+        source_url="https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic",
+        kind="steigung",
+        unit="Grad",
+        tile_set="slope_ctx",
+    ),
+    Layer(
+        id="ctx_ortho",
+        name="CTX Orthobild (5 m)",
+        description="Entzerrtes Graustufenbild des Jezero-Kraters aus MRO-CTX, passend zum CTX-Hoehenmodell",
+        source_url="https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic",
+        kind="bild",
+        unit="Grauwert",
+        tile_set="ctx_ortho",
+    ),
+    Layer(
+        id="geology",
+        name="Geologische Einheiten (SIM 3464)",
+        description="Geologische Karte von Jezero-Krater und Nili Planum (Sun und Stack 2020, 1:75 000), 14 Einheiten als Klassenraster, Legende in `legend`. Deckt nur 76,80 bis 77,80 O und 17,70 bis 18,70 N ab. Die Karte liegt auf einem halbkontrollierten CTX-Mosaik und weicht laut USGS um etwa 100 bis 200 m vom kontrollierten CTX-Mosaik ab, auf dem unser Hoehenmodell beruht",
+        source_url="https://pubs.usgs.gov/publication/sim3464",
+        kind="geologie",
+        unit="Klasse",
+        tile_set="geology",
+    ),
+    Layer(
+        id="thermal_inertia",
+        name="THEMIS Waermetraegheit (100 m)",
+        description="Thermische Traegheit der Oberflaeche aus Nachtaufnahmen von Mars Odyssey THEMIS. Hohe Werte stehen fuer Fels, niedrige fuer Staub und Sand. Rund ein Drittel des Kraters ist ohne Daten",
+        source_url="https://zenodo.org/records/4931348",
+        kind="thermik",
+        unit="J m-2 K-1 s-1/2",
+        tile_set="thermal_inertia",
     ),
 ]
+
+
+def layer_liste(ordner: Path) -> list[Layer]:
+    infos = {info["name"]: info for info in lade_kachelinfos(ordner)}
+    ergebnis = []
+    for layer in LAYER_KATALOG:
+        info = infos.get(layer.tile_set)
+        legende = None
+        if info and info.get("legende"):
+            legende = [
+                LegendEntry(class_id=e["klasse"], name=e["name"], symbol=e["symbol"], color=e["farbe"])
+                for e in info["legende"]
+            ]
+        ergebnis.append(layer.model_copy(update={"available": info is not None, "legend": legende}))
+    return ergebnis
+
 
 SCIENCE_POINTS: list[SciencePoint] = [
     SciencePoint.model_validate(eintrag)

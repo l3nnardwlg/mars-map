@@ -1,0 +1,708 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Mars Map API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/terrain/metadata": {
+      "get": {
+        "summary": "Terrain Metadata",
+        "operationId": "terrain_metadata_api_terrain_metadata_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerrainMetadata"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/layers": {
+      "get": {
+        "summary": "Layers",
+        "operationId": "layers_api_layers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Layer"
+                  },
+                  "type": "array",
+                  "title": "Response Layers Api Layers Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/science-points": {
+      "get": {
+        "summary": "Science Points",
+        "operationId": "science_points_api_science_points_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SciencePoint"
+                  },
+                  "type": "array",
+                  "title": "Response Science Points Api Science Points Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/routes/calculate": {
+      "post": {
+        "summary": "Calculate Route",
+        "operationId": "calculate_route_api_routes_calculate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarsRoute"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/routes/alternatives": {
+      "post": {
+        "summary": "Calculate Alternatives",
+        "operationId": "calculate_alternatives_api_routes_alternatives_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlternativesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MarsRoute"
+                  },
+                  "type": "array",
+                  "title": "Response Calculate Alternatives Api Routes Alternatives Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mission/simulate": {
+      "post": {
+        "summary": "Simulate Mission",
+        "operationId": "simulate_mission_api_mission_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionEstimate"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlternativesRequest": {
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "end": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Count",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "AlternativesRequest"
+      },
+      "BoundingBox": {
+        "properties": {
+          "minLatitude": {
+            "type": "number",
+            "title": "Minlatitude"
+          },
+          "maxLatitude": {
+            "type": "number",
+            "title": "Maxlatitude"
+          },
+          "minLongitude": {
+            "type": "number",
+            "title": "Minlongitude"
+          },
+          "maxLongitude": {
+            "type": "number",
+            "title": "Maxlongitude"
+          }
+        },
+        "type": "object",
+        "required": [
+          "minLatitude",
+          "maxLatitude",
+          "minLongitude",
+          "maxLongitude"
+        ],
+        "title": "BoundingBox"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Layer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "title": "Sourceurl"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "tileSet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tileset"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": false
+          },
+          "legend": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LegendEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "sourceUrl"
+        ],
+        "title": "Layer"
+      },
+      "LegendEntry": {
+        "properties": {
+          "classId": {
+            "type": "integer",
+            "title": "Classid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classId",
+          "name",
+          "symbol",
+          "color"
+        ],
+        "title": "LegendEntry"
+      },
+      "MarsCoordinate": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 360.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "elevationMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevationmeters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "MarsCoordinate"
+      },
+      "MarsRoute": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "waypoints": {
+            "items": {
+              "$ref": "#/components/schemas/MarsCoordinate"
+            },
+            "type": "array",
+            "title": "Waypoints"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distancemeters"
+          },
+          "estimatedDurationSeconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Estimateddurationseconds"
+          },
+          "riskScore": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Riskscore"
+          },
+          "energyJoules": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energyjoules"
+          },
+          "averagePowerWatts": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagepowerwatts"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "waypoints",
+          "distanceMeters",
+          "estimatedDurationSeconds",
+          "riskScore"
+        ],
+        "title": "MarsRoute"
+      },
+      "MissionEstimate": {
+        "properties": {
+          "durationSeconds": {
+            "type": "number",
+            "title": "Durationseconds"
+          },
+          "oxygenLiters": {
+            "type": "number",
+            "title": "Oxygenliters"
+          },
+          "energyWattHours": {
+            "type": "number",
+            "title": "Energywatthours"
+          },
+          "oxygenKilograms": {
+            "type": "number",
+            "title": "Oxygenkilograms"
+          },
+          "averagePowerWatts": {
+            "type": "number",
+            "title": "Averagepowerwatts"
+          },
+          "evaTimeLimitSeconds": {
+            "type": "number",
+            "title": "Evatimelimitseconds"
+          },
+          "withinEvaTimeLimit": {
+            "type": "boolean",
+            "title": "Withinevatimelimit"
+          },
+          "withinAverageMetabolicRate": {
+            "type": "boolean",
+            "title": "Withinaveragemetabolicrate"
+          },
+          "radiationDoseMilligray": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radiationdosemilligray"
+          },
+          "radiationBasis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radiationbasis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "durationSeconds",
+          "oxygenLiters",
+          "energyWattHours",
+          "oxygenKilograms",
+          "averagePowerWatts",
+          "evaTimeLimitSeconds",
+          "withinEvaTimeLimit",
+          "withinAverageMetabolicRate"
+        ],
+        "title": "MissionEstimate"
+      },
+      "MissionRequest": {
+        "properties": {
+          "route": {
+            "$ref": "#/components/schemas/MarsRoute"
+          },
+          "crewSize": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 1.0,
+            "title": "Crewsize"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route",
+          "crewSize"
+        ],
+        "title": "MissionRequest"
+      },
+      "RouteRequest": {
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "end": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "RouteRequest"
+      },
+      "SciencePoint": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "location": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "nasaSourceUrl": {
+            "type": "string",
+            "title": "Nasasourceurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "location",
+          "description",
+          "nasaSourceUrl"
+        ],
+        "title": "SciencePoint"
+      },
+      "TerrainMetadata": {
+        "properties": {
+          "regionName": {
+            "type": "string",
+            "title": "Regionname"
+          },
+          "coordinateSystem": {
+            "type": "string",
+            "title": "Coordinatesystem"
+          },
+          "elevationReference": {
+            "type": "string",
+            "title": "Elevationreference"
+          },
+          "bounds": {
+            "$ref": "#/components/schemas/BoundingBox"
+          },
+          "resolutionMetersPerPixel": {
+            "type": "number",
+            "title": "Resolutionmetersperpixel"
+          },
+          "availableTiles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Availabletiles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "regionName",
+          "coordinateSystem",
+          "elevationReference",
+          "bounds",
+          "resolutionMetersPerPixel",
+          "availableTiles"
+        ],
+        "title": "TerrainMetadata"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

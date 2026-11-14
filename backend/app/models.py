@@ -20,6 +20,7 @@ class MarsRoute(ApiModel):
     risk_score: float = Field(ge=0, le=1)
     energy_joules: float | None = Field(default=None, ge=0)
     average_power_watts: float | None = Field(default=None, ge=0)
+    tags: list[str] = Field(default_factory=list)
 
 
 class SciencePoint(ApiModel):
@@ -46,11 +47,23 @@ class TerrainMetadata(ApiModel):
     available_tiles: list[str]
 
 
+class LegendEntry(ApiModel):
+    class_id: int
+    name: str
+    symbol: str
+    color: str
+
+
 class Layer(ApiModel):
     id: str
     name: str
     description: str
     source_url: str
+    kind: str | None = None
+    unit: str | None = None
+    tile_set: str | None = None
+    available: bool = False
+    legend: list[LegendEntry] | None = None
 
 
 class RouteRequest(ApiModel):
@@ -76,3 +89,5 @@ class MissionEstimate(ApiModel):
     eva_time_limit_seconds: float
     within_eva_time_limit: bool
     within_average_metabolic_rate: bool
+    radiation_dose_milligray: float | None = None
+    radiation_basis: str | None = None

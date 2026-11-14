@@ -52,3 +52,11 @@ def test_missing_elevation_is_rejected():
     punkte = {"id": "x", "waypoints": [{"latitude": 18.4, "longitude": 77.5}, {"latitude": 18.5, "longitude": 77.5}],
               "distanceMeters": 0, "estimatedDurationSeconds": 0, "riskScore": 0}
     assert client.post("/api/mission/simulate", json={"route": punkte, "crewSize": 1}).status_code == 422
+
+
+def test_radiation_reference_scales_with_duration():
+    punkte = [(18.4, 77.5, -2500), (18.41, 77.5, -2480)]
+    antwort = client.post("/api/mission/simulate", json={"route": route(punkte), "crewSize": 2}).json()
+    erwartet = 0.210 * antwort["durationSeconds"] / 86400.0
+    assert antwort["radiationDoseMilligray"] == pytest.approx(erwartet)
+    assert "Gale" in antwort["radiationBasis"]

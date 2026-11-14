@@ -26,8 +26,23 @@ def test_terrain_metadata_uses_camel_case(monkeypatch, tmp_path):
 
 def test_layers_have_source_urls():
     layers = client.get("/api/layers").json()
-    assert {layer["id"] for layer in layers} == {"mola", "hirise", "ctx"}
+    assert {layer["id"] for layer in layers} == {"ctx_dem", "hirise_dem", "slope_ctx", "ctx_ortho", "geology", "thermal_inertia"}
+    assert {layer["kind"] for layer in layers} == {"hoehe", "steigung", "bild", "geologie", "thermik"}
     assert all(layer["sourceUrl"].startswith("https://") for layer in layers)
+
+
+def test_layers_report_availability_from_tile_sets(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
+    assert not any(layer["available"] for layer in client.get("/api/layers").json())
+    ordner = tmp_path / "thermal_inertia"
+    ordner.mkdir()
+    (ordner / "metadata.json").write_text(
+        '{"name": "thermal_inertia", "bounds": {"west": 77.0, "south": 17.6, "east": 78.6, "north": 19.3},'
+        ' "meterProPixelFeinsteStufe": 87.0}',
+        encoding="utf-8",
+    )
+    verfuegbar = {layer["id"] for layer in client.get("/api/layers").json() if layer["available"]}
+    assert verfuegbar == {"thermal_inertia"}
 
 
 def test_science_points_are_inside_jezero_with_nasa_sources():
@@ -118,3 +133,28 @@ def test_tiles_are_served_as_png():
     assert antwort.status_code == 200
     assert antwort.headers["content-type"] == "image/png"
     assert antwort.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_geology_layer_carries_legend_from_tile_metadata(monkeypatch, tmp_path):
+    ordner = tmp_path / "geology"
+    ordner.mkdir()
+    (ordner / "metadata.json").write_text(
+        '{"name": "geology", "bounds": {"west": 76.8, "south": 17.7, "east": 77.8, "north": 18.7},'
+        ' "meterProPixelFeinsteStufe": 62.0,'
+        ' "legende": [{"klasse": 1, "name": "Eolian bedform unit", "symbol": "Aeb", "farbe": "#e6194b"}]}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
+    geologie = next(layer for layer in client.get("/api/layers").json() if layer["id"] == "geology")
+    assert geologie["available"] is True
+    assert geologie["legend"] == [{"classId": 1, "name": "Eolian bedform unit", "symbol": "Aeb", "color": "#e6194b"}]
+    assert "100 bis 200 m" in geologie["description"]
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_alternatives_carry_tags():
+    payload = {"start": {"latitude": 18.44, "longitude": 77.45}, "end": {"latitude": 18.40, "longitude": 77.55}, "count": 3}
+    routen = client.post("/api/routes/alternatives", json=payload).json()
+    assert "energy_optimal" in routen[0]["tags"]
+    alle = [tag for route in routen for tag in route["tags"]]
+    assert "lowest_risk" in alle and "shortest" in alle

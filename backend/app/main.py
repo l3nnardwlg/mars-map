@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.data import LAYERS, SCIENCE_POINTS, kachelordner, terrain_metadaten
+from app.data import SCIENCE_POINTS, kachelordner, layer_liste, terrain_metadaten
 from app.mission import MissingElevationError, simulate
 from app.routing import NoRouteError
 from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route, plan_routes, vorwaermen
@@ -31,7 +31,7 @@ def terrain_metadata() -> TerrainMetadata:
 
 @api.get("/layers", response_model=list[Layer], response_model_by_alias=True)
 def layers() -> list[Layer]:
-    return LAYERS
+    return layer_liste(kachelordner())
 
 
 @api.get("/science-points", response_model=list[SciencePoint], response_model_by_alias=True)
