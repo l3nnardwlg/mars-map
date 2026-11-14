@@ -1,6 +1,7 @@
 from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 
-from app.data import LAYERS, SCIENCE_POINTS, TERRAIN
+from app.data import LAYERS, SCIENCE_POINTS, kachelordner, terrain_metadaten
 from app.models import (
     Layer,
     MarsRoute,
@@ -16,7 +17,7 @@ api = APIRouter(prefix="/api")
 
 @api.get("/terrain/metadata", response_model=TerrainMetadata, response_model_by_alias=True)
 def terrain_metadata() -> TerrainMetadata:
-    return TERRAIN
+    return terrain_metadaten(kachelordner())
 
 
 @api.get("/layers", response_model=list[Layer], response_model_by_alias=True)
@@ -41,6 +42,9 @@ def simulate_mission(request: MissionRequest) -> MissionEstimate:
 
 app = FastAPI(title="Mars Map API", version="0.1.0")
 app.include_router(api)
+
+if kachelordner().is_dir():
+    app.mount("/api/terrain/tiles", StaticFiles(directory=kachelordner()), name="tiles")
 
 
 @app.get("/health")
