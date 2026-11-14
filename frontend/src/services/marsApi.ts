@@ -216,6 +216,52 @@ export async function requestRouteAlternatives(
   end: MarsCoordinate,
   scienceDetour?: MarsCoordinate
 ): Promise<{ direct: MarsRoute; safe: MarsRoute; science: MarsRoute }> {
+  // 1. Try FastAPI backend alternatives endpoint if available
+  try {
+    const res = await fetch('/api/routes/alternatives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start, end, count: 3 }),
+    });
+
+    if (res.ok) {
+      const routes: MarsRoute[] = await res.json();
+      if (routes && routes.length >= 2) {
+        const enrichWithElevation = (r: MarsRoute, prof: RouteProfile): MarsRoute => {
+          const elevProfile: ElevationPoint[] = [];
+          let runDist = 0;
+          r.waypoints.forEach((wp, idx) => {
+            if (idx > 0) {
+              const p = r.waypoints[idx - 1];
+              const d = Math.hypot(
+                (wp.latitude - p.latitude) * 59274,
+                (wp.longitude - p.longitude) * 59274 * Math.cos((wp.latitude * Math.PI) / 180)
+              );
+              runDist += d;
+            }
+            elevProfile.push({
+              distanceKm: Number((runDist / 1000).toFixed(2)),
+              elevationM: wp.elevationMeters ?? -2450,
+              slopeDeg: prof === 'safe' ? 4.5 : 8.5,
+            });
+          });
+          return { ...r, profile: prof, elevationProfile: elevProfile };
+        };
+
+        const direct = enrichWithElevation(routes[0], 'direct');
+        const safe = enrichWithElevation(routes[1], 'safe');
+        const science = routes[2] 
+          ? enrichWithElevation(routes[2], 'science') 
+          : await requestRoute(start, end, 'science', scienceDetour);
+
+        return { direct, safe, science };
+      }
+    }
+  } catch {
+    // Backend endpoint not ready or offline -> fallback to client generator
+  }
+
+  // 2. High-precision client-side multi-profile generator fallback
   const [direct, safe, science] = await Promise.all([
     requestRoute(start, end, 'direct'),
     requestRoute(start, end, 'safe'),
