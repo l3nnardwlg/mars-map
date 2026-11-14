@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, pandolf_watt
-from app.routing import MAX_SLOPE_DEGREES, NoRouteError, find_alternatives, find_path, measure_path, slope_degrees
+from app.routing import MAX_SLOPE_DEGREES, NoRouteError, find_alternatives, find_path, find_path_astar, measure_path, slope_degrees
 from app.terrain import DEM_STANDARD
 
 client = TestClient(app)
@@ -115,3 +115,122 @@ def test_alternatives_endpoint_on_real_dem():
     einzel = client.post("/api/routes/calculate", json={k: payload[k] for k in ("start", "end")}).json()
     assert routen[0]["energyJoules"] == pytest.approx(einzel["energyJoules"])
     assert all(r["energyJoules"] <= routen[0]["energyJoules"] * 1.6 + 1 for r in routen)
+
+
+def test_identical_concurrent_requests_are_computed_one_at_a_time(monkeypatch, tmp_path):
+    import threading
+    import time
+
+    from app import terrain
+
+    dem = tmp_path / "dem.tif"
+    dem.write_bytes(b"")
+    monkeypatch.setenv("MARS_DEM_PATH", str(dem))
+    gleichzeitig = {"jetzt": 0, "max": 0, "aufrufe": 0}
+    zaehler = threading.Lock()
+
+    def langsam(*args):
+        with zaehler:
+            gleichzeitig["jetzt"] += 1
+            gleichzeitig["max"] = max(gleichzeitig["max"], gleichzeitig["jetzt"])
+            gleichzeitig["aufrufe"] += 1
+        time.sleep(0.2)
+        with zaehler:
+            gleichzeitig["jetzt"] -= 1
+        return [{"id": "x"}]
+
+    monkeypatch.setattr(terrain, "_plan_routes_cached", langsam)
+    terrain._SPERREN.clear()
+    threads = [threading.Thread(target=terrain.plan_routes, args=((18.4, 77.5), (18.5, 77.6), 3)) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert gleichzeitig["max"] == 1
+    assert gleichzeitig["aufrufe"] == 4
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_parallel_identical_alternatives_requests_search_only_once(monkeypatch):
+    import threading
+
+    from app import terrain
+
+    terrain._plan_routes_cached.cache_clear()
+    suchen = []
+    original = terrain.find_alternatives
+
+    def zaehlend(*args, **kwargs):
+        suchen.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(terrain, "find_alternatives", zaehlend)
+    ergebnisse = []
+    start, ende = (18.43, 77.46), (18.41, 77.50)
+    threads = [threading.Thread(target=lambda: ergebnisse.append(terrain.plan_routes(start, ende, 2))) for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(suchen) == 1
+    assert len(ergebnisse) == 3
+
+
+
+def _zufallsgelaende(seed):
+    rng = np.random.default_rng(seed)
+    grob = rng.normal(0, 25, (12, 12))
+    hoehe = np.kron(grob, np.ones((6, 6))) + rng.normal(0, 2, (72, 72))
+    hoehe[rng.random((72, 72)) < 0.01] = np.nan
+    return hoehe
+
+
+@pytest.mark.parametrize("seed", range(8))
+def test_fast_search_finds_same_optimum_as_astar(seed):
+    hoehe = _zufallsgelaende(seed)
+    start, ende = (5, 5), (66, 64)
+    try:
+        alt, slope = find_path_astar(hoehe, 20.0, start, ende)
+    except NoRouteError:
+        with pytest.raises(NoRouteError):
+            find_path(hoehe, 20.0, start, ende)
+        return
+    neu, _ = find_path(hoehe, 20.0, start, ende)
+    energie_alt = measure_path(alt, hoehe, slope, 20.0)[3]
+    energie_neu = measure_path(neu, hoehe, slope, 20.0)[3]
+    assert energie_neu == pytest.approx(energie_alt, rel=1e-9)
+
+
+@pytest.mark.parametrize("seed", range(4))
+def test_fast_search_with_penalty_matches_astar(seed):
+    hoehe = _zufallsgelaende(seed + 100)
+    strafe = np.zeros(hoehe.shape)
+    strafe[20:50, 20:50] = 3.0
+    start, ende = (5, 5), (66, 64)
+    try:
+        alt, slope = find_path_astar(hoehe, 20.0, start, ende, strafe)
+    except NoRouteError:
+        return
+    neu, _ = find_path(hoehe, 20.0, start, ende, strafe)
+    kosten = lambda weg: sum(
+        (1 + 0.5 * (strafe[a] + strafe[b])) * measure_path([a, b], hoehe, slope, 20.0)[3]
+        for a, b in zip(weg, weg[1:])
+    )
+    assert kosten(neu) == pytest.approx(kosten(alt), rel=1e-9)
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_steep_start_gets_readable_reason():
+    payload = {"start": {"latitude": 18.064, "longitude": 77.517}, "end": {"latitude": 18.026, "longitude": 77.478}}
+    antwort = client.post("/api/routes/alternatives", json=payload)
+    assert antwort.status_code == 422
+    assert "zu steilem Gelände" in antwort.json()["detail"]
+    assert "15 Grad" in antwort.json()["detail"]
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_point_outside_model_gets_readable_reason():
+    payload = {"start": {"latitude": 0.0, "longitude": 10.0}, "end": {"latitude": 18.4, "longitude": 77.5}}
+    antwort = client.post("/api/routes/calculate", json=payload)
+    assert antwort.status_code == 422
+    assert "außerhalb" in antwort.json()["detail"]

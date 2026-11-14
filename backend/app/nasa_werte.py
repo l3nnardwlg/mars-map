@@ -25,6 +25,20 @@ QUELLEN = {
 }
 
 
+def pandolf_watt_array(steigung_prozent):
+    import numpy as np
+
+    w = KOERPERMASSE_KG
+    last = ZUSATZLAST_KG
+    v = GEHTEMPO_METER_PRO_SEKUNDE
+    g = np.maximum(0.0, steigung_prozent)
+    return (
+        1.5 * w
+        + 2.0 * (w + last) * (last / w) ** 2
+        + GELAENDEFAKTOR * (w + last) * (1.5 * v**2 + 0.35 * v * g)
+    )
+
+
 def pandolf_watt(steigung_prozent: float) -> float:
     w = KOERPERMASSE_KG
     last = ZUSATZLAST_KG

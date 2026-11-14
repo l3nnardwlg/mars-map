@@ -1,5 +1,6 @@
 import math
 import os
+import threading
 from functools import lru_cache
 from pathlib import Path
 
@@ -35,15 +36,25 @@ def pixel_of(src, latitude: float, longitude: float) -> tuple[int, int]:
     xs, ys = transform(MARS_GEOGRAPHIC, src.crs, [longitude], [latitude])
     row, col = src.index(xs[0], ys[0])
     if not (0 <= row < src.height and 0 <= col < src.width):
-        raise OutsideTerrainError("Punkt liegt ausserhalb des Gelaendemodells")
+        raise OutsideTerrainError("Der Punkt liegt außerhalb des Geländemodells von Jezero.")
     return row, col
+
+
+_SPERREN: dict = {}
+_SPERREN_LOCK = threading.Lock()
 
 
 def plan_routes(start: tuple[float, float], end: tuple[float, float], count: int) -> list[dict]:
     pfad = dem_pfad()
     if not pfad.is_file():
         raise DemUnavailableError("Gelaendemodell ist nicht vorhanden")
-    return _plan_routes_cached(round(start[0], 6), round(start[1], 6), round(end[0], 6), round(end[1], 6), count, str(pfad), pfad.stat().st_mtime_ns)
+    schluessel = (round(start[0], 6), round(start[1], 6), round(end[0], 6), round(end[1], 6), count, str(pfad), pfad.stat().st_mtime_ns)
+    with _SPERREN_LOCK:
+        if len(_SPERREN) > 256:
+            _SPERREN.clear()
+        sperre = _SPERREN.setdefault(schluessel, threading.Lock())
+    with sperre:
+        return _plan_routes_cached(*schluessel)
 
 
 @lru_cache(maxsize=64)

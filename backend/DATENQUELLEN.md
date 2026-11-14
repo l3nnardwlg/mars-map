@@ -27,7 +27,10 @@ Nicht verwendet: Mars Trek (Weboberflaeche ohne stabile Download-Schnittstelle, 
 | CTX-DEM gegen UAHiRISE-DTM 022680 (53 815 Punkte) | Mittel +3,2 m, Standardabweichung 6,1 m, RMSE 6,9 m, 95 % unter 15,7 m |
 | CTX-DEM gegen NASA-Probenhoehen (22 Orte) | Mittel 2,8 m, Maximum 17,2 m |
 | Landeplatz: CTX-DEM gegen NASA-Wegpunkt | -2567 m gegen -2570 m, 3 m Abweichung |
-| Gegenprobe HiRISE-Mosaik | nicht moeglich, das Mosaik ueberlappt beide UA-DTMs nicht |
+| CTX-DEM gegen alle NASA-Rover-Positionen (708 Wegpunkte bis Sol 2022, `elev_geoid`) | Mittel -1,0 m, Standardabweichung 3,2 m, RMSE 3,3 m, 95 % unter 6,5 m, Maximum 13,4 m |
+| HiRISE-DTM gegen die NASA-Rover-Positionen im Mosaik (320 Wegpunkte) | Mittel -0,6 m, Standardabweichung 0,95 m, RMSE 1,13 m, 95 % unter 2,6 m, Maximum 3,9 m |
+| CTX-DEM gegen HiRISE-DTM an denselben 320 Positionen | Mittel -1,3 m, RMSE 4,1 m |
+| Gegenprobe HiRISE-Mosaik gegen UA-DTMs | nicht moeglich, das Mosaik ueberlappt beide UA-DTMs nicht. Ersetzt durch den unabhaengigen Vergleich mit den Rover-Positionen oben |
 | Pixelfreie Randwerte (Nodata) | CTX -3,4e38, HiRISE -32767, werden beim Routing als gesperrt behandelt |
 
 Skript fuer die Gegenproben: `scripts/compare_dem.py`.
@@ -37,7 +40,7 @@ Skript fuer die Gegenproben: `scripts/compare_dem.py`.
 - Ein 20-m-Raster glaettet Steigungen, kleine steile Stufen sind im Routing nicht sichtbar.
 - Kachelhoehen sind 16 Bit linear quantisiert: Schritt etwa 0,046 m (CTX) und 0,015 m (HiRISE).
 - Probe 30 (Gallants) hat in der NASA-Datei noch keine Sol-Angabe (TBD).
-- Strahlung: keine Karte gefunden, nur der Referenzwert von Curiosity (MSL RAD, Gale-Krater, 0,21 mGy pro Tag), siehe README.
+- Strahlung: keine Karte gefunden, nur der Referenzwert von Curiosity (MSL RAD, Gale-Krater, 0,21 mGy pro Tag), siehe README. Wert und Quelle (Hassler et al. 2014, Science 343, 6169, DOI 10.1126/science.1244797: mittlere GCR-Dosisrate 0,210 plus minus 0,040 mGy pro Tag, im Reiseflug 0,48 mGy pro Tag) sind gegen die Veroeffentlichung abgeglichen. Eine Dosisaequivalenz in mSv ist nicht uebernommen.
 - Geologie: Laut USGS liegt die Karte auf einem halbkontrollierten CTX-Mosaik und weicht um etwa 100 bis 200 m vom kontrollierten CTX-Mosaik ab, auf dem unser Hoehenmodell beruht. Die Karte deckt nur den westlichen Teil des CTX-Gebiets ab. In den Quelldaten steht die Einheit "Upper etched unit" einmal mit der Nummer der Nili-Planum-2-Einheit, und "Crater riim unit" ist ein Tippfehler, beides haben wir nach Namen zusammengefuehrt.
 - Die Waermetraegheit hat in etwa einem Drittel des Gebiets keine Daten (Nodata), dort bleiben die Kacheln leer.
 - Die Steigungskarte (`slope_ctx`) ist aus dem CTX-DEM berechnet und kein eigener NASA-Datensatz. Maximalwerte bis 88 Grad entstehen an Steilkanten und Randartefakten.
