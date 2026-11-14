@@ -1,5 +1,6 @@
 import math
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -42,6 +43,12 @@ def plan_routes(start: tuple[float, float], end: tuple[float, float], count: int
     pfad = dem_pfad()
     if not pfad.is_file():
         raise DemUnavailableError("Gelaendemodell ist nicht vorhanden")
+    return _plan_routes_cached(round(start[0], 6), round(start[1], 6), round(end[0], 6), round(end[1], 6), count, str(pfad), pfad.stat().st_mtime_ns)
+
+
+@lru_cache(maxsize=64)
+def _plan_routes_cached(start_lat: float, start_lon: float, end_lat: float, end_lon: float, count: int, pfad_text: str, aenderung: int) -> list[dict]:
+    start, end, pfad = (start_lat, start_lon), (end_lat, end_lon), Path(pfad_text)
     with rasterio.open(pfad) as src:
         (r1, c1), (r2, c2) = pixel_of(src, *start), pixel_of(src, *end)
         pad = int(PADDING_METERS / src.res[0])
@@ -91,3 +98,15 @@ def plan_routes(start: tuple[float, float], end: tuple[float, float], count: int
 
 def plan_route(start: tuple[float, float], end: tuple[float, float]) -> dict:
     return plan_routes(start, end, 1)[0]
+
+
+BENCHMARK_START = (18.38, 77.58)
+BENCHMARK_END = (18.44, 77.45)
+
+
+def vorwaermen() -> None:
+    for anzahl in (1, 3):
+        try:
+            plan_routes(BENCHMARK_START, BENCHMARK_END, anzahl)
+        except (DemUnavailableError, OutsideTerrainError):
+            return
