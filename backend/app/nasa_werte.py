@@ -1,0 +1,25 @@
+KOERPERMASSE_KG = 80.7
+ZUSATZLAST_KG = 0.0
+GELAENDEFAKTOR = 1.0
+GEHTEMPO_METER_PRO_SEKUNDE = 3.0 / 3.6
+MAX_STEIGUNG_GRAD = 15.0
+
+QUELLEN = {
+    "KOERPERMASSE_KG": "Mittlere Koerpermasse der 6 Astronauten-Probanden, Gernhardt, Norcross, Vos: Integrated Suit Test 1 (IST-1), NASA JSC, SAE 2007, Tabelle 1: 80,7 kg",
+    "ZUSATZLAST_KG": "0 gesetzt: die Pandolf-Gleichung gilt fuer Lasten bei 1 g, die Anzuglast bei 0,38 g Mars-Schwerkraft ist damit nicht belegt abbildbar",
+    "GELAENDEFAKTOR": "Pandolf-Gelaendekoeffizient eta, 1,0 = feste ebene Flaeche (Kim et al., IEEE EMBC 2024, NASA JSC Crew State and Risk Model)",
+    "GEHTEMPO_METER_PRO_SEKUNDE": "3,0 km/h: Geh- und Steigungstest bei Norcross und Gernhardt, NASA JSC (Gehen und Gehen mit 20 % Steigung, jeweils 3,0 km/h); IST-1: nominale Geschwindigkeiten bis 5 km/h",
+    "MAX_STEIGUNG_GRAD": "ca. 15 Grad (ca. 27 % Steigung): steilster Abschnitt im Rock Yard des NASA JSC, den Probanden bei der Pandolf-Studie liefen (Kim et al., APACHE-Studie, ICES 2022)",
+}
+
+
+def pandolf_watt(steigung_prozent: float) -> float:
+    w = KOERPERMASSE_KG
+    last = ZUSATZLAST_KG
+    v = GEHTEMPO_METER_PRO_SEKUNDE
+    g = max(0.0, steigung_prozent)
+    return (
+        1.5 * w
+        + 2.0 * (w + last) * (last / w) ** 2
+        + GELAENDEFAKTOR * (w + last) * (1.5 * v**2 + 0.35 * v * g)
+    )

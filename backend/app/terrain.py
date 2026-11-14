@@ -63,7 +63,7 @@ def plan_route(start: tuple[float, float], end: tuple[float, float]) -> dict:
             )
 
         path, slope = find_path(elevation, cell_meters, to_cell(r1, c1), to_cell(r2, c2))
-        distance, duration, risk = measure_path(path, elevation, slope, cell_meters)
+        distance, duration, risk, _ = measure_path(path, elevation, slope, cell_meters)
 
         step = max(1, math.ceil(len(path) / MAX_WAYPOINTS))
         chosen = path[::step]

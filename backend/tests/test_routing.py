@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, pandolf_watt
 from app.routing import MAX_SLOPE_DEGREES, NoRouteError, find_path, measure_path, slope_degrees
 from app.terrain import DEM_STANDARD
 
@@ -14,9 +15,10 @@ client = TestClient(app)
 def test_flat_terrain_gives_straight_path_without_risk():
     elevation = np.zeros((30, 30))
     path, slope = find_path(elevation, 10.0, (15, 2), (15, 27))
-    distance, duration, risk = measure_path(path, elevation, slope, 10.0)
+    distance, duration, risk, energy = measure_path(path, elevation, slope, 10.0)
     assert distance == pytest.approx(250.0)
-    assert duration == pytest.approx(250.0)
+    assert duration == pytest.approx(250.0 / GEHTEMPO_METER_PRO_SEKUNDE)
+    assert energy == pytest.approx(pandolf_watt(0.0) * duration)
     assert risk == 0.0
 
 
@@ -43,13 +45,20 @@ def test_slope_of_known_ramp():
 
 def test_climb_is_slower_and_riskier_than_flat():
     flat = np.zeros((20, 20))
-    hill = np.tile(np.arange(20) * 3.0, (20, 1))
+    hill = np.tile(np.arange(20) * 2.0, (20, 1))
     results = []
     for elevation in (flat, hill):
         path, slope = find_path(elevation, 10.0, (10, 1), (10, 18))
         results.append(measure_path(path, elevation, slope, 10.0))
     assert results[1][1] > results[0][1]
     assert results[1][2] > results[0][2]
+    assert results[1][3] > results[0][3]
+
+
+def test_pandolf_formula_matches_nasa_equation():
+    assert pandolf_watt(0.0) == pytest.approx(1.5 * 80.7 + 80.7 * 1.5 * GEHTEMPO_METER_PRO_SEKUNDE**2)
+    assert pandolf_watt(20.0) > pandolf_watt(10.0) > pandolf_watt(0.0)
+    assert pandolf_watt(-10.0) == pandolf_watt(0.0)
 
 
 def test_route_without_dem_returns_503(monkeypatch, tmp_path):
