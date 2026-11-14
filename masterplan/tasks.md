@@ -34,13 +34,13 @@
 
 ## Phase 2 – Core Features (8–20h)
 
-- [ ] Implement high-resolution 3D Jezero terrain
-- [ ] Implement global-to-surface camera transition
-- [ ] Integrate NASA imagery and elevation layers
+- [x] Implement high-resolution 3D Jezero terrain
+- [x] Implement global-to-surface camera transition
+- [x] Integrate NASA imagery and elevation layers
 - [x] Implement A* route calculation
 - [x] Calculate slope and terrain risk
-- [ ] Add interactive start/end point selection
-- [ ] Connect frontend with routing API
+- [x] Add interactive start/end point selection
+- [x] Connect frontend with routing API
 
 **Milestone:** User can select two points and visualize a calculated route on real Mars terrain.
 

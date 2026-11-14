@@ -2,10 +2,11 @@
 
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useLoader } from '@react-three/fiber';
+import { useLoader, ThreeEvent } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import { useMissionStore } from '@/store/useMissionStore';
 import { Html } from '@react-three/drei';
+import RouteMesh from './RouteMesh';
 
 export default function TerrainPrototype() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -13,11 +14,13 @@ export default function TerrainPrototype() {
   const terrainWireframe = useMissionStore((state) => state.terrainWireframe);
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
   const terrainColorMode = useMissionStore((state) => state.terrainColorMode);
+  const setRoutePoint = useMissionStore((state) => state.setRoutePoint);
 
-  // Load NASA DEM heightmap and matching Ortho texture
-  const [demMap, orthoMap] = useLoader(TextureLoader, [
+  // Load NASA DEM heightmap, Ortho texture, and calculated Slope Risk map
+  const [demMap, orthoMap, slopeMap] = useLoader(TextureLoader, [
     '/terrain/jezero_dem.png',
     '/terrain/jezero_ortho.jpg',
+    '/terrain/jezero_slope.png',
   ]);
 
   useMemo(() => {
@@ -32,9 +35,14 @@ export default function TerrainPrototype() {
       orthoMap.wrapS = THREE.ClampToEdgeWrapping;
       orthoMap.wrapT = THREE.ClampToEdgeWrapping;
     }
-  }, [demMap, orthoMap]);
+    if (slopeMap) {
+      slopeMap.colorSpace = THREE.SRGBColorSpace;
+      slopeMap.wrapS = THREE.ClampToEdgeWrapping;
+      slopeMap.wrapT = THREE.ClampToEdgeWrapping;
+    }
+  }, [demMap, orthoMap, slopeMap]);
 
-  // Generate hypsometric (elevation colormap) texture
+  // Hypsometric Colormap texture
   const hypsometricMap = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
@@ -56,13 +64,36 @@ export default function TerrainPrototype() {
     return texture;
   }, []);
 
-  const activeTexture = terrainColorMode === 'hypsometric' ? hypsometricMap : orthoMap;
+  const activeTexture = useMemo(() => {
+    if (terrainColorMode === 'hypsometric') return hypsometricMap;
+    if (terrainColorMode === 'slope') return slopeMap;
+    return orthoMap;
+  }, [terrainColorMode, hypsometricMap, slopeMap, orthoMap]);
+
+  // Interactive Click on Terrain to pick Start / Destination waypoint
+  const handleTerrainClick = (e: ThreeEvent<MouseEvent>) => {
+    if (!e.uv) return;
+    e.stopPropagation();
+
+    // Map UV (0..1) to Jezero Crater Bounding Box [17.58, 19.29]N, [76.99, 78.58]E
+    const lat = 17.58 + e.uv.y * (19.29 - 17.58);
+    const lon = 76.99 + e.uv.x * (78.58 - 76.99);
+
+    setRoutePoint({
+      latitude: Number(lat.toFixed(4)),
+      longitude: Number(lon.toFixed(4)),
+    });
+  };
 
   return (
     <group position={[0, -0.5, 0]} rotation={[-Math.PI / 2.3, 0, 0]}>
       {/* 3D Displaced Terrain Mesh */}
-      <mesh ref={meshRef} receiveShadow castShadow>
-        {/* Dense 256x256 grid for smooth crater ridges and river channel */}
+      <mesh
+        ref={meshRef}
+        receiveShadow
+        castShadow
+        onClick={handleTerrainClick}
+      >
         <planeGeometry args={[7, 7, 256, 256]} />
         <meshStandardMaterial
           map={activeTexture}
@@ -75,28 +106,29 @@ export default function TerrainPrototype() {
         />
       </mesh>
 
-      {/* Western River Inflow Tag */}
+      {/* 3D Rendered Route and Waypoint Beacons */}
+      <RouteMesh planeSize={7} />
+
+      {/* Surface Landmark Tags */}
       <group position={[-2.2, 0.4, 0.4]}>
         <Html center distanceFactor={8}>
-          <div className="pointer-events-none rounded bg-black/80 px-2 py-1 text-[10px] font-mono text-amber-300 border border-amber-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
+          <div className="pointer-events-none rounded bg-black/85 px-2 py-1 text-[10px] font-mono text-amber-300 border border-amber-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
             🌊 Neretva Vallis (Inlet Breach)
           </div>
         </Html>
       </group>
 
-      {/* Delta Fan Tag */}
       <group position={[-0.4, 0.6, 0.2]}>
         <Html center distanceFactor={8}>
-          <div className="pointer-events-none rounded bg-black/80 px-2 py-1 text-[10px] font-mono text-sky-300 border border-sky-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
+          <div className="pointer-events-none rounded bg-black/85 px-2 py-1 text-[10px] font-mono text-sky-300 border border-sky-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
             🎯 Ancient Jezero Delta Fan
           </div>
         </Html>
       </group>
 
-      {/* Crater Floor Center */}
       <group position={[1.2, 0.1, -0.3]}>
         <Html center distanceFactor={8}>
-          <div className="pointer-events-none rounded bg-black/80 px-2 py-1 text-[10px] font-mono text-zinc-300 border border-zinc-700 backdrop-blur-sm whitespace-nowrap shadow-md">
+          <div className="pointer-events-none rounded bg-black/85 px-2 py-1 text-[10px] font-mono text-zinc-300 border border-zinc-700 backdrop-blur-sm whitespace-nowrap shadow-md">
             Elevation: -2,500 m (Lakebed)
           </div>
         </Html>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { Landmark, CameraViewMode } from '@/types/mars';
+import { Landmark, CameraViewMode, MarsCoordinate, MarsRoute } from '@/types/mars';
+import { requestRoute } from '@/services/marsApi';
 
 export const MARS_LANDMARKS: Landmark[] = [
   {
@@ -45,10 +46,16 @@ interface MissionStore {
   cameraTarget: [number, number, number];
   cameraDesiredPosition: [number, number, number] | null;
 
-  // DEM Terrain Prototype State
+  // DEM Terrain State
   terrainWireframe: boolean;
   terrainExaggeration: number;
   terrainColorMode: TerrainColorMode;
+
+  // Route Planning State (Phase 2)
+  routeStart: MarsCoordinate | null;
+  routeEnd: MarsCoordinate | null;
+  currentRoute: MarsRoute | null;
+  isCalculatingRoute: boolean;
 
   // Actions
   setActiveView: (view: ActiveView) => void;
@@ -65,9 +72,14 @@ interface MissionStore {
   toggleTerrainWireframe: () => void;
   setTerrainExaggeration: (val: number) => void;
   setTerrainColorMode: (mode: TerrainColorMode) => void;
+
+  // Route Planning Actions
+  setRoutePoint: (coord: MarsCoordinate) => void;
+  clearRoute: () => void;
+  calculateRoute: () => Promise<void>;
 }
 
-export const useMissionStore = create<MissionStore>((set) => ({
+export const useMissionStore = create<MissionStore>((set, get) => ({
   activeView: 'globe',
   cameraMode: 'orbit',
   cameraDistance: 6.0,
@@ -79,6 +91,11 @@ export const useMissionStore = create<MissionStore>((set) => ({
   terrainWireframe: false,
   terrainExaggeration: 1.5,
   terrainColorMode: 'satellite',
+
+  routeStart: { latitude: 18.38, longitude: 77.45, elevationMeters: -2480 },
+  routeEnd: { latitude: 18.42, longitude: 77.62, elevationMeters: -2210 },
+  currentRoute: null,
+  isCalculatingRoute: false,
 
   setActiveView: (view) =>
     set({
@@ -111,4 +128,34 @@ export const useMissionStore = create<MissionStore>((set) => ({
   toggleTerrainWireframe: () => set((state) => ({ terrainWireframe: !state.terrainWireframe })),
   setTerrainExaggeration: (val) => set({ terrainExaggeration: val }),
   setTerrainColorMode: (mode) => set({ terrainColorMode: mode }),
+
+  setRoutePoint: (coord: MarsCoordinate) => {
+    const { routeStart, routeEnd } = get();
+    if (!routeStart || (routeStart && routeEnd)) {
+      set({ routeStart: coord, routeEnd: null, currentRoute: null });
+    } else {
+      set({ routeEnd: coord });
+      get().calculateRoute();
+    }
+  },
+
+  clearRoute: () =>
+    set({
+      routeStart: null,
+      routeEnd: null,
+      currentRoute: null,
+    }),
+
+  calculateRoute: async () => {
+    const { routeStart, routeEnd } = get();
+    if (!routeStart || !routeEnd) return;
+
+    set({ isCalculatingRoute: true });
+    try {
+      const route = await requestRoute(routeStart, routeEnd);
+      set({ currentRoute: route, isCalculatingRoute: false });
+    } catch {
+      set({ isCalculatingRoute: false });
+    }
+  },
 }));
