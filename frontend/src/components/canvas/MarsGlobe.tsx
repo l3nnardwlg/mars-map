@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import { MARS_RADIUS_SCENE, MARS_AXIAL_TILT_RAD } from '@/utils/coordinates';
 import { useMissionStore, MARS_LANDMARKS } from '@/store/useMissionStore';
@@ -12,27 +12,42 @@ import LandmarkMarker from './LandmarkMarker';
 export default function MarsGlobe() {
   const globeGroupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  const { gl } = useThree();
 
   const isAutoRotating = useMissionStore((state) => state.isAutoRotating);
   const selectedLandmark = useMissionStore((state) => state.selectedLandmark);
 
-  // Load textures
+  // Load 8K textures
   const [colorMap, bumpMap] = useLoader(TextureLoader, [
     '/textures/mars_color.jpg',
     '/textures/mars_bump.jpg',
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
+    /* eslint-disable react-hooks/immutability */
+    const maxAniso = gl.capabilities.getMaxAnisotropy?.() || 16;
+
     if (colorMap) {
       colorMap.colorSpace = THREE.SRGBColorSpace;
       colorMap.wrapS = THREE.ClampToEdgeWrapping;
       colorMap.wrapT = THREE.ClampToEdgeWrapping;
+      colorMap.minFilter = THREE.LinearMipmapLinearFilter;
+      colorMap.magFilter = THREE.LinearFilter;
+      colorMap.anisotropy = Math.min(16, maxAniso);
+      colorMap.generateMipmaps = true;
+      colorMap.needsUpdate = true;
     }
     if (bumpMap) {
       bumpMap.wrapS = THREE.ClampToEdgeWrapping;
       bumpMap.wrapT = THREE.ClampToEdgeWrapping;
+      bumpMap.minFilter = THREE.LinearMipmapLinearFilter;
+      bumpMap.magFilter = THREE.LinearFilter;
+      bumpMap.anisotropy = Math.min(16, maxAniso);
+      bumpMap.generateMipmaps = true;
+      bumpMap.needsUpdate = true;
+      /* eslint-enable react-hooks/immutability */
     }
-  }, [colorMap, bumpMap]);
+  }, [colorMap, bumpMap, gl]);
 
   // Handle slow planet rotation (only when auto-rotate is enabled and no landmark is focused)
   useFrame((_, delta) => {
@@ -46,13 +61,13 @@ export default function MarsGlobe() {
     <group rotation={[0, 0, MARS_AXIAL_TILT_RAD]}>
       {/* Inner group rotating around its tilted polar axis */}
       <group ref={globeGroupRef}>
-        {/* Main Mars Globe Mesh */}
+        {/* Main Mars Globe Mesh with 128x128 high-fidelity sphere subdivision */}
         <mesh ref={meshRef} castShadow receiveShadow>
-          <sphereGeometry args={[MARS_RADIUS_SCENE, 64, 64]} />
+          <sphereGeometry args={[MARS_RADIUS_SCENE, 128, 128]} />
           <meshStandardMaterial
             map={colorMap}
             bumpMap={bumpMap}
-            bumpScale={0.06}
+            bumpScale={0.08}
             roughness={0.88}
             metalness={0.05}
           />

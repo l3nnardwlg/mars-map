@@ -34,13 +34,13 @@
 
 ## Phase 2 – Core Features (8–20h)
 
-- [ ] Implement high-resolution 3D Jezero terrain
-- [ ] Implement global-to-surface camera transition
-- [ ] Integrate NASA imagery and elevation layers
+- [x] Implement high-resolution 3D Jezero terrain
+- [x] Implement global-to-surface camera transition
+- [x] Integrate NASA imagery and elevation layers
 - [x] Implement A* route calculation
 - [x] Calculate slope and terrain risk
-- [ ] Add interactive start/end point selection
-- [ ] Connect frontend with routing API
+- [x] Add interactive start/end point selection
+- [x] Connect frontend with routing API
 
 **Milestone:** User can select two points and visualize a calculated route on real Mars terrain.
 
@@ -49,26 +49,53 @@
 - [x] Implement NASA science points
 - [x] Implement route alternatives
 - [x] Add EVA duration and resource estimates
-- [ ] Display mission risks and terrain information
-- [ ] Build interactive layer controls
-- [ ] Finalize Mission Control dashboard
-- [ ] Integrate science points into 3D scene
+- [x] Display mission risks and terrain information
+- [x] Build interactive layer controls
+- [x] Finalize Mission Control dashboard
+- [x] Integrate science points into 3D scene
 
 **Milestone:** Complete interactive Marswalk planning workflow.
 
 ## Phase 4 – QA & Release (32–48h)
 
-- [ ] Validate scientific data and source attribution
-- [ ] Test coordinate transformations
-- [ ] Test routing on steep and inaccessible terrain
-- [ ] Verify frontend/backend integration
-- [ ] Optimize 3D rendering performance
-- [ ] Test complete mission planning workflow
+- [x] Validate scientific data and source attribution
+- [x] Test coordinate transformations
+- [x] Test routing on steep and inaccessible terrain
+- [x] Verify frontend/backend integration
+- [x] Optimize 3D rendering performance
+- [x] Test complete mission planning workflow
 - [ ] Record demonstration video
 - [ ] Prepare NASA Space Apps submission
 - [ ] Freeze release and deploy
 
 **Milestone:** Stable, demonstrable project ready for submission.
+
+## Phase 5 – Advanced 3D Exploration, Mission Visualization & UX (Dev A)
+
+### P0 – Unbedingt umsetzen
+- [x] **Astronaut Mode:** First-Person-Perspektive mit WASD-Steuerung, PointerLock-Mausblick und realistischer Geländekollision (DEM-gestützt)
+- [x] **Minimap:** 2D-Radarübersicht mit Astronautenposition, Blickrichtung (FoV-Kegel), Route und Science Points
+- [x] **3D Route Visualization:** Erweiterte Routendarstellung mit Richtungspfeilen, Wegpunkten und Gefahrenmarkierungen
+- [x] **Terrain Inspector:** Klick-/Hover-Tool mit Anzeige von Höhe, IAU-Koordinaten und lokaler Steigung
+- [x] **Layer Manager:** NASA-Layer Opacity-Slider, Legenden und konfigurierbare Gefahren-Grenzwerte
+- [x] **Performance Optimization:** Frustum Culling, GPU-Memory-Management, glatte 60 FPS
+
+### P1 – Wissenschaftliche Visualisierung
+- [x] **Interaktives Höhenprofil:** Verknüpfung von Höhenprofil-Hover mit der 3D-Kartenposition
+- [x] **Slope Heatmap & Risk Zones:** Einstellbare Grenzwerte für Neigungsrisiken (10°–25°)
+- [x] **Route Comparison:** Direktes Gegenüberstellen von bis zu 3 Routen im Dashboard
+- [x] **Distance Measurement Tool:** Laser-Messwerkzeug für Distanzen und Höhendifferenzen zwischen beliebigen Punkten
+- [x] **Science Point Viewer:** Detailansicht mit NASA-Bildern, Beschreibungen und Proben-Zielen
+
+### P2 – Immersion & Premium Features
+- [x] **Cinematic Landing Experience:** Kamerafahrt vom Weltraum in den Jezero-Krater mit Skip-Button
+- [x] **Mars Day/Night Simulation:** Dynamischer Sonnenlauf mit Sol-Uhrzeit und Schattenwurf
+- [x] **Astronaut HUD:** Helm-Visier mit Kompassrose, künstlichem Horizont und simulierter Vitaltelemetrie
+- [x] **Mission Replay:** Automatisches Abfahren der geplanten Marswalk-Route mit Timeline-Steuerung
+
+### P3 – Extras & Accessibility
+- [x] **Keyboard Shortcuts:** Schnelltasten für Ansichten (1 Orbit, 2 Terrain, 3 Astronaut, M Minimap, I Inspector, R Replay, L Layer Manager)
+- [x] **Guided Demo:** Geführte 2-Minuten-Tour für die NASA-Jury
 
 ## Integration Rules
 
