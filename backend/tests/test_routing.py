@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, pandolf_watt
-from app.routing import MAX_SLOPE_DEGREES, NoRouteError, find_path, measure_path, slope_degrees
+from app.routing import MAX_SLOPE_DEGREES, NoRouteError, find_alternatives, find_path, measure_path, slope_degrees
 from app.terrain import DEM_STANDARD
 
 client = TestClient(app)
@@ -85,3 +85,33 @@ def test_route_on_real_jezero_dem():
 def test_route_outside_dem_returns_422():
     payload = {"start": {"latitude": 0.0, "longitude": 10.0}, "end": {"latitude": 18.4, "longitude": 77.5}}
     assert client.post("/api/routes/calculate", json=payload).status_code == 422
+
+
+def test_alternative_goes_through_other_gap():
+    elevation = np.zeros((60, 60))
+    elevation[:, 30] = 500.0
+    elevation[10:13, 30] = 0.0
+    elevation[45:48, 30] = 0.0
+    ergebnisse = find_alternatives(elevation, 10.0, (30, 5), (30, 55), 2)
+    assert len(ergebnisse) == 2
+    luecken = [next(row for row, col in path if col == 30) for path, _ in ergebnisse]
+    assert min(luecken) < 20 < 40 < max(luecken)
+
+
+def test_no_alternative_when_only_one_way():
+    elevation = np.zeros((40, 40))
+    elevation[:, 20] = 500.0
+    elevation[18:21, 20] = 0.0
+    assert len(find_alternatives(elevation, 10.0, (20, 5), (20, 35), 3)) == 1
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_alternatives_endpoint_on_real_dem():
+    payload = {"start": {"latitude": 18.44, "longitude": 77.45}, "end": {"latitude": 18.40, "longitude": 77.55}, "count": 3}
+    antwort = client.post("/api/routes/alternatives", json=payload)
+    routen = antwort.json()
+    assert antwort.status_code == 200
+    assert 1 <= len(routen) <= 3
+    einzel = client.post("/api/routes/calculate", json={k: payload[k] for k in ("start", "end")}).json()
+    assert routen[0]["energyJoules"] == pytest.approx(einzel["energyJoules"])
+    assert all(r["energyJoules"] <= routen[0]["energyJoules"] * 1.6 + 1 for r in routen)

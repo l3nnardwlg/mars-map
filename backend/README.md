@@ -17,6 +17,7 @@ Alle Endpunkte verwenden `latitude`, `longitude` in Grad und `elevationMeters`.
 | `GET /api/layers` | Datenlayer mit Quelle |
 | `GET /api/science-points` | 36 Punkte: 22 Probenorte der Perseverance-Mission, Landeplatz, Rover-Position, 12 USGS-Merkmale |
 | `POST /api/routes/calculate` | A*-Route auf dem CTX-DEM, Energie nach Pandolf |
+| `POST /api/routes/alternatives` | Beste Route plus bis zu 4 Alternativen (`count`, Standard 3), erste Route ist die energieguenstigste |
 | `POST /api/mission/simulate` | Dauer, Energie, Sauerstoff, Grenzen aus den Wegpunkten einer Route |
 
 Die Routenantwort enthaelt zusaetzlich `energyJoules` und `averagePowerWatts`. Das Frontend muss die Pandolf-Formel nicht selbst rechnen.

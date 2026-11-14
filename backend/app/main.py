@@ -6,8 +6,9 @@ from fastapi.staticfiles import StaticFiles
 from app.data import LAYERS, SCIENCE_POINTS, kachelordner, terrain_metadaten
 from app.mission import MissingElevationError, simulate
 from app.routing import NoRouteError
-from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route
+from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route, plan_routes
 from app.models import (
+    AlternativesRequest,
     Layer,
     MarsRoute,
     MissionEstimate,
@@ -49,6 +50,21 @@ def calculate_route(request: RouteRequest) -> MarsRoute:
     except NoRouteError as fehler:
         raise HTTPException(status_code=422, detail=str(fehler)) from fehler
     return MarsRoute(id=str(uuid4()), **ergebnis)
+
+
+@api.post("/routes/alternatives", response_model=list[MarsRoute], response_model_by_alias=True)
+def calculate_alternatives(request: AlternativesRequest) -> list[MarsRoute]:
+    try:
+        ergebnisse = plan_routes(
+            (request.start.latitude, request.start.longitude),
+            (request.end.latitude, request.end.longitude),
+            request.count,
+        )
+    except DemUnavailableError as fehler:
+        raise HTTPException(status_code=503, detail=str(fehler)) from fehler
+    except (OutsideTerrainError, NoRouteError) as fehler:
+        raise HTTPException(status_code=422, detail=str(fehler)) from fehler
+    return [MarsRoute(id=str(uuid4()), **ergebnis) for ergebnis in ergebnisse]
 
 
 @api.post("/mission/simulate", response_model=MissionEstimate, response_model_by_alias=True)
