@@ -94,20 +94,20 @@ export default function TerrainPrototype() {
         castShadow
         onClick={handleTerrainClick}
       >
-        <planeGeometry args={[7, 7, 256, 256]} />
+        <planeGeometry args={[8, 8, 384, 384]} />
         <meshStandardMaterial
           map={activeTexture}
           displacementMap={demMap}
-          displacementScale={0.9 * terrainExaggeration}
-          displacementBias={-0.2}
+          displacementScale={0.55 * terrainExaggeration}
+          displacementBias={-0.1}
           wireframe={terrainWireframe}
-          roughness={0.85}
-          metalness={0.1}
+          roughness={0.9}
+          metalness={0.05}
         />
       </mesh>
 
       {/* 3D Rendered Route and Waypoint Beacons */}
-      <RouteMesh planeSize={7} />
+      <RouteMesh planeSize={8} />
 
       {/* Surface Landmark Tags */}
       <group position={[-2.2, 0.4, 0.4]}>

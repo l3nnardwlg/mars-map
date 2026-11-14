@@ -10,7 +10,7 @@ interface RouteMeshProps {
   planeSize?: number;
 }
 
-export default function RouteMesh({ planeSize = 7 }: RouteMeshProps) {
+export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
   const currentRoute = useMissionStore((state) => state.currentRoute);
   const routeStart = useMissionStore((state) => state.routeStart);
   const routeEnd = useMissionStore((state) => state.routeEnd);
@@ -29,7 +29,7 @@ export default function RouteMesh({ planeSize = 7 }: RouteMeshProps) {
 
       // Scaled displacement elevation Z (matching displacement map)
       const normElev = ((wp.elevationMeters ?? -2400) - (-2560)) / (1320);
-      const localZ = (normElev * 0.9 * terrainExaggeration) - 0.2 + 0.06;
+      const localZ = (normElev * 0.55 * terrainExaggeration) - 0.1 + 0.05;
 
       return new THREE.Vector3(localX, localY, localZ);
     });
@@ -39,7 +39,7 @@ export default function RouteMesh({ planeSize = 7 }: RouteMeshProps) {
   const tubeGeometry = useMemo(() => {
     if (!localPoints || localPoints.length < 2) return null;
     const curve = new THREE.CatmullRomCurve3(localPoints);
-    return new THREE.TubeGeometry(curve, 100, 0.032, 8, false);
+    return new THREE.TubeGeometry(curve, 100, 0.035, 8, false);
   }, [localPoints]);
 
   const startPoint = useMemo(() => {
@@ -48,7 +48,7 @@ export default function RouteMesh({ planeSize = 7 }: RouteMeshProps) {
     const localX = (nx - 0.5) * planeSize;
     const localY = (ny - 0.5) * planeSize;
     const normElev = ((routeStart.elevationMeters ?? -2450) - (-2560)) / (1320);
-    const localZ = (normElev * 0.9 * terrainExaggeration) - 0.2 + 0.08;
+    const localZ = (normElev * 0.55 * terrainExaggeration) - 0.1 + 0.07;
     return new THREE.Vector3(localX, localY, localZ);
   }, [routeStart, planeSize, terrainExaggeration]);
 
@@ -58,7 +58,7 @@ export default function RouteMesh({ planeSize = 7 }: RouteMeshProps) {
     const localX = (nx - 0.5) * planeSize;
     const localY = (ny - 0.5) * planeSize;
     const normElev = ((routeEnd.elevationMeters ?? -2200) - (-2560)) / (1320);
-    const localZ = (normElev * 0.9 * terrainExaggeration) - 0.2 + 0.08;
+    const localZ = (normElev * 0.55 * terrainExaggeration) - 0.1 + 0.07;
     return new THREE.Vector3(localX, localY, localZ);
   }, [routeEnd, planeSize, terrainExaggeration]);
 
