@@ -40,6 +40,7 @@ def find_path(
     cell_meters: float,
     start: tuple[int, int],
     end: tuple[int, int],
+    penalty: np.ndarray | None = None,
 ) -> tuple[list[tuple[int, int]], np.ndarray]:
     rows, cols = elevation.shape
     slope = slope_degrees(elevation, cell_meters)
@@ -69,7 +70,10 @@ def find_path(
             if not (0 <= n_row < rows and 0 <= n_col < cols) or not passable[n_row, n_col]:
                 continue
             rise = float(elevation[n_row, n_col] - elevation[row, col])
-            new_cost = cost + step_energy_joule(length * cell_meters, rise)
+            step = step_energy_joule(length * cell_meters, rise)
+            if penalty is not None:
+                step *= 1.0 + 0.5 * (penalty[row, col] + penalty[n_row, n_col])
+            new_cost = cost + step
             if new_cost < best[n_row, n_col]:
                 best[n_row, n_col] = new_cost
                 parent[n_row, n_col] = (row, col)
@@ -103,3 +107,48 @@ def measure_path(
     fractions = np.array([slope[r, c] for r, c in path]) / MAX_SLOPE_DEGREES
     risk = float(np.clip(0.6 * fractions.mean() + 0.4 * fractions.max(), 0.0, 1.0))
     return distance, duration, risk, energy
+
+
+ALTERNATIVE_PENALTY = 3.0
+ALTERNATIVE_CORRIDOR_METERS = 200.0
+MAX_ALTERNATIVE_OVERLAP = 0.7
+MAX_ALTERNATIVE_ENERGY_FACTOR = 1.6
+
+
+def corridor(shape: tuple[int, int], path: list[tuple[int, int]], radius: int) -> np.ndarray:
+    mask = np.zeros(shape, dtype=bool)
+    for row, col in path:
+        mask[max(0, row - radius): row + radius + 1, max(0, col - radius): col + radius + 1] = True
+    return mask
+
+
+def find_alternatives(
+    elevation: np.ndarray,
+    cell_meters: float,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    count: int,
+) -> list[tuple[list[tuple[int, int]], np.ndarray]]:
+    best_path, slope = find_path(elevation, cell_meters, start, end)
+    results = [(best_path, slope)]
+    best_energy = measure_path(best_path, elevation, slope, cell_meters)[3]
+    radius = max(1, int(ALTERNATIVE_CORRIDOR_METERS / cell_meters))
+    penalty = np.zeros(elevation.shape)
+    penalty[corridor(elevation.shape, best_path, radius)] = ALTERNATIVE_PENALTY
+    for _ in range(count * 3):
+        if len(results) >= count:
+            break
+        try:
+            path, path_slope = find_path(elevation, cell_meters, start, end, penalty)
+        except NoRouteError:
+            break
+        penalty[corridor(elevation.shape, path, radius)] = ALTERNATIVE_PENALTY
+        energy = measure_path(path, elevation, path_slope, cell_meters)[3]
+        if energy > best_energy * MAX_ALTERNATIVE_ENERGY_FACTOR:
+            continue
+        masks = [corridor(elevation.shape, other, radius) for other, _ in results]
+        overlap = max(float(np.mean([mask[r, c] for r, c in path])) for mask in masks)
+        if overlap > MAX_ALTERNATIVE_OVERLAP:
+            continue
+        results.append((path, path_slope))
+    return results
