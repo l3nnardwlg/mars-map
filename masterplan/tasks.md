@@ -48,7 +48,7 @@
 
 - [ ] Implement NASA science points
 - [ ] Implement route alternatives
-- [ ] Add EVA duration and resource estimates
+- [x] Add EVA duration and resource estimates
 - [ ] Display mission risks and terrain information
 - [ ] Build interactive layer controls
 - [ ] Finalize Mission Control dashboard
