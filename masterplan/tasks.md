@@ -25,9 +25,9 @@
 - [x] **Agent 1:** Implement interactive 3D Mars globe
 - [x] **Agent 2:** Research and prototype NASA DEM terrain rendering
 - [x] **Agent 3:** Create Mission Control UI skeleton
-- [ ] **Dev B:** Initialize FastAPI backend
+- [x] **Dev B:** Initialize FastAPI backend
 - [ ] **Agent 4:** Identify and validate NASA datasets
-- [ ] **Agent 5:** Design routing algorithm and risk model
+- [x] **Agent 5:** Design routing algorithm and risk model
 - [ ] **Agent 6:** Define OpenAPI contracts and automated test setup
 
 **Milestone:** Working 3D globe + backend skeleton + verified NASA data source.
@@ -37,8 +37,8 @@
 - [ ] Implement high-resolution 3D Jezero terrain
 - [ ] Implement global-to-surface camera transition
 - [ ] Integrate NASA imagery and elevation layers
-- [ ] Implement A* route calculation
-- [ ] Calculate slope and terrain risk
+- [x] Implement A* route calculation
+- [x] Calculate slope and terrain risk
 - [ ] Add interactive start/end point selection
 - [ ] Connect frontend with routing API
 

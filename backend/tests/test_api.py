@@ -37,14 +37,6 @@ def test_route_rejects_invalid_latitude():
     assert client.post("/api/routes/calculate", json=payload).status_code == 422
 
 
-def test_route_not_implemented_yet():
-    payload = {
-        "start": {"latitude": 18.4, "longitude": 77.5},
-        "end": {"latitude": 18.5, "longitude": 77.6},
-    }
-    assert client.post("/api/routes/calculate", json=payload).status_code == 501
-
-
 def test_terrain_metadata_reads_tile_info(monkeypatch, tmp_path):
     ordner = tmp_path / "ctx_dem"
     ordner.mkdir()
