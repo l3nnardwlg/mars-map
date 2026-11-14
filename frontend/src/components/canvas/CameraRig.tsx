@@ -18,6 +18,11 @@ export default function CameraRig() {
   const cameraDesiredPosition = useMissionStore((state) => state.cameraDesiredPosition);
   const setCameraDesiredPosition = useMissionStore((state) => state.setCameraDesiredPosition);
 
+  const isAstronautMode = useMissionStore((state) => state.isAstronautMode);
+  const isMissionReplayPlaying = useMissionStore((state) => state.isMissionReplayPlaying);
+  const isCinematicLanding = useMissionStore((state) => state.isCinematicLanding);
+  const isFreeOrbit = !isAstronautMode && !isMissionReplayPlaying && !isCinematicLanding;
+
   // Target destination vector for smooth camera transitions
   const targetCamPos = useRef<THREE.Vector3 | null>(null);
   const targetLookAt = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
@@ -56,7 +61,7 @@ export default function CameraRig() {
   }, [activeView, selectedLandmark, cameraDesiredPosition, setCameraDesiredPosition]);
 
   useFrame(() => {
-    if (targetCamPos.current && controlsRef.current) {
+    if (isFreeOrbit && targetCamPos.current && controlsRef.current) {
       camera.position.lerp(targetCamPos.current, 0.05);
       controlsRef.current.target.lerp(targetLookAt.current, 0.05);
       controlsRef.current.update();
@@ -75,6 +80,7 @@ export default function CameraRig() {
   return (
     <OrbitControls
       ref={controlsRef}
+      enabled={isFreeOrbit}
       enableDamping
       dampingFactor={0.06}
       minDistance={isTerrain ? 0.9 : 2.35}
