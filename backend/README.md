@@ -32,6 +32,20 @@ Fehler der Routenberechnung: 503 (Geodaten fehlen), 422 (Punkt ausserhalb oder k
 - Pixel sind 16 Bit PNG: Wert 0 bedeutet keine Daten, 1 bis 65535 laufen linear von `hoeheMin` bis `hoeheMax`:
   `hoehe = hoeheMin + (wert - 1) / 65534 * (hoeheMax - hoeheMin)`
 
+## Daten holen (nach git clone)
+
+Die Geodaten liegen nicht im Repo (Rohdaten ca. 13 GB, GitHub nimmt keine Dateien ueber 100 MB). Ein Befehl holt sie von den Originalquellen, prueft Groesse und Pruefsumme und baut die Kacheln:
+
+```bash
+cd backend
+pip install -e ".[dev,build]"
+python scripts/fetch_data.py            # CTX-DEM (86 MB) laden, Kacheln ctx_dem bauen, ca. 2 Minuten
+python scripts/fetch_data.py --science  # zusaetzlich die Quelldateien der Science Points (ca. 6 MB)
+python scripts/fetch_data.py --hirise   # zusaetzlich HiRISE-Paket (5,5 GB), Kacheln hirise_dem bauen
+```
+
+Ohne das CTX-DEM antwortet `/api/routes/*` mit 503, die Science Points (`app/science_points.json`) und die Tests laufen auch ohne Daten.
+
 ## Daten neu erzeugen
 
 Rohdaten liegen unter `backend/data/raw/` (nicht im Repo, siehe `.gitignore`).
