@@ -153,7 +153,7 @@ export default function MissionHUD() {
                 </div>
               </div>
 
-              {selectedLandmark.coordinate.elevationMeters !== undefined && (
+              {selectedLandmark.coordinate.elevationMeters != null && (
                 <div className="mt-2 rounded bg-zinc-900/80 p-2 border border-zinc-800 text-xs">
                   <span className="text-[10px] text-zinc-400 block">ELEVATION (DATUM)</span>
                   <span className="text-amber-300 font-semibold">
