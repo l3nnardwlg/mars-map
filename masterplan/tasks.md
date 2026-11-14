@@ -46,7 +46,7 @@
 
 ## Phase 3 – Mission Planning (20–32h)
 
-- [ ] Implement NASA science points
+- [x] Implement NASA science points
 - [ ] Implement route alternatives
 - [x] Add EVA duration and resource estimates
 - [ ] Display mission risks and terrain information
