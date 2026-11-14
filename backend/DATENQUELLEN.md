@@ -8,8 +8,8 @@ Stand 14.11.2026. Alle Daten sind oeffentlich. Rohdaten liegen nicht im Repo, `p
 |---|---|---|---|---|---|---|
 | CTX-DEM Jezero (`M20_JezeroCrater_CTXDEM_20m.tif`) | USGS Astrogeology, Calef 2021 ([Seite](https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic)) | 90 345 300 Byte, SHA-256 `ba7f706e...1ba2` | 20 m, 4456 x 5067 | 17,58 bis 19,29 N, 76,99 bis 78,58 O | Public Domain, Autoren nennen | Routing, Kacheln `ctx_dem`, Hoehen der Science Points |
 | HiRISE-DTM Jezero, MSR-Mosaike v003 (`..._mosaics.zip`) | USGS, Bland 2024 ([Seite](https://astrogeology.usgs.gov/search/map/mars-sample-return-terrain-relative-navigation-hirise-dtm-mosaic)) | 5 468 062 403 Byte, darin DTM 711 891 990 Byte | 1 m, 19144 x 26816 | 18,136 bis 18,588 N, 77,058 bis 77,381 O | Public Domain | Kacheln `hirise_dem` (bis 1,6 m) |
-| CTX-Orthobild Jezero 5 m | USGS, passend zum CTX-DEM | 359 599 280 Byte, SHA-256 `cd9f4b21...d2df` | 5 m | wie CTX-DEM | Public Domain | noch nicht als Layer genutzt |
-| THEMIS-Waermetraegheit Jezero (`Jezero_Thermal_Inertia_v1.tiff`) | Edwards und Buz 2021, [Zenodo 4931348](https://zenodo.org/records/4931348) | 1 721 889 Byte, SHA-256 `84401e77...829c` | THEMIS-Mosaik | Jezero-Krater | siehe Zenodo-Eintrag | noch nicht als Layer genutzt |
+| CTX-Orthobild Jezero 5 m | USGS, passend zum CTX-DEM | 359 599 280 Byte, SHA-256 `cd9f4b21...d2df` | 5 m | wie CTX-DEM | Public Domain | Layer `ctx_ortho` (Kacheln bis 10 m) |
+| THEMIS-Waermetraegheit Jezero (`Jezero_Thermal_Inertia_v1.tiff`) | Edwards und Buz 2021, [Zenodo 4931348](https://zenodo.org/records/4931348) | 1 721 889 Byte, SHA-256 `84401e77...829c` | THEMIS-Mosaik | Jezero-Krater | siehe Zenodo-Eintrag | Layer `thermal_inertia` (Kacheln, 87 m) |
 | Rover-Wegpunkte (`M20_waypoints.json`) | NASA MMGIS Mars 2020 ([Datei](https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json)) | 603 126 Byte, 708 Punkte bis Sol 2022 | - | Jezero | NASA, oeffentlich | Landeplatz und letzte Position (Science Points) |
 | Probenorte (`M20_SAMPLE_v3.json`) | NASA MMGIS Mars 2020 ([Datei](https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json)), Tabelle: [science.nasa.gov](https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples) | 11 389 Byte, SHA-256 `60d4b0a2...fcae` | - | 22 Eintraege fuer 30 Proben | NASA, oeffentlich | 22 Science Points |
 | Namensverzeichnis Mars (`MARS_nomenclature_center_pts.zip`) | USGS Gazetteer of Planetary Nomenclature | 5 421 247 Byte, SHA-256 `753f2965...1910` | - | global, 12 Merkmale im Gebiet | oeffentlich | 12 Science Points |
@@ -36,5 +36,7 @@ Skript fuer die Gegenproben: `scripts/compare_dem.py`.
 - Ein 20-m-Raster glaettet Steigungen, kleine steile Stufen sind im Routing nicht sichtbar.
 - Kachelhoehen sind 16 Bit linear quantisiert: Schritt etwa 0,046 m (CTX) und 0,015 m (HiRISE).
 - Probe 30 (Gallants) hat in der NASA-Datei noch keine Sol-Angabe (TBD).
-- Strahlung: keine Karte gefunden, nur Messwerte von Curiosity (MSL RAD, Gale-Krater). Thermik und Geologie sind noch nicht als Layer umgesetzt.
+- Strahlung: keine Karte gefunden, nur Messwerte von Curiosity (MSL RAD, Gale-Krater). Geologie (USGS-Geologiekarte) ist noch nicht als Layer umgesetzt.
+- Die Waermetraegheit hat in etwa einem Drittel des Gebiets keine Daten (Nodata), dort bleiben die Kacheln leer.
+- Die Steigungskarte (`slope_ctx`) ist aus dem CTX-DEM berechnet und kein eigener NASA-Datensatz. Maximalwerte bis 88 Grad entstehen an Steilkanten und Randartefakten.
 - Die UA-DTMs sind Stichproben, kein Nachweis fuer das ganze Gebiet.

@@ -51,6 +51,10 @@ class Layer(ApiModel):
     name: str
     description: str
     source_url: str
+    kind: str | None = None
+    unit: str | None = None
+    tile_set: str | None = None
+    available: bool = False
 
 
 class RouteRequest(ApiModel):

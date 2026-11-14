@@ -291,6 +291,44 @@
           "sourceUrl": {
             "type": "string",
             "title": "Sourceurl"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "tileSet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tileset"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": false
           }
         },
         "type": "object",

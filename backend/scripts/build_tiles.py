@@ -21,6 +21,20 @@ def hoehenbereich(src):
     return float(daten.min()), float(daten.max())
 
 
+def bild_kachel_bauen(src, west, north, grad):
+    pixel_grad = grad / TILE_SIZE
+    ziel = np.zeros((TILE_SIZE, TILE_SIZE), dtype=np.uint8)
+    reproject(
+        source=rasterio.band(src, 1),
+        destination=ziel,
+        dst_transform=Affine(pixel_grad, 0, west, 0, -pixel_grad, north),
+        dst_crs=MARS_GEOGRAPHIC,
+        dst_nodata=0,
+        resampling=Resampling.bilinear,
+    )
+    return ziel if ziel.any() else None
+
+
 def kachel_bauen(src, west, north, grad, hoehe_min, hoehe_max):
     pixel_grad = grad / TILE_SIZE
     ziel = np.full((TILE_SIZE, TILE_SIZE), np.nan, dtype=np.float32)
@@ -47,12 +61,15 @@ def main():
     parser.add_argument("ziel", type=Path)
     parser.add_argument("--name", required=True)
     parser.add_argument("--max-zoom", type=int, default=None)
+    parser.add_argument("--art", choices=["hoehe", "wert", "bild"], default="hoehe")
+    parser.add_argument("--einheit", default="m")
     args = parser.parse_args()
 
     with rasterio.open(args.quelle) as src:
         west, south, east, north = transform_bounds(src.crs, MARS_GEOGRAPHIC, *src.bounds, densify_pts=21)
         pixel_meter = float(min(src.res))
-        hoehe_min, hoehe_max = hoehenbereich(src)
+        bild = args.art == "bild"
+        hoehe_min, hoehe_max = (0.0, 255.0) if bild else hoehenbereich(src)
 
         wurzel_grad = max(east - west, north - south)
         natuerlich = math.ceil(math.log2(wurzel_grad / TILE_SIZE * METERS_PER_DEGREE / pixel_meter))
@@ -68,13 +85,16 @@ def main():
                     kachel_nord = north - y * grad
                     if kachel_west > east or kachel_nord - grad > north or kachel_nord < south:
                         continue
-                    daten = kachel_bauen(src, kachel_west, kachel_nord, grad, hoehe_min, hoehe_max)
+                    if bild:
+                        daten = bild_kachel_bauen(src, kachel_west, kachel_nord, grad)
+                    else:
+                        daten = kachel_bauen(src, kachel_west, kachel_nord, grad, hoehe_min, hoehe_max)
                     if daten is None:
                         continue
                     pfad = args.ziel / str(zoom) / str(x) / f"{y}.png"
                     pfad.parent.mkdir(parents=True, exist_ok=True)
                     with rasterio.open(
-                        pfad, "w", driver="PNG", width=TILE_SIZE, height=TILE_SIZE, count=1, dtype="uint16"
+                        pfad, "w", driver="PNG", width=TILE_SIZE, height=TILE_SIZE, count=1, dtype="uint8" if bild else "uint16"
                     ) as ziel:
                         ziel.write(daten, 1)
                     anzahl += 1
@@ -89,11 +109,18 @@ def main():
             "minZoom": 0,
             "maxZoom": max_zoom,
             "meterProPixelFeinsteStufe": wurzel_grad / 2**max_zoom / TILE_SIZE * METERS_PER_DEGREE,
-            "hoeheMin": hoehe_min,
-            "hoeheMax": hoehe_max,
-            "kodierung": "uint16 PNG, 0 = keine Daten, 1..65535 = hoeheMin..hoeheMax linear",
+            "art": args.art,
+            "einheit": args.einheit,
+            "wertMin": hoehe_min,
+            "wertMax": hoehe_max,
             "kacheln": anzahl,
         }
+        if bild:
+            metadaten["kodierung"] = "uint8 PNG Graustufen, 0 = keine Daten"
+        else:
+            metadaten["hoeheMin"] = hoehe_min
+            metadaten["hoeheMax"] = hoehe_max
+            metadaten["kodierung"] = "uint16 PNG, 0 = keine Daten, 1..65535 = wertMin..wertMax linear"
         (args.ziel / "metadata.json").write_text(json.dumps(metadaten, indent=2), encoding="utf-8")
         print(json.dumps(metadaten, indent=2))
 

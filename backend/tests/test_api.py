@@ -26,8 +26,23 @@ def test_terrain_metadata_uses_camel_case(monkeypatch, tmp_path):
 
 def test_layers_have_source_urls():
     layers = client.get("/api/layers").json()
-    assert {layer["id"] for layer in layers} == {"mola", "hirise", "ctx"}
+    assert {layer["id"] for layer in layers} == {"ctx_dem", "hirise_dem", "slope_ctx", "ctx_ortho", "thermal_inertia"}
+    assert {layer["kind"] for layer in layers} == {"hoehe", "steigung", "bild", "thermik"}
     assert all(layer["sourceUrl"].startswith("https://") for layer in layers)
+
+
+def test_layers_report_availability_from_tile_sets(monkeypatch, tmp_path):
+    monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
+    assert not any(layer["available"] for layer in client.get("/api/layers").json())
+    ordner = tmp_path / "thermal_inertia"
+    ordner.mkdir()
+    (ordner / "metadata.json").write_text(
+        '{"name": "thermal_inertia", "bounds": {"west": 77.0, "south": 17.6, "east": 78.6, "north": 19.3},'
+        ' "meterProPixelFeinsteStufe": 87.0}',
+        encoding="utf-8",
+    )
+    verfuegbar = {layer["id"] for layer in client.get("/api/layers").json() if layer["available"]}
+    assert verfuegbar == {"thermal_inertia"}
 
 
 def test_science_points_are_inside_jezero_with_nasa_sources():
