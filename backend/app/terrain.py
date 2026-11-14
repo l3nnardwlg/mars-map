@@ -36,7 +36,7 @@ def pixel_of(src, latitude: float, longitude: float) -> tuple[int, int]:
     xs, ys = transform(MARS_GEOGRAPHIC, src.crs, [longitude], [latitude])
     row, col = src.index(xs[0], ys[0])
     if not (0 <= row < src.height and 0 <= col < src.width):
-        raise OutsideTerrainError("Punkt liegt ausserhalb des Gelaendemodells")
+        raise OutsideTerrainError("Der Punkt liegt außerhalb des Geländemodells von Jezero.")
     return row, col
 
 

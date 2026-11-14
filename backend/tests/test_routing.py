@@ -217,3 +217,20 @@ def test_fast_search_with_penalty_matches_astar(seed):
         for a, b in zip(weg, weg[1:])
     )
     assert kosten(neu) == pytest.approx(kosten(alt), rel=1e-9)
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_steep_start_gets_readable_reason():
+    payload = {"start": {"latitude": 18.064, "longitude": 77.517}, "end": {"latitude": 18.026, "longitude": 77.478}}
+    antwort = client.post("/api/routes/alternatives", json=payload)
+    assert antwort.status_code == 422
+    assert "zu steilem Gelände" in antwort.json()["detail"]
+    assert "15 Grad" in antwort.json()["detail"]
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_point_outside_model_gets_readable_reason():
+    payload = {"start": {"latitude": 0.0, "longitude": 10.0}, "end": {"latitude": 18.4, "longitude": 77.5}}
+    antwort = client.post("/api/routes/calculate", json=payload)
+    assert antwort.status_code == 422
+    assert "außerhalb" in antwort.json()["detail"]

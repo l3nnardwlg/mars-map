@@ -51,7 +51,7 @@ def find_path_astar(
     passable = np.isfinite(slope) & (slope <= MAX_SLOPE_DEGREES)
     for row, col in (start, end):
         if not (0 <= row < rows and 0 <= col < cols) or not passable[row, col]:
-            raise NoRouteError("Start oder Ziel liegt auf unpassierbarem Gelaende")
+            raise NoRouteError(f"Start oder Ziel liegt auf zu steilem Gelände (über {MAX_SLOPE_DEGREES:.0f} Grad). Bitte einen flacheren Punkt wählen.")
 
     best = np.full((rows, cols), np.inf)
     parent = np.full((rows, cols, 2), -1, dtype=np.int32)
@@ -84,7 +84,7 @@ def find_path_astar(
                 heapq.heappush(queue, (new_cost + heuristic(n_row, n_col), new_cost, (n_row, n_col)))
 
     if not np.isfinite(best[end]):
-        raise NoRouteError("Kein passierbarer Weg zwischen Start und Ziel gefunden")
+        raise NoRouteError(f"Kein passierbarer Weg zwischen Start und Ziel gefunden. Hänge über {MAX_SLOPE_DEGREES:.0f} Grad sind gesperrt.")
 
     path = [end]
     while path[-1] != start:
@@ -127,7 +127,7 @@ class _Graph:
     ) -> tuple[list[tuple[int, int]], np.ndarray]:
         for row, col in (start, end):
             if not (0 <= row < self.rows and 0 <= col < self.cols) or not self.passable[row, col]:
-                raise NoRouteError("Start oder Ziel liegt auf unpassierbarem Gelaende")
+                raise NoRouteError(f"Start oder Ziel liegt auf zu steilem Gelände (über {MAX_SLOPE_DEGREES:.0f} Grad). Bitte einen flacheren Punkt wählen.")
         kosten = self.kosten
         if penalty is not None:
             flach = penalty.ravel()
@@ -138,7 +138,7 @@ class _Graph:
         end_index = end[0] * self.cols + end[1]
         distanz, vorgaenger = dijkstra(matrix, directed=True, indices=start_index, return_predecessors=True)
         if not np.isfinite(distanz[end_index]):
-            raise NoRouteError("Kein passierbarer Weg zwischen Start und Ziel gefunden")
+            raise NoRouteError(f"Kein passierbarer Weg zwischen Start und Ziel gefunden. Hänge über {MAX_SLOPE_DEGREES:.0f} Grad sind gesperrt.")
         weg = [end_index]
         while weg[-1] != start_index:
             weg.append(int(vorgaenger[weg[-1]]))
