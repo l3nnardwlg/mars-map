@@ -58,12 +58,12 @@
 
 ## Phase 4 – QA & Release (32–48h)
 
-- [ ] Validate scientific data and source attribution
-- [ ] Test coordinate transformations
-- [ ] Test routing on steep and inaccessible terrain
-- [ ] Verify frontend/backend integration
-- [ ] Optimize 3D rendering performance
-- [ ] Test complete mission planning workflow
+- [x] Validate scientific data and source attribution
+- [x] Test coordinate transformations
+- [x] Test routing on steep and inaccessible terrain
+- [x] Verify frontend/backend integration
+- [x] Optimize 3D rendering performance
+- [x] Test complete mission planning workflow
 - [ ] Record demonstration video
 - [ ] Prepare NASA Space Apps submission
 - [ ] Freeze release and deploy

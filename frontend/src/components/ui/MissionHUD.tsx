@@ -22,11 +22,14 @@ import {
   FlaskConical,
   Sun,
   FileText,
-  Check
+  Check,
+  Info,
+  X
 } from 'lucide-react';
 
 export default function MissionHUD() {
   const [copiedBriefing, setCopiedBriefing] = useState(false);
+  const [showAttributionModal, setShowAttributionModal] = useState(false);
 
   const activeView = useMissionStore((state) => state.activeView);
   const setActiveView = useMissionStore((state) => state.setActiveView);
@@ -166,6 +169,19 @@ Datum: IAU Mars 2000 / MOLA Areoid
               <span className="font-semibold text-amber-300">IAU MARS 2000 (EAST+)</span>
             </div>
           </div>
+
+          {/* NASA Data & Scientific Attribution Button */}
+          <button
+            onClick={() => setShowAttributionModal(true)}
+            className="pointer-events-auto bg-black/60 hover:bg-zinc-800 border border-zinc-700/80 rounded px-3 py-1.5 flex items-center gap-2 text-zinc-300 hover:text-white transition group shadow-md"
+            title="Scientific Data Sources & Attribution"
+          >
+            <Info className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition" />
+            <div className="text-left hidden sm:block">
+              <span className="text-zinc-500 block text-[10px]">SCIENCE</span>
+              <span className="font-semibold text-sky-300 text-xs">NASA & ESA Data</span>
+            </div>
+          </button>
         </div>
       </header>
 
@@ -630,6 +646,86 @@ Datum: IAU Mars 2000 / MOLA Areoid
           </div>
         </div>
       </footer>
+
+      {/* Scientific Data & Attribution Modal */}
+      {showAttributionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
+          <div className="w-full max-w-2xl rounded-2xl border border-sky-500/40 bg-zinc-950 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="rounded-lg bg-sky-500/20 p-2 text-sky-400 border border-sky-500/30">
+                  <Info className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">
+                    NASA & ESA Scientific Data Attribution
+                  </h3>
+                  <p className="text-xs text-zinc-400 font-mono">
+                    NASA Space Apps Challenge: Interplanetary Survival Guide
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAttributionModal(false)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3.5 text-xs text-zinc-300 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-sky-300">
+                  <span>1. Mars Orbiter Laser Altimeter (MOLA) Digital Elevation Model</span>
+                  <span className="text-[10px] bg-sky-950 text-sky-400 border border-sky-800 px-1.5 py-0.5 rounded">NASA PDS / GSFC</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  Provides global topographic heights and the MOLA Areoid reference datum (0 m elevation) under the IAU Mars 2000 planetocentric coordinate system (positive East longitude).
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-emerald-300">
+                  <span>2. High Resolution Stereo Camera (HRSC) Jezero Crater Data</span>
+                  <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">ESA / DLR / Freie Univ. Berlin</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  Authentic high-resolution orthomosaic imagery (2048x2048) and co-registered digital elevation model covering the Jezero Crater delta, Neretva Vallis breach, and ancient lakebed.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-amber-300">
+                  <span>3. NASA Perseverance Rover Science Sample Cores</span>
+                  <span className="text-[10px] bg-amber-950 text-amber-400 border border-amber-800 px-1.5 py-0.5 rounded">NASA Mars 2020 / JPL-Caltech</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  Actual Mars 2020 Perseverance science target coordinates including Roubion, Montdenier, Salette, Coulettes, and Skinner Ridge sample caches.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-yellow-300">
+                  <span>4. Pandolf Human Metabolic & EVA Life-Support Model</span>
+                  <span className="text-[10px] bg-yellow-950 text-yellow-400 border border-yellow-800 px-1.5 py-0.5 rounded">NASA JSC / USARIEM</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  Simulates astronaut metabolic energy expenditure W = 1.5W + ηW(1.5V² + 0.35VG), 80.7 kg suited mass (Integrated Suit Test 1), 3.0 km/h walking speed, oxygen consumption rates, and the 8-hour maximum safe EVA constraint.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setShowAttributionModal(false)}
+                className="rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2 text-xs transition shadow-md"
+              >
+                Close Data Overview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
