@@ -4,6 +4,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
 from app.data import LAYERS, SCIENCE_POINTS, kachelordner, terrain_metadaten
+from app.mission import MissingElevationError, simulate
 from app.routing import NoRouteError
 from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route
 from app.models import (
@@ -52,7 +53,10 @@ def calculate_route(request: RouteRequest) -> MarsRoute:
 
 @api.post("/mission/simulate", response_model=MissionEstimate, response_model_by_alias=True)
 def simulate_mission(request: MissionRequest) -> MissionEstimate:
-    raise HTTPException(status_code=501, detail="Missionssimulation ist noch nicht umgesetzt")
+    try:
+        return simulate(request.route.waypoints, request.crew_size)
+    except MissingElevationError as fehler:
+        raise HTTPException(status_code=422, detail=str(fehler)) from fehler
 
 
 app = FastAPI(title="Mars Map API", version="0.1.0")

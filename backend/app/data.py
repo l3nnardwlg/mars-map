@@ -69,4 +69,7 @@ LAYERS = [
     ),
 ]
 
-SCIENCE_POINTS: list[SciencePoint] = []
+SCIENCE_POINTS: list[SciencePoint] = [
+    SciencePoint.model_validate(eintrag)
+    for eintrag in json.loads((Path(__file__).parent / "science_points.json").read_text(encoding="utf-8"))
+]
