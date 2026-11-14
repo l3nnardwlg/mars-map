@@ -1,8 +1,32 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/venv/
+.venv/
+backend/__pycache__/
 __pycache__/
 *.pyc
-.venv/
 .pytest_cache/
 *.egg-info/
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Environments
 .env
+.env*.local
+
+# Backend-Daten (gross, wird lokal erzeugt)
 backend/data/raw/
 backend/data/tiles/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
