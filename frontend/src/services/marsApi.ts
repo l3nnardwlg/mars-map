@@ -383,6 +383,8 @@ export async function requestRoute(
   };
 }
 
+export class RouteRejectedError extends Error {}
+
 /**
  * Requests or computes alternative multi-objective routes for scientific comparison.
  */
@@ -399,9 +401,14 @@ export async function requestRouteAlternatives(
       body: JSON.stringify({ start, end, count: 3 }),
     });
 
+    if (res.status === 422) {
+      const info = await res.json().catch(() => null);
+      throw new RouteRejectedError(info?.detail || 'Für diese Punkte ist keine Route möglich');
+    }
+
     if (res.ok) {
       const routes: MarsRoute[] = await res.json();
-      if (routes && routes.length >= 2) {
+      if (routes && routes.length >= 1) {
         const enrich = (r: MarsRoute, prof: RouteProfile, defaultTag: string): MarsRoute => {
           const topo = enrichWaypointsWithTopography(
             r.waypoints,
@@ -422,15 +429,18 @@ export async function requestRouteAlternatives(
         };
 
         const direct = enrich(routes[0], 'direct', 'energy_optimal');
-        const safe = enrich(routes[1], 'safe', 'lowest_risk');
-        const science = routes[2] 
-          ? enrich(routes[2], 'science', 'shortest') 
-          : await requestRoute(start, end, 'science', scienceDetour);
+        const safe = routes[1] ? enrich(routes[1], 'safe', 'lowest_risk') : direct;
+        const science = routes[2]
+          ? enrich(routes[2], 'science', 'shortest')
+          : routes[1]
+            ? await requestRoute(start, end, 'science', scienceDetour)
+            : direct;
 
         return { direct, safe, science };
       }
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof RouteRejectedError) throw error;
     // Backend offline -> fallback to offline model with explicit provenance
   }
 

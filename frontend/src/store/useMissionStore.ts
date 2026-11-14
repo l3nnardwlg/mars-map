@@ -10,10 +10,11 @@ import {
   InspectionPoint,
   AstronautPose
 } from '@/types/mars';
-import { 
-  requestRouteAlternatives, 
-  fetchSciencePoints, 
-  simulateMission 
+import {
+  requestRouteAlternatives,
+  fetchSciencePoints,
+  simulateMission,
+  RouteRejectedError
 } from '@/services/marsApi';
 
 export const MARS_LANDMARKS: Landmark[] = [
@@ -107,6 +108,7 @@ interface MissionStore {
   currentRoute: MarsRoute | null;
   alternativeRoutes: { direct?: MarsRoute; safe?: MarsRoute; science?: MarsRoute };
   isCalculatingRoute: boolean;
+  routeError: string | null;
   hoveredRoutePoint: MarsCoordinate | null;
   isComparingRoutes: boolean;
 
@@ -179,6 +181,8 @@ interface MissionStore {
   routeToSciencePoint: (point: SciencePoint) => void;
 }
 
+let letzteRouteAnfrage = 0;
+
 export const useMissionStore = create<MissionStore>((set, get) => ({
   activeView: 'globe',
   cameraMode: 'orbit',
@@ -219,6 +223,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   currentRoute: null,
   alternativeRoutes: {},
   isCalculatingRoute: false,
+  routeError: null,
   hoveredRoutePoint: null,
   isComparingRoutes: false,
   showFpsMetrics: true,
@@ -268,12 +273,15 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   setRoutePoint: (coord: MarsCoordinate) => {
     const { routeStart, routeEnd } = get();
     if (!routeStart || (routeStart && routeEnd)) {
-      set({ 
-        routeStart: coord, 
-        routeEnd: null, 
-        currentRoute: null, 
-        alternativeRoutes: {}, 
-        missionEstimate: null 
+      letzteRouteAnfrage++;
+      set({
+        routeStart: coord,
+        routeEnd: null,
+        currentRoute: null,
+        alternativeRoutes: {},
+        missionEstimate: null,
+        isCalculatingRoute: false,
+        routeError: null
       });
     } else {
       set({ routeEnd: coord });
@@ -281,34 +289,45 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     }
   },
 
-  clearRoute: () =>
+  clearRoute: () => {
+    letzteRouteAnfrage++;
     set({
       routeStart: null,
       routeEnd: null,
       currentRoute: null,
       alternativeRoutes: {},
       missionEstimate: null,
-    }),
+      isCalculatingRoute: false,
+      routeError: null,
+    });
+  },
 
   calculateRoute: async () => {
     const { routeStart, routeEnd, sciencePoints, selectedRouteProfile } = get();
     if (!routeStart || !routeEnd) return;
 
-    set({ isCalculatingRoute: true });
+    const anfrage = ++letzteRouteAnfrage;
+    set({ isCalculatingRoute: true, routeError: null });
     try {
       const nearestScience = sciencePoints[0]?.location;
       const alternatives = await requestRouteAlternatives(routeStart, routeEnd, nearestScience);
       const active = alternatives[selectedRouteProfile] || alternatives.direct;
       const estimate = await simulateMission(active, 2);
+      if (anfrage !== letzteRouteAnfrage) return;
 
-      set({ 
+      set({
         alternativeRoutes: alternatives,
-        currentRoute: active, 
-        missionEstimate: estimate, 
-        isCalculatingRoute: false 
+        currentRoute: active,
+        missionEstimate: estimate,
+        isCalculatingRoute: false
       });
-    } catch {
-      set({ isCalculatingRoute: false });
+    } catch (error) {
+      if (anfrage === letzteRouteAnfrage) {
+        set({
+          isCalculatingRoute: false,
+          routeError: error instanceof RouteRejectedError ? error.message : null,
+        });
+      }
     }
   },
 

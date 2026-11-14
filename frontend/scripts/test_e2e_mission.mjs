@@ -20,6 +20,8 @@
 
 import assert from 'node:assert';
 
+const BACKEND_BASIS = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
+
 console.log('================================================================');
 console.log('   MARS PATHFINDER: E2E MISSION ACCEPTANCE TEST SUITE           ');
 console.log('================================================================');
@@ -29,6 +31,39 @@ function logStep(name, detail) {
   currentStep++;
   console.log(`[STEP ${currentStep.toString().padStart(2, '0')}] ${name}`);
   if (detail) console.log(`         ↳ ${detail}`);
+}
+
+const MARS_RADIUS_METERS = 3396190;
+
+function profilAusWegpunkten(wegpunkte) {
+  let km = 0;
+  return wegpunkte.map((p, i) => {
+    let slopeDeg = 0;
+    if (i > 0) {
+      const q = wegpunkte[i - 1];
+      const dLat = ((p.latitude - q.latitude) * Math.PI) / 180;
+      const dLon = ((p.longitude - q.longitude) * Math.PI) / 180;
+      const flat = MARS_RADIUS_METERS * Math.hypot(dLat, dLon * Math.cos((p.latitude * Math.PI) / 180));
+      km += flat / 1000;
+      if (flat > 0) {
+        slopeDeg = (Math.abs(Math.atan((p.elevationMeters - q.elevationMeters) / flat)) * 180) / Math.PI;
+      }
+    }
+    return { distanceKm: km, elevationM: p.elevationMeters, slopeDeg };
+  });
+}
+
+function routeMitProfil(route, profile) {
+  const elevationProfile = profilAusWegpunkten(route.waypoints);
+  const slopes = elevationProfile.map((p) => p.slopeDeg);
+  return {
+    ...route,
+    profile,
+    elevationProfile,
+    maxSlopeDeg: Number(Math.max(...slopes).toFixed(1)),
+    meanSlopeDeg: Number((slopes.reduce((a, b) => a + b, 0) / slopes.length).toFixed(1)),
+    dataSource: 'NASA FastAPI Backend [CTX-DEM]',
+  };
 }
 
 async function runE2EMissionTest() {
@@ -65,21 +100,24 @@ async function runE2EMissionTest() {
   // Check if live backend exists or use verified benchmark fixture
   let isLiveBackend = false;
   try {
-    const res = await fetch('http://127.0.0.1:8000/health', { signal: AbortSignal.timeout(1000) });
+    const res = await fetch(`${BACKEND_BASIS}/health`, { signal: AbortSignal.timeout(1000) });
     if (res.ok) isLiveBackend = true;
   } catch {
     isLiveBackend = false;
   }
 
+  let liveRoutes = null;
   if (isLiveBackend) {
-    logStep('Live Backend Connected', 'Calling POST http://127.0.0.1:8000/api/routes/calculate');
-    const res = await fetch('http://127.0.0.1:8000/api/routes/calculate', {
+    logStep('Live Backend Connected', 'Calling POST /api/routes/alternatives');
+    const res = await fetch(`${BACKEND_BASIS}/api/routes/alternatives`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start: missionState.routeStart, end: missionState.routeEnd }),
+      body: JSON.stringify({ start: missionState.routeStart, end: missionState.routeEnd, count: 3 }),
     });
-    missionState.currentRoute = await res.json();
-    missionState.currentRoute.dataSource = 'NASA FastAPI Backend [A* CTX-DEM]';
+    assert.strictEqual(res.status, 200, 'Live alternatives endpoint must answer 200');
+    liveRoutes = await res.json();
+    assert(liveRoutes.length >= 1, 'Live backend must return at least one route');
+    missionState.currentRoute = routeMitProfil(liveRoutes[0], 'direct');
   } else {
     logStep('Offline Reference Mode', 'Loading verified Western Delta Scarp reference benchmark');
     missionState.currentRoute = {
@@ -148,8 +186,22 @@ async function runE2EMissionTest() {
     },
   };
 
-  assert(missionState.alternativeRoutes.safe.riskScore < missionState.alternativeRoutes.direct.riskScore, 'Safe route must reduce risk score');
-  assert(missionState.alternativeRoutes.safe.maxSlopeDeg < missionState.alternativeRoutes.direct.maxSlopeDeg, 'Safe route must reduce peak slope');
+  if (isLiveBackend) {
+    const sichersteRoute = liveRoutes.find((r) => r.tags && r.tags.includes('lowest_risk')) || liveRoutes[0];
+    const weitereRoute = liveRoutes.find((r) => r !== liveRoutes[0] && r !== sichersteRoute) || sichersteRoute;
+    missionState.alternativeRoutes = {
+      direct: missionState.currentRoute,
+      safe: routeMitProfil(sichersteRoute, 'safe'),
+      science: routeMitProfil(weitereRoute, 'science'),
+    };
+    assert(
+      missionState.alternativeRoutes.safe.riskScore <= missionState.alternativeRoutes.direct.riskScore,
+      'Lowest-risk route must not have a higher risk score than the energy-optimal route'
+    );
+  } else {
+    assert(missionState.alternativeRoutes.safe.riskScore < missionState.alternativeRoutes.direct.riskScore, 'Safe route must reduce risk score');
+    assert(missionState.alternativeRoutes.safe.maxSlopeDeg < missionState.alternativeRoutes.direct.maxSlopeDeg, 'Safe route must reduce peak slope');
+  }
 
   // Step 8: Inspect Elevation Profile
   logStep('Elevation Profile Cross-Section', 'Verifying MOLA Areoid datum anchoring & slope grade');
