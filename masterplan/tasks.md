@@ -26,9 +26,9 @@
 - [x] **Agent 2:** Research and prototype NASA DEM terrain rendering
 - [x] **Agent 3:** Create Mission Control UI skeleton
 - [x] **Dev B:** Initialize FastAPI backend
-- [ ] **Agent 4:** Identify and validate NASA datasets
+- [x] **Agent 4:** Identify and validate NASA datasets
 - [x] **Agent 5:** Design routing algorithm and risk model
-- [ ] **Agent 6:** Define OpenAPI contracts and automated test setup
+- [x] **Agent 6:** Define OpenAPI contracts and automated test setup
 
 **Milestone:** Working 3D globe + backend skeleton + verified NASA data source.
 
