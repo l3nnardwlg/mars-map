@@ -76,6 +76,9 @@ def test_route_on_real_jezero_dem():
     assert 0 <= body["riskScore"] <= 1
     assert body["estimatedDurationSeconds"] >= body["distanceMeters"]
     assert "elevationMeters" in body["waypoints"][0]
+    assert body["energyJoules"] > 0
+    assert body["averagePowerWatts"] == pytest.approx(body["energyJoules"] / body["estimatedDurationSeconds"])
+    assert body["averagePowerWatts"] >= pandolf_watt(0.0) - 1e-6
 
 
 @pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")

@@ -18,6 +18,8 @@ class MarsRoute(ApiModel):
     distance_meters: float = Field(ge=0)
     estimated_duration_seconds: float = Field(ge=0)
     risk_score: float = Field(ge=0, le=1)
+    energy_joules: float | None = Field(default=None, ge=0)
+    average_power_watts: float | None = Field(default=None, ge=0)
 
 
 class SciencePoint(ApiModel):
@@ -65,3 +67,8 @@ class MissionEstimate(ApiModel):
     duration_seconds: float
     oxygen_liters: float
     energy_watt_hours: float
+    oxygen_kilograms: float
+    average_power_watts: float
+    eva_time_limit_seconds: float
+    within_eva_time_limit: bool
+    within_average_metabolic_rate: bool

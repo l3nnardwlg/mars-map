@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -25,8 +26,23 @@ def test_layers_have_source_urls():
     assert all(layer["sourceUrl"].startswith("https://") for layer in layers)
 
 
-def test_science_points_is_list():
-    assert client.get("/api/science-points").json() == []
+def test_science_points_are_inside_jezero_with_nasa_sources():
+    punkte = client.get("/api/science-points").json()
+    ids = {punkt["id"] for punkt in punkte}
+    assert {"perseverance-landung", "gazetteer-jezero", "gazetteer-neretva-vallis"} <= ids
+    assert len(ids) == len(punkte)
+    for punkt in punkte:
+        assert 17.58 <= punkt["location"]["latitude"] <= 19.29
+        assert 76.99 <= punkt["location"]["longitude"] <= 78.58
+        assert punkt["nasaSourceUrl"].startswith("https://")
+        assert punkt["description"]
+
+
+def test_landing_site_matches_nasa_waypoint():
+    landung = next(p for p in client.get("/api/science-points").json() if p["id"] == "perseverance-landung")
+    assert landung["location"]["latitude"] == pytest.approx(18.4446, abs=1e-3)
+    assert landung["location"]["longitude"] == pytest.approx(77.4509, abs=1e-3)
+    assert landung["location"]["elevationMeters"] == pytest.approx(-2570, abs=10)
 
 
 def test_route_rejects_invalid_latitude():
@@ -50,3 +66,13 @@ def test_terrain_metadata_reads_tile_info(monkeypatch, tmp_path):
     assert body["availableTiles"] == ["ctx_dem"]
     assert body["bounds"]["minLatitude"] == 17.6
     assert body["resolutionMetersPerPixel"] == 12.4
+
+
+def test_all_nasa_sample_sites_are_science_points():
+    punkte = client.get("/api/science-points").json()
+    proben = [p for p in punkte if p["id"].startswith("probe-")]
+    assert len(proben) == 22
+    canyon = next(p for p in proben if "Sapphire Canyon" in p["name"])
+    assert "Neretva Vallis" in canyon["description"]
+    assert canyon["location"]["latitude"] == pytest.approx(18.4975, abs=1e-3)
+    assert all("Probe" in p["description"] and "Gestein" in p["description"] for p in proben)
