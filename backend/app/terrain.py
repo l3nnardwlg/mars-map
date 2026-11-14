@@ -9,7 +9,7 @@ from rasterio.enums import Resampling
 from rasterio.warp import transform
 from rasterio.windows import Window
 
-from app.routing import find_path, measure_path
+from app.routing import find_alternatives, measure_path
 
 MARS_GEOGRAPHIC = CRS.from_string("+proj=longlat +R=3396190 +no_defs")
 DEM_STANDARD = Path(__file__).resolve().parent.parent / "data" / "raw" / "M20_JezeroCrater_CTXDEM_20m.tif"
@@ -38,7 +38,7 @@ def pixel_of(src, latitude: float, longitude: float) -> tuple[int, int]:
     return row, col
 
 
-def plan_route(start: tuple[float, float], end: tuple[float, float]) -> dict:
+def plan_routes(start: tuple[float, float], end: tuple[float, float], count: int) -> list[dict]:
     pfad = dem_pfad()
     if not pfad.is_file():
         raise DemUnavailableError("Gelaendemodell ist nicht vorhanden")
@@ -62,25 +62,32 @@ def plan_route(start: tuple[float, float], end: tuple[float, float]) -> dict:
                 min(out_w - 1, int((col - left) * out_w / width)),
             )
 
-        path, slope = find_path(elevation, cell_meters, to_cell(r1, c1), to_cell(r2, c2))
-        distance, duration, risk, energy = measure_path(path, elevation, slope, cell_meters)
+        routes = []
+        for path, slope in find_alternatives(elevation, cell_meters, to_cell(r1, c1), to_cell(r2, c2), count):
+            distance, duration, risk, energy = measure_path(path, elevation, slope, cell_meters)
+            step = max(1, math.ceil(len(path) / MAX_WAYPOINTS))
+            chosen = path[::step]
+            if chosen[-1] != path[-1]:
+                chosen.append(path[-1])
+            xs = [win_transform.a * (c + 0.5) + win_transform.b * (r + 0.5) + win_transform.c for r, c in chosen]
+            ys = [win_transform.d * (c + 0.5) + win_transform.e * (r + 0.5) + win_transform.f for r, c in chosen]
+            lons, lats = transform(src.crs, MARS_GEOGRAPHIC, xs, ys)
+            waypoints = [
+                {"latitude": lat, "longitude": lon, "elevation_meters": float(elevation[r, c])}
+                for lat, lon, (r, c) in zip(lats, lons, chosen)
+            ]
+            routes.append(
+                {
+                    "waypoints": waypoints,
+                    "distance_meters": distance,
+                    "estimated_duration_seconds": duration,
+                    "risk_score": risk,
+                    "energy_joules": energy,
+                    "average_power_watts": energy / duration if duration > 0 else 0.0,
+                }
+            )
+    return routes
 
-        step = max(1, math.ceil(len(path) / MAX_WAYPOINTS))
-        chosen = path[::step]
-        if chosen[-1] != path[-1]:
-            chosen.append(path[-1])
-        xs = [win_transform.a * (c + 0.5) + win_transform.b * (r + 0.5) + win_transform.c for r, c in chosen]
-        ys = [win_transform.d * (c + 0.5) + win_transform.e * (r + 0.5) + win_transform.f for r, c in chosen]
-        lons, lats = transform(src.crs, MARS_GEOGRAPHIC, xs, ys)
-        waypoints = [
-            {"latitude": lat, "longitude": lon, "elevation_meters": float(elevation[r, c])}
-            for lat, lon, (r, c) in zip(lats, lons, chosen)
-        ]
-    return {
-        "waypoints": waypoints,
-        "distance_meters": distance,
-        "estimated_duration_seconds": duration,
-        "risk_score": risk,
-        "energy_joules": energy,
-        "average_power_watts": energy / duration if duration > 0 else 0.0,
-    }
+
+def plan_route(start: tuple[float, float], end: tuple[float, float]) -> dict:
+    return plan_routes(start, end, 1)[0]

@@ -17,6 +17,7 @@ Alle Endpunkte verwenden `latitude`, `longitude` in Grad und `elevationMeters`.
 | `GET /api/layers` | Datenlayer mit Quelle |
 | `GET /api/science-points` | 36 Punkte: 22 Probenorte der Perseverance-Mission, Landeplatz, Rover-Position, 12 USGS-Merkmale |
 | `POST /api/routes/calculate` | A*-Route auf dem CTX-DEM, Energie nach Pandolf |
+| `POST /api/routes/alternatives` | Beste Route plus bis zu 4 Alternativen (`count`, Standard 3), erste Route ist die energieguenstigste |
 | `POST /api/mission/simulate` | Dauer, Energie, Sauerstoff, Grenzen aus den Wegpunkten einer Route |
 
 Die Routenantwort enthaelt zusaetzlich `energyJoules` und `averagePowerWatts`. Das Frontend muss die Pandolf-Formel nicht selbst rechnen.
@@ -30,6 +31,20 @@ Fehler der Routenberechnung: 503 (Geodaten fehlen), 422 (Punkt ausserhalb oder k
 - Kachelgroesse in Grad auf Stufe z: `groesseGrad / 2^z`
 - Pixel sind 16 Bit PNG: Wert 0 bedeutet keine Daten, 1 bis 65535 laufen linear von `hoeheMin` bis `hoeheMax`:
   `hoehe = hoeheMin + (wert - 1) / 65534 * (hoeheMax - hoeheMin)`
+
+## Daten holen (nach git clone)
+
+Die Geodaten liegen nicht im Repo (Rohdaten ca. 13 GB, GitHub nimmt keine Dateien ueber 100 MB). Ein Befehl holt sie von den Originalquellen, prueft Groesse und Pruefsumme und baut die Kacheln:
+
+```bash
+cd backend
+pip install -e ".[dev,build]"
+python scripts/fetch_data.py            # CTX-DEM (86 MB) laden, Kacheln ctx_dem bauen, ca. 2 Minuten
+python scripts/fetch_data.py --science  # zusaetzlich die Quelldateien der Science Points (ca. 6 MB)
+python scripts/fetch_data.py --hirise   # zusaetzlich HiRISE-Paket (5,5 GB), Kacheln hirise_dem bauen
+```
+
+Ohne das CTX-DEM antwortet `/api/routes/*` mit 503, die Science Points (`app/science_points.json`) und die Tests laufen auch ohne Daten.
 
 ## Daten neu erzeugen
 

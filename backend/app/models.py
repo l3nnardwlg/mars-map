@@ -58,6 +58,10 @@ class RouteRequest(ApiModel):
     end: MarsCoordinate
 
 
+class AlternativesRequest(RouteRequest):
+    count: int = Field(default=3, ge=1, le=5)
+
+
 class MissionRequest(ApiModel):
     route: MarsRoute
     crew_size: int = Field(ge=1, le=6)
