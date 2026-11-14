@@ -50,6 +50,11 @@ export interface MarsRoute {
   riskScore: number;
   energyJoules?: number | null;
   averagePowerWatts?: number | null;
+  elevationGainMeters?: number;
+  elevationLossMeters?: number;
+  maxSlopeDeg?: number;
+  averageSlopeDeg?: number;
+  dataSource?: string;
   elevationProfile?: ElevationPoint[];
 }
 
@@ -105,6 +110,10 @@ export interface InspectionPoint {
   longitude: number;
   elevationMeters: number;
   slopeDeg: number;
+  aspectDeg?: number;
+  compassOctant?: string;
+  uncertaintyMeters?: number;
+  sourceDataset?: string;
   riskLevel: 'safe' | 'caution' | 'hazard';
 }
 

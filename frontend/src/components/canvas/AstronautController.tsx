@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMissionStore } from '@/store/useMissionStore';
-import { getSurfaceZ } from '@/utils/demSampler';
+import { getSurfaceZ, sampleSlopeAtUV } from '@/utils/demSampler';
 
 interface KeyState {
   forward: boolean;
@@ -154,7 +154,22 @@ export default function AstronautController() {
     if (!isAstronautMode) return;
 
     const keys = keysRef.current;
-    const baseSpeed = keys.sprint ? 1.6 : 0.85; // scene units per second
+
+    // Physical slope-aware speed modulation:
+    const currentU = posRef.current.x / 8.0 + 0.5;
+    const currentV = posRef.current.y / 8.0 + 0.5;
+    const slopeDeg = sampleSlopeAtUV(currentU, currentV);
+
+    let slopeSpeedFactor = 1.0;
+    if (slopeDeg > 25) {
+      slopeSpeedFactor = 0.22; // Impassable cliff crawl
+    } else if (slopeDeg > 15) {
+      slopeSpeedFactor = 0.5;  // Scree slope
+    } else if (slopeDeg > 10) {
+      slopeSpeedFactor = 0.75; // Moderate incline
+    }
+
+    const baseSpeed = (keys.sprint ? 1.6 : 0.85) * slopeSpeedFactor; // scene units per second
     const moveDist = baseSpeed * Math.min(delta, 0.1);
 
     // Movement relative to current yaw heading
@@ -221,7 +236,7 @@ export default function AstronautController() {
 
     // Sync pose to store for Minimap & HUD
     const headingDeg = (Math.round(((-yaw * 180) / Math.PI) % 360) + 360) % 360;
-    const currentSpeed = (moveX !== 0 || moveY !== 0) ? (keys.sprint ? 5.5 : 3.0) : 0;
+    const currentSpeed = (moveX !== 0 || moveY !== 0) ? (keys.sprint ? 5.5 : 3.0) * slopeSpeedFactor : 0;
 
     setAstronautPose({
       x: posRef.current.x,

@@ -1,5 +1,6 @@
 import MarsScene from '@/components/canvas/MarsScene';
 import MissionHUD from '@/components/ui/MissionHUD';
+import OnboardingModal from '@/components/ui/OnboardingModal';
 
 export default function Home() {
   return (
@@ -9,6 +10,9 @@ export default function Home() {
 
       {/* Futuristic Mission Control HUD Overlay */}
       <MissionHUD />
+
+      {/* 15-Second First-Time User Onboarding */}
+      <OnboardingModal />
     </main>
   );
 }

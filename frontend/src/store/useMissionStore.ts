@@ -107,6 +107,8 @@ interface MissionStore {
   currentRoute: MarsRoute | null;
   alternativeRoutes: { direct?: MarsRoute; safe?: MarsRoute; science?: MarsRoute };
   isCalculatingRoute: boolean;
+  hoveredRoutePoint: MarsCoordinate | null;
+  isComparingRoutes: boolean;
 
   // Phase 3 Science & Mission Simulation
   sciencePoints: SciencePoint[];
@@ -162,6 +164,8 @@ interface MissionStore {
   clearRoute: () => void;
   calculateRoute: () => Promise<void>;
   selectRouteProfile: (profile: RouteProfile) => Promise<void>;
+  setHoveredRoutePoint: (point: MarsCoordinate | null) => void;
+  toggleComparingRoutes: () => void;
 
   // Science Points Actions
   loadSciencePoints: () => Promise<void>;
@@ -209,6 +213,8 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   currentRoute: null,
   alternativeRoutes: {},
   isCalculatingRoute: false,
+  hoveredRoutePoint: null,
+  isComparingRoutes: false,
 
   sciencePoints: [],
   selectedSciencePoint: null,
@@ -309,6 +315,9 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
       // ignore
     }
   },
+
+  setHoveredRoutePoint: (point) => set({ hoveredRoutePoint: point }),
+  toggleComparingRoutes: () => set((state) => ({ isComparingRoutes: !state.isComparingRoutes })),
 
   loadSciencePoints: async () => {
     const points = await fetchSciencePoints();

@@ -10,7 +10,13 @@ import RouteMesh from './RouteMesh';
 import SciencePointsLayer from './SciencePointsLayer';
 import MeasurementLaser from './MeasurementLaser';
 import MissionReplayFollower from './MissionReplayFollower';
-import { getElevationMetersAtUV, sampleSlopeAtUV } from '@/utils/demSampler';
+import { 
+  getElevationMetersAtUV, 
+  sampleSlopeAtUV, 
+  sampleAspectAtUV, 
+  classifySlopeRisk, 
+  NASA_DEM_METADATA 
+} from '@/utils/demSampler';
 import { useEffect } from 'react';
 
 export default function TerrainPrototype() {
@@ -105,12 +111,17 @@ export default function TerrainPrototype() {
     }
 
     if (isTerrainInspectorActive) {
-      const risk = slope > slopeThresholdDeg ? 'hazard' : slope > 10 ? 'caution' : 'safe';
+      const risk = classifySlopeRisk(slope, slopeThresholdDeg);
+      const aspect = sampleAspectAtUV(e.uv.x, e.uv.y);
       setInspectedPoint({
         latitude: lat,
         longitude: lon,
         elevationMeters: elev,
         slopeDeg: slope,
+        aspectDeg: aspect.azimuthDeg,
+        compassOctant: aspect.compassOctant,
+        uncertaintyMeters: NASA_DEM_METADATA.elevationUncertaintyMeters,
+        sourceDataset: NASA_DEM_METADATA.productId,
         riskLevel: risk,
       });
       return;

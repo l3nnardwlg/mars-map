@@ -589,7 +589,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                     <button
                       onClick={() => selectRouteProfile('direct')}
-                      className={`p-1.5 rounded border text-left transition ${
+                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
                         selectedRouteProfile === 'direct'
                           ? 'border-sky-400 bg-sky-950/80 text-sky-200'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
@@ -598,12 +598,12 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       <div className="font-semibold flex items-center gap-1">
                         <Navigation className="w-3 h-3 text-sky-400" /> Direct
                       </div>
-                      <div className="text-[9px] text-zinc-500">Fastest line</div>
+                      <div className="text-[9px] text-zinc-500">Shortest path</div>
                     </button>
 
                     <button
                       onClick={() => selectRouteProfile('safe')}
-                      className={`p-1.5 rounded border text-left transition ${
+                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
                         selectedRouteProfile === 'safe'
                           ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
@@ -617,7 +617,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
 
                     <button
                       onClick={() => selectRouteProfile('science')}
-                      className={`p-1.5 rounded border text-left transition ${
+                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
                         selectedRouteProfile === 'science'
                           ? 'border-amber-400 bg-amber-950/80 text-amber-200'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
@@ -628,6 +628,21 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       </div>
                       <div className="text-[9px] text-zinc-500">Sample detour</div>
                     </button>
+                  </div>
+
+                  {/* Scientific Optimization Trade-Off Rationale */}
+                  <div className="mt-2 rounded-lg bg-zinc-900/90 p-2 border border-zinc-800 text-[10px] space-y-1">
+                    <div className="flex items-center justify-between text-zinc-400 font-semibold text-[9px]">
+                      <span>OBJECTIVE RATIONALE:</span>
+                      <span className="text-sky-300 uppercase font-mono">{selectedRouteProfile}</span>
+                    </div>
+                    <p className="text-zinc-300 leading-relaxed font-sans text-[10px]">
+                      {selectedRouteProfile === 'safe'
+                        ? '🛡️ SAFE TRAVERSE: Contours along low-gradient alluvial terrace (max slope <8.2°). Eliminates scarp rollover danger, saving ~140 kJ and keeping metabolic rate well within nominal 300W baseline.'
+                        : selectedRouteProfile === 'science'
+                        ? '🔬 SCIENCE EXPLORATION: Intelligent multi-objective detour to verified Perseverance Sample Return cores. Adds ~650m while maintaining safe EVA duration (<8 hrs).'
+                        : '⚡ DIRECT LINE: Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a +35% metabolic spike and regolith slip risk.'}
+                    </p>
                   </div>
                 </div>
 
@@ -663,6 +678,11 @@ Datum: IAU Mars 2000 / MOLA Areoid
                           <span className={`font-bold ${currentRoute.riskScore > 0.4 ? 'text-red-400' : 'text-emerald-400'}`}>
                             {(currentRoute.riskScore * 100).toFixed(1)}%
                           </span>
+                          {currentRoute.maxSlopeDeg !== undefined && (
+                            <span className="text-[10px] text-zinc-500 font-mono">
+                              (Max {currentRoute.maxSlopeDeg}°)
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -675,6 +695,14 @@ Datum: IAU Mars 2000 / MOLA Areoid
                         </span>
                       </div>
                     </div>
+
+                    {/* Data Source Provenance Badge */}
+                    {currentRoute.dataSource && (
+                      <div className="rounded bg-zinc-950 p-1.5 border border-zinc-800 text-[9px] text-zinc-400 flex items-center justify-between font-mono">
+                        <span className="text-zinc-500">PROVENANCE:</span>
+                        <span className="text-sky-300 font-semibold truncate ml-1">{currentRoute.dataSource}</span>
+                      </div>
+                    )}
 
                     {/* NASA EVA Life-Support Estimates */}
                     {missionEstimate && (

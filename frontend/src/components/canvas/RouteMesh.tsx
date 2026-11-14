@@ -41,6 +41,7 @@ export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
   const routeStart = useMissionStore((state) => state.routeStart);
   const routeEnd = useMissionStore((state) => state.routeEnd);
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
+  const hoveredRoutePoint = useMissionStore((state) => state.hoveredRoutePoint);
 
   useEffect(() => {
     initDemSampler().then(() => setDemLoaded(true));
@@ -102,6 +103,16 @@ export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
       headPos: new THREE.Vector3(localX, localY, surfaceZ + 0.09),
     };
   }, [routeEnd, planeSize, terrainExaggeration, demLoaded]);
+
+  // Synchronized Hover Cursor from Elevation Profile Chart
+  const hoveredPointData = useMemo(() => {
+    if (!hoveredRoutePoint || !demLoaded) return null;
+    const { x: nx, y: ny } = jezeroLatLonToLocal(hoveredRoutePoint.latitude, hoveredRoutePoint.longitude);
+    const localX = (nx - 0.5) * planeSize;
+    const localY = (ny - 0.5) * planeSize;
+    const surfaceZ = getSurfaceZ(nx, ny, terrainExaggeration);
+    return new THREE.Vector3(localX, localY, surfaceZ + 0.025);
+  }, [hoveredRoutePoint, planeSize, terrainExaggeration, demLoaded]);
 
   // Active color based on profile
   const activeColor = selectedRouteProfile === 'safe' 
@@ -193,6 +204,25 @@ export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
             <div className="flex items-center gap-1 rounded bg-black/85 border border-red-400/70 px-1.5 py-0.5 text-[9px] font-mono text-red-300 shadow-lg whitespace-nowrap">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
               <span className="font-bold">TARGET</span>
+            </div>
+          </Html>
+        </group>
+      )}
+
+      {/* Synchronized Elevation Chart Hover Beacon on 3D Surface */}
+      {hoveredPointData && (
+        <group position={hoveredPointData} renderOrder={1002}>
+          <mesh>
+            <sphereGeometry args={[0.028, 16, 16]} />
+            <meshBasicMaterial color="#facc15" depthTest={false} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.04, 0.065, 32]} />
+            <meshBasicMaterial color="#fde047" side={THREE.DoubleSide} depthTest={false} />
+          </mesh>
+          <Html center style={{ pointerEvents: 'none', userSelect: 'none' }}>
+            <div className="rounded bg-black/90 border border-yellow-400 px-1.5 py-0.5 text-[9px] font-mono text-yellow-300 shadow whitespace-nowrap">
+              {hoveredRoutePoint?.elevationMeters ? `${hoveredRoutePoint.elevationMeters}m MOLA` : 'WAYPOINT'}
             </div>
           </Html>
         </group>
