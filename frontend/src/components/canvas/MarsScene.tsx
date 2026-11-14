@@ -4,11 +4,13 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import MarsGlobe from './MarsGlobe';
+import TerrainPrototype from './TerrainPrototype';
 import CameraRig from './CameraRig';
+import { useMissionStore } from '@/store/useMissionStore';
 
 function SceneLoadingFallback() {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-amber-500 font-mono">
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-amber-500 font-mono z-50">
       <div className="w-12 h-12 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-4" />
       <div className="text-sm tracking-wider uppercase">Loading Planetary Assets...</div>
       <div className="text-xs text-zinc-500 mt-1">NASA MOLA Elevation & High-Res Textures</div>
@@ -17,6 +19,8 @@ function SceneLoadingFallback() {
 }
 
 export default function MarsScene() {
+  const activeView = useMissionStore((state) => state.activeView);
+
   return (
     <div className="relative w-full h-full bg-[#030308] overflow-hidden">
       <Suspense fallback={<SceneLoadingFallback />}>
@@ -45,23 +49,24 @@ export default function MarsScene() {
           />
 
           {/* Solar Illumination */}
-          <ambientLight intensity={0.12} color="#ffe8d6" />
+          <ambientLight intensity={activeView === 'globe' ? 0.12 : 0.25} color="#ffe8d6" />
           <directionalLight
-            position={[12, 6, 10]}
-            intensity={2.8}
+            position={activeView === 'globe' ? [12, 6, 10] : [6, 10, 8]}
+            intensity={activeView === 'globe' ? 2.8 : 3.2}
             color="#fff8f2"
             castShadow
           />
 
-          {/* Rim light from opposing dark side */}
+          {/* Secondary Fill Light */}
           <directionalLight
             position={[-10, -4, -8]}
-            intensity={0.08}
+            intensity={0.12}
             color="#38bdf8"
           />
 
-          {/* Interactive Mars & Camera */}
-          <MarsGlobe />
+          {/* Mode Switch: 3D Mars Globe vs. DEM Terrain Prototype */}
+          {activeView === 'globe' ? <MarsGlobe /> : <TerrainPrototype />}
+
           <CameraRig />
         </Canvas>
       </Suspense>

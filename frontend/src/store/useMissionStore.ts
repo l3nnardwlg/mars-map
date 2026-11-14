@@ -32,7 +32,12 @@ export const MARS_LANDMARKS: Landmark[] = [
   },
 ];
 
+export type ActiveView = 'globe' | 'terrain_prototype';
+export type TerrainColorMode = 'satellite' | 'hypsometric' | 'slope';
+
 interface MissionStore {
+  // Global View State
+  activeView: ActiveView;
   cameraMode: CameraViewMode;
   cameraDistance: number;
   isAutoRotating: boolean;
@@ -40,6 +45,13 @@ interface MissionStore {
   cameraTarget: [number, number, number];
   cameraDesiredPosition: [number, number, number] | null;
 
+  // DEM Terrain Prototype State
+  terrainWireframe: boolean;
+  terrainExaggeration: number;
+  terrainColorMode: TerrainColorMode;
+
+  // Actions
+  setActiveView: (view: ActiveView) => void;
   setCameraMode: (mode: CameraViewMode) => void;
   setCameraDistance: (dist: number) => void;
   toggleAutoRotate: () => void;
@@ -48,9 +60,15 @@ interface MissionStore {
   resetToOrbit: () => void;
   setCameraDesiredPosition: (pos: [number, number, number] | null) => void;
   setCameraTarget: (target: [number, number, number]) => void;
+
+  setTerrainWireframe: (val: boolean) => void;
+  toggleTerrainWireframe: () => void;
+  setTerrainExaggeration: (val: number) => void;
+  setTerrainColorMode: (mode: TerrainColorMode) => void;
 }
 
 export const useMissionStore = create<MissionStore>((set) => ({
+  activeView: 'globe',
   cameraMode: 'orbit',
   cameraDistance: 6.0,
   isAutoRotating: true,
@@ -58,6 +76,15 @@ export const useMissionStore = create<MissionStore>((set) => ({
   cameraTarget: [0, 0, 0],
   cameraDesiredPosition: null,
 
+  terrainWireframe: false,
+  terrainExaggeration: 1.5,
+  terrainColorMode: 'satellite',
+
+  setActiveView: (view) =>
+    set({
+      activeView: view,
+      isAutoRotating: view === 'globe',
+    }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
   setCameraDistance: (dist) => set({ cameraDistance: dist }),
   toggleAutoRotate: () => set((state) => ({ isAutoRotating: !state.isAutoRotating })),
@@ -70,6 +97,7 @@ export const useMissionStore = create<MissionStore>((set) => ({
     }),
   resetToOrbit: () =>
     set({
+      activeView: 'globe',
       selectedLandmark: null,
       cameraMode: 'orbit',
       cameraTarget: [0, 0, 0],
@@ -78,4 +106,9 @@ export const useMissionStore = create<MissionStore>((set) => ({
     }),
   setCameraDesiredPosition: (pos) => set({ cameraDesiredPosition: pos }),
   setCameraTarget: (target) => set({ cameraTarget: target }),
+
+  setTerrainWireframe: (val) => set({ terrainWireframe: val }),
+  toggleTerrainWireframe: () => set((state) => ({ terrainWireframe: !state.terrainWireframe })),
+  setTerrainExaggeration: (val) => set({ terrainExaggeration: val }),
+  setTerrainColorMode: (mode) => set({ terrainColorMode: mode }),
 }));
