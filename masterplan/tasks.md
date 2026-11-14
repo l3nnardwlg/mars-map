@@ -95,7 +95,7 @@
 
 ### P3 – Extras & Accessibility
 - [x] **Keyboard Shortcuts:** Schnelltasten für Ansichten (1 Orbit, 2 Terrain, 3 Astronaut, M Minimap, I Inspector, R Replay, L Layer Manager)
-- [ ] **Guided Demo:** Geführte 2-Minuten-Tour für die NASA-Jury
+- [x] **Guided Demo:** Geführte 2-Minuten-Tour für die NASA-Jury
 
 ## Integration Rules
 
