@@ -95,8 +95,9 @@ export default function TerrainPrototype() {
   }, [terrainColorMode, hypsometricMap, slopeMap, orthoMap]);
 
   // Interactive Click on Terrain
-  const handleTerrainClick = (e: ThreeEvent<MouseEvent>) => {
+  const handleTerrainClick = (e: ThreeEvent<MouseEvent>, doubleClick: boolean) => {
     if (!e.uv) return;
+    if (doubleClick && (isMeasureMode || isTerrainInspectorActive)) return;
     e.stopPropagation();
 
     // Map UV (0..1) to Jezero Crater Bounding Box [17.58, 19.29]N, [76.99, 78.58]E
@@ -127,6 +128,8 @@ export default function TerrainPrototype() {
       return;
     }
 
+    if (!doubleClick) return;
+
     setRoutePoint({
       latitude: lat,
       longitude: lon,
@@ -141,7 +144,8 @@ export default function TerrainPrototype() {
         ref={meshRef}
         receiveShadow
         castShadow
-        onClick={handleTerrainClick}
+        onClick={(e) => handleTerrainClick(e, false)}
+        onDoubleClick={(e) => handleTerrainClick(e, true)}
       >
         <planeGeometry args={[8, 8, 384, 384]} />
         <meshStandardMaterial

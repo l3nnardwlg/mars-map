@@ -581,7 +581,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> START POINT
                     </span>
                     <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
-                      {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                      {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Doppelklick ins Gelände'}
                     </span>
                   </div>
                   <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
@@ -589,7 +589,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> DESTINATION
                     </span>
                     <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
-                      {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                      {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Doppelklick ins Gelände'}
                     </span>
                   </div>
                 </div>
@@ -851,7 +851,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
           )}
 
           <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-zinc-500 px-2 py-1">
-            <span>🖱️ Click terrain to set waypoints • Drag to pan</span>
+            <span>🖱️ Doppelklick: erst Start, dann Ziel • Ziehen: Ansicht drehen</span>
           </div>
         </div>
       </footer>
@@ -936,24 +936,10 @@ Datum: IAU Mars 2000 / MOLA Areoid
         </div>
       )}
 
-      {/* Route Calculation Progress Modal (up to 10s for new routes) */}
       {isCalculatingRoute && (
-        <div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="rounded-2xl border border-sky-500/60 bg-zinc-950 p-6 shadow-2xl text-center max-w-sm font-mono space-y-3">
-            <div className="flex justify-center">
-              <div className="w-12 h-12 border-3 border-sky-500/20 border-t-sky-400 rounded-full animate-spin" />
-            </div>
-            <div className="text-sm font-bold text-white tracking-wide">
-              BERECHNE MARSWALK-TRAJEKTORIE
-            </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Analysiere 3D-Geländesteigungen auf dem 20m NASA CTX-Raster via A*.
-              Neue Strecken dauern bis zu 10 Sekunden (Benchmark-Strecke ist vorgewärmt).
-            </p>
-            <div className="text-[10px] text-sky-400 bg-sky-950/80 border border-sky-800/50 py-1 px-2.5 rounded font-bold">
-              FastAPI Backend • NumPy Grid Optimization
-            </div>
-          </div>
+        <div className="pointer-events-none fixed bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-sky-500/50 bg-zinc-950/90 px-3 py-1.5 font-mono text-[11px] text-sky-300 shadow-lg">
+          <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-sky-400/30 border-t-sky-400" />
+          Route wird berechnet
         </div>
       )}
 

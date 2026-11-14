@@ -179,6 +179,8 @@ interface MissionStore {
   routeToSciencePoint: (point: SciencePoint) => void;
 }
 
+let letzteRouteAnfrage = 0;
+
 export const useMissionStore = create<MissionStore>((set, get) => ({
   activeView: 'globe',
   cameraMode: 'orbit',
@@ -268,12 +270,14 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   setRoutePoint: (coord: MarsCoordinate) => {
     const { routeStart, routeEnd } = get();
     if (!routeStart || (routeStart && routeEnd)) {
-      set({ 
-        routeStart: coord, 
-        routeEnd: null, 
-        currentRoute: null, 
-        alternativeRoutes: {}, 
-        missionEstimate: null 
+      letzteRouteAnfrage++;
+      set({
+        routeStart: coord,
+        routeEnd: null,
+        currentRoute: null,
+        alternativeRoutes: {},
+        missionEstimate: null,
+        isCalculatingRoute: false
       });
     } else {
       set({ routeEnd: coord });
@@ -281,34 +285,39 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     }
   },
 
-  clearRoute: () =>
+  clearRoute: () => {
+    letzteRouteAnfrage++;
     set({
       routeStart: null,
       routeEnd: null,
       currentRoute: null,
       alternativeRoutes: {},
       missionEstimate: null,
-    }),
+      isCalculatingRoute: false,
+    });
+  },
 
   calculateRoute: async () => {
     const { routeStart, routeEnd, sciencePoints, selectedRouteProfile } = get();
     if (!routeStart || !routeEnd) return;
 
+    const anfrage = ++letzteRouteAnfrage;
     set({ isCalculatingRoute: true });
     try {
       const nearestScience = sciencePoints[0]?.location;
       const alternatives = await requestRouteAlternatives(routeStart, routeEnd, nearestScience);
       const active = alternatives[selectedRouteProfile] || alternatives.direct;
       const estimate = await simulateMission(active, 2);
+      if (anfrage !== letzteRouteAnfrage) return;
 
-      set({ 
+      set({
         alternativeRoutes: alternatives,
-        currentRoute: active, 
-        missionEstimate: estimate, 
-        isCalculatingRoute: false 
+        currentRoute: active,
+        missionEstimate: estimate,
+        isCalculatingRoute: false
       });
     } catch {
-      set({ isCalculatingRoute: false });
+      if (anfrage === letzteRouteAnfrage) set({ isCalculatingRoute: false });
     }
   },
 
