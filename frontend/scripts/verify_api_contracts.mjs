@@ -78,6 +78,25 @@ function validateTerrainMetadata(data) {
   assert(Array.isArray(data.availableTiles), 'availableTiles must be array');
 }
 
+function validateLayer(l) {
+  assert(typeof l.id === 'string', 'layer id must be string');
+  assert(typeof l.name === 'string', 'layer name must be string');
+  assert(typeof l.sourceUrl === 'string', 'sourceUrl must be string');
+  assert(typeof l.available === 'boolean', 'available must be boolean');
+  if (l.kind) assert(typeof l.kind === 'string');
+  if (l.unit) assert(typeof l.unit === 'string');
+  if (l.tileSet) assert(typeof l.tileSet === 'string');
+  if (l.legend) {
+    assert(Array.isArray(l.legend), 'legend must be array');
+    l.legend.forEach((e) => {
+      assert(typeof e.classId === 'number', 'legend classId must be number');
+      assert(typeof e.name === 'string', 'legend name must be string');
+      assert(typeof e.symbol === 'string', 'legend symbol must be string');
+      assert(typeof e.color === 'string', 'legend color must be string');
+    });
+  }
+}
+
 function validateMissionEstimate(data) {
   assert(typeof data.durationSeconds === 'number', 'durationSeconds must be number');
   assert(typeof data.oxygenLiters === 'number' && data.oxygenLiters >= 0, 'oxygenLiters must be >= 0');
@@ -85,6 +104,9 @@ function validateMissionEstimate(data) {
   assert(typeof data.energyWattHours === 'number' && data.energyWattHours >= 0, 'energyWattHours must be >= 0');
   assert(typeof data.averagePowerWatts === 'number' && data.averagePowerWatts >= 0, 'averagePowerWatts must be >= 0');
   assert(typeof data.withinEvaTimeLimit === 'boolean', 'withinEvaTimeLimit must be boolean');
+  if (data.radiationDoseMilligray !== undefined && data.radiationDoseMilligray !== null) {
+    assert(typeof data.radiationDoseMilligray === 'number' && data.radiationDoseMilligray >= 0);
+  }
 }
 
 async function runContractTests() {
@@ -112,11 +134,7 @@ async function runContractTests() {
       assert.strictEqual(res.status, 200);
       const layers = await res.json();
       assert(Array.isArray(layers) && layers.length >= 1);
-      layers.forEach((l) => {
-        assert(typeof l.id === 'string');
-        assert(typeof l.name === 'string');
-        assert(typeof l.sourceUrl === 'string');
-      });
+      layers.forEach((l) => validateLayer(l));
       console.log(`✅ CONTRACT 2 PASSED: GET /api/layers matches schema (${layers.length} layers)`);
       testsPassed++;
     } catch (err) {

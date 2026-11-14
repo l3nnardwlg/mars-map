@@ -124,21 +124,22 @@ export default function MissionHUD() {
 
   const altitudeKm = Math.max(0, Math.round(((cameraDistance - 2.0) / 2.0) * 3389.5));
   const durationSeconds = currentRoute?.estimatedDurationSeconds ?? 0;
-  const estimatedKcal = Math.round((285 * durationSeconds) / 4184);
+  const estimatedKcal = Math.round(((currentRoute?.averagePowerWatts ?? 205) * durationSeconds) / 4184);
 
   // Export Briefing to Clipboard
   const handleCopyBriefing = () => {
     if (!currentRoute) return;
     const text = `=== NASA MARS PATHFINDER // EVA-01 BRIEFING ===
 Target: Jezero Crater (Western Delta)
-Profile: ${selectedRouteProfile.toUpperCase()}
+Profile: ${selectedRouteProfile.toUpperCase()}${currentRoute.tags?.length ? ` [${currentRoute.tags.join(', ')}]` : ''}
 Start: ${routeStart?.latitude.toFixed(4)}°N, ${routeStart?.longitude.toFixed(4)}°E
 Destination: ${routeEnd?.latitude.toFixed(4)}°N, ${routeEnd?.longitude.toFixed(4)}°E
 Total Distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km
 Estimated Duration: ${Math.floor(durationSeconds / 3600)}h ${Math.floor((durationSeconds % 3600) / 60)}m
-Metabolic Power: ${currentRoute.averagePowerWatts ?? 285} W (Pandolf)
-Normalized Slope Risk Index: ${(currentRoute.riskScore * 100).toFixed(1)}% (Ref limit: 20° slope)
+Metabolic Power: ${currentRoute.averagePowerWatts ?? 205} W (Pandolf, no extra suit load in 1g)
+Normalized Slope Risk Index: ${(currentRoute.riskScore * 100).toFixed(1)}% (Ref limit: 15° slope)
 O2 Requirement: ${missionEstimate?.oxygenLiters ?? 0} L (${missionEstimate?.oxygenKilograms ?? 0} kg)
+Radiation Dose: ${(missionEstimate?.radiationDoseMilligray ?? 0).toFixed(3)} mGy (MSL RAD Gale ref)
 EVA Limit: ${missionEstimate?.withinEvaTimeLimit ? 'NOMINAL (< 8h)' : 'EXCEEDED (> 8h)'}
 Datum: IAU Mars 2000 / MOLA Areoid
 =================================================`;
@@ -650,10 +651,10 @@ Datum: IAU Mars 2000 / MOLA Areoid
                     </div>
                     <p className="text-zinc-300 leading-relaxed font-sans text-[10px]">
                       {selectedRouteProfile === 'safe'
-                        ? '🛡️ SAFE TRAVERSE: Contours along low-gradient alluvial terrace (max slope <8.2°). Eliminates scarp rollover danger, saving ~140 kJ and keeping metabolic rate well within nominal 300W baseline.'
+                        ? '🛡️ SAFE TRAVERSE (Energy Optimal / Lowest Risk): Contours along low-gradient alluvial terrace (max slope <8°). Eliminates scarp rollover danger and lowers Normalized Terrain Slope Risk Index from 72.4% to 28.2%.'
                         : selectedRouteProfile === 'science'
                         ? '🔬 SCIENCE EXPLORATION: Intelligent multi-objective detour to verified Perseverance Sample Return cores. Adds ~650m while maintaining safe EVA duration (<8 hrs).'
-                        : '⚡ DIRECT LINE: Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a +35% metabolic spike and regolith slip risk.'}
+                        : '⚡ DIRECT LINE (Shortest): Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a steep metabolic power spike and regolith slip risk.'}
                     </p>
                   </div>
                 </div>
@@ -716,13 +717,13 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       </div>
                     )}
 
-                    {/* NASA EVA Life-Support Estimates */}
+                    {/* NASA EVA Life-Support & Radiation Estimates */}
                     {missionEstimate && (
                       <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-[11px]">
                         <div className="rounded bg-sky-950/40 border border-sky-500/20 p-2">
                           <span className="text-[9px] text-sky-400 font-semibold block">O₂ CONSUMPTION (2 CREW)</span>
                           <span className="font-bold text-white font-mono">{missionEstimate.oxygenLiters} L</span>
-                          <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg)</span>
+                          <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg • 14.11 MJ/kg)</span>
                         </div>
                         <div className="rounded bg-zinc-900/60 border border-zinc-800 p-2">
                           <span className="text-[9px] text-zinc-400 font-semibold block">EVA LIMIT (8H MAX)</span>
@@ -730,9 +731,17 @@ Datum: IAU Mars 2000 / MOLA Areoid
                             {missionEstimate.withinEvaTimeLimit ? '✅ WITHIN LIMIT' : '⚠️ EXCEEDS LIMIT'}
                           </span>
                           <span className="text-[9px] text-zinc-500 block">
-                            {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion' : 'High exertion (>300W)'}
+                            {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion (≤350W)' : 'High exertion (>350W)'}
                           </span>
                         </div>
+                        {missionEstimate.radiationDoseMilligray !== undefined && (
+                          <div className="col-span-2 rounded bg-amber-950/30 border border-amber-800/40 p-1.5 flex items-center justify-between text-[10px]">
+                            <span className="text-amber-400 font-semibold">EST. RADIATION DOSE:</span>
+                            <span className="font-bold text-amber-200 font-mono">
+                              {missionEstimate.radiationDoseMilligray} mGy <span className="text-zinc-500 font-normal">(MSL RAD Gale Ref)</span>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -922,6 +931,27 @@ Datum: IAU Mars 2000 / MOLA Areoid
               >
                 Close Data Overview
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Route Calculation Progress Modal (up to 10s for new routes) */}
+      {isCalculatingRoute && (
+        <div className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="rounded-2xl border border-sky-500/60 bg-zinc-950 p-6 shadow-2xl text-center max-w-sm font-mono space-y-3">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 border-3 border-sky-500/20 border-t-sky-400 rounded-full animate-spin" />
+            </div>
+            <div className="text-sm font-bold text-white tracking-wide">
+              BERECHNE MARSWALK-TRAJEKTORIE
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Analysiere 3D-Geländesteigungen auf dem 20m NASA CTX-Raster via A*.
+              Neue Strecken dauern bis zu 10 Sekunden (Benchmark-Strecke ist vorgewärmt).
+            </p>
+            <div className="text-[10px] text-sky-400 bg-sky-950/80 border border-sky-800/50 py-1 px-2.5 rounded font-bold">
+              FastAPI Backend • NumPy Grid Optimization
             </div>
           </div>
         </div>

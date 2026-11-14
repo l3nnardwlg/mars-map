@@ -246,7 +246,7 @@ export default function ElevationProfileChart() {
             </span>
             <span
               className="text-amber-300 font-semibold cursor-help"
-              title="Normalized Terrain Slope Risk Index = 0.6*(Mean Slope / 20°) + 0.4*(Max Slope / 20°). Topographic hazard metric, not accident probability."
+              title="Normalized Terrain Slope Risk Index = 0.6*(Mean Slope / 15°) + 0.4*(Max Slope / 15°). Topographic hazard metric, not accident probability."
             >
               RISK INDEX: {((currentRoute.riskScore ?? 0) * 100).toFixed(1)}% <span className="text-zinc-500 font-normal">(0.6·μ + 0.4·max)</span>
             </span>
@@ -264,6 +264,13 @@ export default function ElevationProfileChart() {
                   const r = alternativeRoutes[prof];
                   if (!r) return null;
                   const isAct = selectedRouteProfile === prof;
+                  const label = r.tags?.includes('energy_optimal')
+                    ? 'Energieoptimal'
+                    : r.tags?.includes('lowest_risk')
+                    ? 'Geringstes Risiko'
+                    : r.tags?.includes('shortest')
+                    ? 'Kürzeste'
+                    : prof;
                   return (
                     <button
                       key={prof}
@@ -274,8 +281,13 @@ export default function ElevationProfileChart() {
                           : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-white'
                       }`}
                     >
-                      <div className="text-[10px] capitalize">{prof}</div>
+                      <div className="text-[10px] truncate" title={label}>{label}</div>
                       <div className="text-[9px] text-zinc-400">{(r.distanceMeters / 1000).toFixed(2)} km</div>
+                      {r.energyJoules && (
+                        <div className="text-[8px] text-yellow-400/80 font-mono">
+                          {Math.round(r.energyJoules / 1000)} kJ
+                        </div>
+                      )}
                     </button>
                   );
                 })}

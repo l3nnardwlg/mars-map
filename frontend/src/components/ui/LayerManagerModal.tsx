@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useMissionStore, TerrainColorMode } from '@/store/useMissionStore';
-import { Layers, ShieldAlert, X, ExternalLink, Info, Database } from 'lucide-react';
+import { Layers, ShieldAlert, X, ExternalLink, Info, Database, CheckCircle2 } from 'lucide-react';
 import { NASA_DEM_METADATA } from '@/utils/demSampler';
+import { fetchLayers } from '@/services/marsApi';
+import { Layer } from '@/types/mars';
 
 export default function LayerManagerModal() {
   const showLayerManagerModal = useMissionStore((state) => state.showLayerManagerModal);
@@ -13,6 +16,15 @@ export default function LayerManagerModal() {
   const setSlopeThresholdDeg = useMissionStore((state) => state.setSlopeThresholdDeg);
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
   const setTerrainExaggeration = useMissionStore((state) => state.setTerrainExaggeration);
+
+  const [layers, setLayers] = useState<Layer[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string>('ctx_dem');
+
+  useEffect(() => {
+    if (showLayerManagerModal) {
+      fetchLayers().then(setLayers).catch(() => {});
+    }
+  }, [showLayerManagerModal]);
 
   if (!showLayerManagerModal) return null;
 
@@ -147,6 +159,90 @@ export default function LayerManagerModal() {
                 <span>25°+ (Impassable Wall)</span>
               </div>
               <div className="h-3 w-full rounded-md bg-gradient-to-r from-[#10b981] via-[#f59e0b] to-[#dc2626]" />
+            </div>
+          </div>
+
+          {/* Active Layer Catalog from /api/layers */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5" />
+                NASA / ESA DATASET LAYER KATALOG
+              </span>
+              <span className="text-[9px] text-zinc-500">
+                {layers.filter(l => l.available).length} von {layers.length} Kachelsätzen verfügbar
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              {layers.map((layer) => {
+                const isSelected = selectedLayerId === layer.id;
+                return (
+                  <div
+                    key={layer.id}
+                    onClick={() => setSelectedLayerId(layer.id)}
+                    className={`rounded-lg border p-2 cursor-pointer transition ${
+                      isSelected
+                        ? 'border-sky-500/60 bg-sky-950/40'
+                        : 'border-zinc-800/80 bg-zinc-900/60 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-zinc-200 text-[11px]">{layer.name}</span>
+                        {layer.kind && (
+                          <span className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded uppercase">
+                            {layer.kind} {layer.unit ? `(${layer.unit})` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {layer.available ? (
+                          <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.5 rounded">
+                            <CheckCircle2 className="w-3 h-3" /> VERFÜGBAR
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[9px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+                            NICHT GEKACHELT
+                          </span>
+                        )}
+                        <a
+                          href={layer.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-sky-400 p-0.5"
+                          title="Datenquelle öffnen"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1 leading-tight">{layer.description}</p>
+
+                    {/* Geology Legend Preview */}
+                    {layer.legend && layer.legend.length > 0 && isSelected && (
+                      <div className="mt-2.5 pt-2 border-t border-zinc-800/80">
+                        <span className="text-[9px] text-sky-400 font-bold block mb-1.5 uppercase">
+                          Geologische Einheiten Legende (SIM 3464):
+                        </span>
+                        <div className="grid grid-cols-2 gap-1 text-[9px] max-h-32 overflow-y-auto pr-1">
+                          {layer.legend.map((leg) => (
+                            <div key={leg.classId} className="flex items-center gap-1.5 bg-black/40 p-1 rounded border border-zinc-800/60">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
+                                style={{ backgroundColor: leg.color }}
+                              />
+                              <span className="text-zinc-400 font-mono text-[8px]">{leg.symbol}</span>
+                              <span className="text-zinc-300 truncate" title={leg.name}>{leg.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

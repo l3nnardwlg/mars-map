@@ -94,10 +94,11 @@ async function runE2EMissionTest() {
       estimatedDurationSeconds: 8904,
       meanSlopeDeg: 11.8,
       maxSlopeDeg: 18.5,
-      // Exact formula: 0.6 * (11.8 / 20) + 0.4 * (18.5 / 20) = 0.724
-      riskScore: 0.724,
+      // Exact formula: clip(0.6 * (11.8 / 15) + 0.4 * (18.5 / 15), 0, 1) = 0.965
+      riskScore: 0.965,
       energyJoules: 1755000,
       averagePowerWatts: 385,
+      tags: ['shortest'],
       elevationGainMeters: 173,
       dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
       elevationProfile: [
@@ -123,10 +124,11 @@ async function runE2EMissionTest() {
       estimatedDurationSeconds: 10740,
       meanSlopeDeg: 4.2,
       maxSlopeDeg: 7.8,
-      // Exact formula: 0.6 * (4.2 / 20) + 0.4 * (7.8 / 20) = 0.282
-      riskScore: 0.282,
+      // Exact formula: clip(0.6 * (4.2 / 15) + 0.4 * (7.8 / 15), 0, 1) = 0.376
+      riskScore: 0.376,
       energyJoules: 1202000,
-      averagePowerWatts: 285,
+      averagePowerWatts: 217,
+      tags: ['energy_optimal', 'lowest_risk'],
       elevationGainMeters: 45,
       dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
     },
@@ -137,9 +139,10 @@ async function runE2EMissionTest() {
       estimatedDurationSeconds: 11520,
       meanSlopeDeg: 5.5,
       maxSlopeDeg: 9.2,
-      riskScore: 0.349,
+      riskScore: 0.465,
       energyJoules: 1380000,
-      averagePowerWatts: 300,
+      averagePowerWatts: 225,
+      tags: ['science_detour'],
       elevationGainMeters: 65,
       dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
     },
@@ -164,12 +167,13 @@ async function runE2EMissionTest() {
   logStep('Mission Simulation Execution', 'Running NASA JSC Pandolf metabolic & oxygen consumption model');
   const crewSize = 2;
   const durationSec = missionState.currentRoute.estimatedDurationSeconds;
-  const avgWatts = missionState.currentRoute.averagePowerWatts || 285;
+  const avgWatts = missionState.currentRoute.averagePowerWatts || 205;
   const totalJoules = avgWatts * durationSec * crewSize;
-  const O2_JOULES_PER_KG = 14150000; // 14.15 MJ/kg
+  const O2_JOULES_PER_KG = 14110000; // 14.11 MJ/kg (Carson Apollo PLSS)
   const O2_DENSITY_KG_L = 0.001429;
   const oxygenKg = totalJoules / O2_JOULES_PER_KG;
   const oxygenL = oxygenKg / O2_DENSITY_KG_L;
+  const radDose = (0.21 * durationSec) / 86400.0;
 
   missionState.missionEstimate = {
     durationSeconds: durationSec,
@@ -180,6 +184,8 @@ async function runE2EMissionTest() {
     evaTimeLimitSeconds: 28800, // 8h
     withinEvaTimeLimit: durationSec <= 28800,
     withinAverageMetabolicRate: avgWatts <= 350,
+    radiationDoseMilligray: Number(radDose.toFixed(3)),
+    radiationBasis: 'Referenzwert MSL RAD, Gale-Krater, 0,21 mGy pro Tag je Person (Hassler et al. 2014)',
   };
 
   assert(missionState.missionEstimate.withinEvaTimeLimit === true, 'Safe traverse must finish within 8h EVA limit');
