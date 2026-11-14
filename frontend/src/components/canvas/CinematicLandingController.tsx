@@ -98,9 +98,14 @@ export default function CinematicLandingController() {
         <div className="flex items-center gap-3">
           <Rocket className="w-5 h-5 text-sky-400 animate-pulse" />
           <div>
-            <h2 className="text-sm font-bold text-white tracking-widest">
-              MISSION MARS 2026 • DESCENT & LANDING SEQUENCE
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-white tracking-widest">
+                MISSION MARS 2026 • DESCENT & LANDING SEQUENCE
+              </h2>
+              <span className="text-[9px] bg-amber-950/80 text-amber-300 border border-amber-700/60 px-1.5 py-0.5 rounded">
+                SIMULATED ENTRY PROFILE
+              </span>
+            </div>
             <p className="text-xs text-sky-300 font-semibold mt-0.5">
               STAGE {stageIndex}/4: {telemetryText}
             </p>

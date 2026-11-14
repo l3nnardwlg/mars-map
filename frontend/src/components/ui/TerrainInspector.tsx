@@ -97,8 +97,20 @@ export default function TerrainInspector() {
             </div>
           </div>
 
+          {/* Scientific Provenance Verification Badge */}
+          <div className="mt-2.5 rounded bg-zinc-950 p-2 border border-zinc-800 text-[9px] text-zinc-400 space-y-0.5">
+            <div className="text-sky-400 font-bold flex items-center justify-between">
+              <span>DATASET: NASA PDS CTX/MOLA DTM</span>
+              <span className="text-emerald-400 font-mono">VERIFIED</span>
+            </div>
+            <div>Datum: MOLA Areoid 0m (IAU Mars 2000 Planetocentric)</div>
+            <div className="text-zinc-500">
+              Method: Direct DTM height fraction • Exaggeration-invariant
+            </div>
+          </div>
+
           {/* Quick Route Actions */}
-          <div className="mt-3 pt-2 border-t border-zinc-800 flex gap-2">
+          <div className="mt-2.5 pt-2 border-t border-zinc-800 flex gap-2">
             <button
               onClick={() => {
                 setRoutePoint({

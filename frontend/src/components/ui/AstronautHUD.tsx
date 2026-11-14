@@ -96,8 +96,8 @@ export default function AstronautHUD() {
         <div className="rounded-xl border border-sky-500/30 bg-black/80 p-3.5 backdrop-blur-md shadow-xl">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5 mb-2.5">
             <span className="text-[10px] font-bold tracking-wider text-sky-400">EVA LIFE SUPPORT</span>
-            <span className="text-[9px] bg-emerald-950 text-emerald-400 px-1 rounded border border-emerald-800">
-              NOMINAL
+            <span className="text-[9px] bg-amber-950/80 text-amber-300 px-1.5 py-0.5 rounded border border-amber-700/60 font-mono">
+              SIMULATED [NASA IST-1]
             </span>
           </div>
 
@@ -143,6 +143,11 @@ export default function AstronautHUD() {
               </span>
               <span className="font-bold text-emerald-300">36.8°C</span>
             </div>
+          </div>
+
+          {/* Scientific Simulation Attribution Disclaimer */}
+          <div className="mt-2.5 pt-2 border-t border-zinc-800/80 text-[8px] text-zinc-500 leading-tight">
+            ⚠️ SIMULATED: Values computed via Pandolf 1977 & NASA Integrated Suit Test 1 (80.7kg mass, 3.0km/h). Not live human bio-sensors.
           </div>
         </div>
 

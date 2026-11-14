@@ -8,6 +8,7 @@ import AstronautHUD from './AstronautHUD';
 import TerrainInspector from './TerrainInspector';
 import LayerManagerModal from './LayerManagerModal';
 import MissionReplayControls from './MissionReplayControls';
+import GuidedJuryTour from './GuidedJuryTour';
 import { 
   RotateCw, 
   Globe2, 
@@ -262,6 +263,9 @@ Datum: IAU Mars 2000 / MOLA Areoid
               <span className="font-semibold text-sky-300 text-xs">NASA & ESA Data</span>
             </div>
           </button>
+
+          {/* Phase 5 P2: Space Apps Jury Guided Tour Button */}
+          <GuidedJuryTour />
         </div>
       </header>
 

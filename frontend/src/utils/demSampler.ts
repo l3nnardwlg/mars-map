@@ -4,6 +4,44 @@
  * to ensure 3D markers and route vertices match the displaced mesh with 0 floating.
  */
 
+/**
+ * NASA PDS CTX/MOLA DTM Geodetic Ground Truth for Jezero Crater
+ *
+ * Primary Dataset: M20_JezeroCrater_CTXDEM_20m
+ * Coordinate System: IAU Mars 2000 Planetocentric (East positive)
+ * Elevation Datum: MOLA Areoid Reference Datum (0.0 m)
+ * 
+ * Geographic Bounds (agreed with Backend / Dev B):
+ * - Latitude: 17.58° N to 19.29° N (Span: 1.71° = 101,358 m)
+ * - Longitude: 76.99° E to 78.58° E (Span: 1.59° = 89,410 m at mean lat 18.435° N)
+ * 
+ * Elevation Range:
+ * - Basin minimum (paleolake floor): -2,583.0 m (MOLA Areoid)
+ * - Rim maximum (crater rim ridge):  -1,280.0 m (MOLA Areoid)
+ * - Total elevation span:             1,303.0 m
+ *
+ * Spatial Resolution of 256x256 DEM Sample Grid:
+ * - dx (East-West):   89,410 m / 256 = 349.26 m/pixel
+ * - dy (North-South): 101,358 m / 256 = 395.93 m/pixel
+ */
+export const NASA_DEM_METADATA = {
+  dataset: 'NASA PDS CTX/MOLA Digital Elevation Model (20m native resolution)',
+  productId: 'M20_JezeroCrater_CTXDEM_20m',
+  crs: 'IAU Mars 2000 Planetocentric, East Longitude',
+  datum: 'MOLA Areoid (0 m)',
+  minElevationMeters: -2583.0,
+  maxElevationMeters: -1280.0,
+  elevationSpanMeters: 1303.0,
+  pixelResolutionXMeters: 349.26,
+  pixelResolutionYMeters: 395.93,
+  bounds: {
+    minLat: 17.58,
+    maxLat: 19.29,
+    minLon: 76.99,
+    maxLon: 78.58,
+  },
+};
+
 let demData: Uint8Array | null = null;
 const DEM_SIZE = 256;
 
@@ -70,28 +108,35 @@ export function getSurfaceZ(u: number, v: number, exaggeration: number): number 
 }
 
 /**
- * Returns estimated real-world elevation in meters relative to MOLA Areoid (-2500m to -1200m)
+ * Returns estimated real-world elevation in meters relative to MOLA Areoid (-2583m to -1280m).
+ * Note: Calculated purely from raw DEM height fraction, completely invariant to visual 3D mesh exaggeration!
  */
 export function getElevationMetersAtUV(u: number, v: number): number {
   const frac = sampleHeightAtUV(u, v);
-  return Math.round(-2500 + frac * 1300);
+  return Math.round(
+    NASA_DEM_METADATA.minElevationMeters + frac * NASA_DEM_METADATA.elevationSpanMeters
+  );
 }
 
 /**
- * Returns calculated slope in degrees at (u, v) using central differences
+ * Returns calculated terrain slope in degrees at (u, v) using central finite differences
+ * evaluated over physical metric space (dx = 349.3m, dy = 395.9m).
+ * Note: Independent of visual 3D mesh exaggeration!
  */
 export function sampleSlopeAtUV(u: number, v: number): number {
   const delta = 1.0 / DEM_SIZE;
-  const metersPerPixel = 390.0; // Jezero bbox ~100km / 256 pixels
-  const elevSpanMeters = 1300.0;
+  const dxMeters = NASA_DEM_METADATA.pixelResolutionXMeters;
+  const dyMeters = NASA_DEM_METADATA.pixelResolutionYMeters;
+  const span = NASA_DEM_METADATA.elevationSpanMeters;
 
-  const hRight = sampleHeightAtUV(u + delta, v) * elevSpanMeters;
-  const hLeft = sampleHeightAtUV(u - delta, v) * elevSpanMeters;
-  const hTop = sampleHeightAtUV(u, v + delta) * elevSpanMeters;
-  const hBottom = sampleHeightAtUV(u, v - delta) * elevSpanMeters;
+  const hRight = sampleHeightAtUV(u + delta, v) * span;
+  const hLeft = sampleHeightAtUV(u - delta, v) * span;
+  const hTop = sampleHeightAtUV(u, v + delta) * span;
+  const hBottom = sampleHeightAtUV(u, v - delta) * span;
 
-  const dzDx = (hRight - hLeft) / (2 * metersPerPixel);
-  const dzDy = (hTop - hBottom) / (2 * metersPerPixel);
+  // Real physical metric gradient in meters/meter
+  const dzDx = (hRight - hLeft) / (2 * dxMeters);
+  const dzDy = (hTop - hBottom) / (2 * dyMeters);
 
   const grad = Math.sqrt(dzDx * dzDx + dzDy * dzDy);
   const slopeDeg = Math.atan(grad) * (180.0 / Math.PI);
