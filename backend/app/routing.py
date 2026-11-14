@@ -2,8 +2,10 @@ import heapq
 import math
 
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import dijkstra
 
-from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, MAX_STEIGUNG_GRAD, pandolf_watt
+from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, MAX_STEIGUNG_GRAD, pandolf_watt, pandolf_watt_array
 
 MAX_SLOPE_DEGREES = MAX_STEIGUNG_GRAD
 RISK_WEIGHT_MEAN = 0.6
@@ -37,7 +39,7 @@ def step_energy_joule(flat_meters: float, rise_meters: float) -> float:
     return pandolf_watt(grade_percent) * length / GEHTEMPO_METER_PRO_SEKUNDE
 
 
-def find_path(
+def find_path_astar(
     elevation: np.ndarray,
     cell_meters: float,
     start: tuple[int, int],
@@ -92,6 +94,68 @@ def find_path(
     return path, slope
 
 
+class _Graph:
+    def __init__(self, elevation: np.ndarray, cell_meters: float) -> None:
+        self.elevation = elevation
+        self.rows, self.cols = elevation.shape
+        self.slope = slope_degrees(elevation, cell_meters)
+        self.passable = np.isfinite(self.slope) & (self.slope <= MAX_SLOPE_DEGREES)
+        index = np.arange(self.rows * self.cols).reshape(self.rows, self.cols)
+        quellen, ziele, kosten = [], [], []
+        with np.errstate(invalid="ignore"):
+            for d_row, d_col, length in NEIGHBORS:
+                row_q = slice(max(0, -d_row), self.rows - max(0, d_row))
+                row_z = slice(max(0, d_row), self.rows - max(0, -d_row))
+                col_q = slice(max(0, -d_col), self.cols - max(0, d_col))
+                col_z = slice(max(0, d_col), self.cols - max(0, -d_col))
+                frei = self.passable[row_q, col_q] & self.passable[row_z, col_z]
+                flat = length * cell_meters
+                rise = elevation[row_z, col_z] - elevation[row_q, col_q]
+                energie = pandolf_watt_array(rise / flat * 100.0) * np.hypot(flat, rise) / GEHTEMPO_METER_PRO_SEKUNDE
+                quellen.append(index[row_q, col_q][frei])
+                ziele.append(index[row_z, col_z][frei])
+                kosten.append(energie[frei])
+        self.quellen = np.concatenate(quellen)
+        self.ziele = np.concatenate(ziele)
+        self.kosten = np.concatenate(kosten)
+
+    def kuerzester_weg(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        penalty: np.ndarray | None = None,
+    ) -> tuple[list[tuple[int, int]], np.ndarray]:
+        for row, col in (start, end):
+            if not (0 <= row < self.rows and 0 <= col < self.cols) or not self.passable[row, col]:
+                raise NoRouteError("Start oder Ziel liegt auf unpassierbarem Gelaende")
+        kosten = self.kosten
+        if penalty is not None:
+            flach = penalty.ravel()
+            kosten = kosten * (1.0 + 0.5 * (flach[self.quellen] + flach[self.ziele]))
+        knoten = self.rows * self.cols
+        matrix = csr_matrix((kosten, (self.quellen, self.ziele)), shape=(knoten, knoten))
+        start_index = start[0] * self.cols + start[1]
+        end_index = end[0] * self.cols + end[1]
+        distanz, vorgaenger = dijkstra(matrix, directed=True, indices=start_index, return_predecessors=True)
+        if not np.isfinite(distanz[end_index]):
+            raise NoRouteError("Kein passierbarer Weg zwischen Start und Ziel gefunden")
+        weg = [end_index]
+        while weg[-1] != start_index:
+            weg.append(int(vorgaenger[weg[-1]]))
+        weg.reverse()
+        return [(n // self.cols, n % self.cols) for n in weg], self.slope
+
+
+def find_path(
+    elevation: np.ndarray,
+    cell_meters: float,
+    start: tuple[int, int],
+    end: tuple[int, int],
+    penalty: np.ndarray | None = None,
+) -> tuple[list[tuple[int, int]], np.ndarray]:
+    return _Graph(elevation, cell_meters).kuerzester_weg(start, end, penalty)
+
+
 def measure_path(
     path: list[tuple[int, int]],
     elevation: np.ndarray,
@@ -131,7 +195,8 @@ def find_alternatives(
     end: tuple[int, int],
     count: int,
 ) -> list[tuple[list[tuple[int, int]], np.ndarray]]:
-    best_path, slope = find_path(elevation, cell_meters, start, end)
+    graph = _Graph(elevation, cell_meters)
+    best_path, slope = graph.kuerzester_weg(start, end)
     results = [(best_path, slope)]
     best_energy = measure_path(best_path, elevation, slope, cell_meters)[3]
     radius = max(1, int(ALTERNATIVE_CORRIDOR_METERS / cell_meters))
@@ -141,7 +206,7 @@ def find_alternatives(
         if len(results) >= count:
             break
         try:
-            path, path_slope = find_path(elevation, cell_meters, start, end, penalty)
+            path, path_slope = graph.kuerzester_weg(start, end, penalty)
         except NoRouteError:
             break
         penalty[corridor(elevation.shape, path, radius)] = ALTERNATIVE_PENALTY
