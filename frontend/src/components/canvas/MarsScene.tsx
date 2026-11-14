@@ -6,6 +6,8 @@ import { Stars } from '@react-three/drei';
 import MarsGlobe from './MarsGlobe';
 import TerrainPrototype from './TerrainPrototype';
 import CameraRig from './CameraRig';
+import AstronautController from './AstronautController';
+import CinematicLandingController from './CinematicLandingController';
 import { useMissionStore } from '@/store/useMissionStore';
 
 function SceneLoadingFallback() {
@@ -76,6 +78,10 @@ export default function MarsScene() {
           {activeView === 'globe' ? <MarsGlobe /> : <TerrainPrototype />}
 
           <CameraRig />
+
+          {/* Phase 5: First-Person Astronaut Controller & Cinematic Landing */}
+          <AstronautController />
+          <CinematicLandingController />
         </Canvas>
       </Suspense>
     </div>

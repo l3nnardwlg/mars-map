@@ -68,3 +68,32 @@ export function getSurfaceZ(u: number, v: number, exaggeration: number): number 
   const bias = -0.1;
   return h * scale + bias;
 }
+
+/**
+ * Returns estimated real-world elevation in meters relative to MOLA Areoid (-2500m to -1200m)
+ */
+export function getElevationMetersAtUV(u: number, v: number): number {
+  const frac = sampleHeightAtUV(u, v);
+  return Math.round(-2500 + frac * 1300);
+}
+
+/**
+ * Returns calculated slope in degrees at (u, v) using central differences
+ */
+export function sampleSlopeAtUV(u: number, v: number): number {
+  const delta = 1.0 / DEM_SIZE;
+  const metersPerPixel = 390.0; // Jezero bbox ~100km / 256 pixels
+  const elevSpanMeters = 1300.0;
+
+  const hRight = sampleHeightAtUV(u + delta, v) * elevSpanMeters;
+  const hLeft = sampleHeightAtUV(u - delta, v) * elevSpanMeters;
+  const hTop = sampleHeightAtUV(u, v + delta) * elevSpanMeters;
+  const hBottom = sampleHeightAtUV(u, v - delta) * elevSpanMeters;
+
+  const dzDx = (hRight - hLeft) / (2 * metersPerPixel);
+  const dzDy = (hTop - hBottom) / (2 * metersPerPixel);
+
+  const grad = Math.sqrt(dzDx * dzDx + dzDy * dzDy);
+  const slopeDeg = Math.atan(grad) * (180.0 / Math.PI);
+  return Number(slopeDeg.toFixed(1));
+}

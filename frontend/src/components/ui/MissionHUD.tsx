@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useMissionStore, MARS_LANDMARKS } from '@/store/useMissionStore';
 import ElevationProfileChart from './ElevationProfileChart';
+import Minimap from './Minimap';
+import AstronautHUD from './AstronautHUD';
+import TerrainInspector from './TerrainInspector';
+import LayerManagerModal from './LayerManagerModal';
+import MissionReplayControls from './MissionReplayControls';
 import { 
   RotateCw, 
   Globe2, 
@@ -24,7 +29,13 @@ import {
   FileText,
   Check,
   Info,
-  X
+  X,
+  Footprints,
+  Rocket,
+  Play,
+  Ruler,
+  Sliders,
+  Map as MapIcon
 } from 'lucide-react';
 
 export default function MissionHUD() {
@@ -62,6 +73,45 @@ export default function MissionHUD() {
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const clearRoute = useMissionStore((state) => state.clearRoute);
+
+  // Phase 5 State & Actions
+  const isAstronautMode = useMissionStore((state) => state.isAstronautMode);
+  const toggleAstronautMode = useMissionStore((state) => state.toggleAstronautMode);
+  const isTerrainInspectorActive = useMissionStore((state) => state.isTerrainInspectorActive);
+  const toggleTerrainInspector = useMissionStore((state) => state.toggleTerrainInspector);
+  const isMeasureMode = useMissionStore((state) => state.isMeasureMode);
+  const toggleMeasureMode = useMissionStore((state) => state.toggleMeasureMode);
+  const isMissionReplayPlaying = useMissionStore((state) => state.isMissionReplayPlaying);
+  const toggleMissionReplay = useMissionStore((state) => state.toggleMissionReplay);
+  const startCinematicLanding = useMissionStore((state) => state.startCinematicLanding);
+  const setShowLayerManagerModal = useMissionStore((state) => state.setShowLayerManagerModal);
+  const showMinimap = useMissionStore((state) => state.showMinimap);
+  const toggleMinimap = useMissionStore((state) => state.toggleMinimap);
+
+  // Keyboard Shortcuts (P3 feature)
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === '1') {
+        setActiveView('globe');
+      } else if (e.key === '2') {
+        setActiveView('terrain_prototype');
+      } else if (e.key === '3') {
+        toggleAstronautMode();
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleMinimap();
+      } else if (e.key === 'i' || e.key === 'I') {
+        toggleTerrainInspector();
+      } else if (e.key === 'r' || e.key === 'R') {
+        toggleMissionReplay();
+      } else if (e.key === 'l' || e.key === 'L') {
+        setShowLayerManagerModal(true);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [setActiveView, toggleAstronautMode, toggleMinimap, toggleTerrainInspector, toggleMissionReplay, setShowLayerManagerModal]);
 
   // Auto-calculate on mount if not yet generated
   useEffect(() => {
@@ -122,29 +172,59 @@ Datum: IAU Mars 2000 / MOLA Areoid
         </div>
 
         {/* View Mode Switcher */}
-        <div className="pointer-events-auto flex items-center rounded-lg border border-zinc-800 bg-black/70 p-1">
+        <div className="pointer-events-auto flex items-center rounded-lg border border-zinc-800 bg-black/70 p-1 gap-1">
           <button
-            onClick={() => setActiveView('globe')}
-            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold transition ${
+            onClick={() => {
+              if (isAstronautMode) toggleAstronautMode();
+              setActiveView('globe');
+            }}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition ${
               activeView === 'globe'
                 ? 'bg-amber-600 text-white shadow-md shadow-amber-600/40'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
             }`}
+            title="Press '1' for Orbit"
           >
             <Globe2 className="w-3.5 h-3.5" />
-            <span>3D Mars Globe</span>
+            <span className="hidden sm:inline">3D Globe</span>
           </button>
 
           <button
-            onClick={() => setActiveView('terrain_prototype')}
-            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold transition ${
-              activeView === 'terrain_prototype'
+            onClick={() => {
+              if (isAstronautMode) toggleAstronautMode();
+              setActiveView('terrain_prototype');
+            }}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition ${
+              activeView === 'terrain_prototype' && !isAstronautMode
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/40'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
             }`}
+            title="Press '2' for Jezero Terrain"
           >
             <Mountain className="w-3.5 h-3.5" />
-            <span>Jezero 3D Terrain & Routing</span>
+            <span className="hidden sm:inline">Jezero Terrain</span>
+          </button>
+
+          <button
+            onClick={toggleAstronautMode}
+            className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition ${
+              isAstronautMode
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/40 animate-pulse'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+            }`}
+            title="First-Person Helmet Mode (Press '3')"
+          >
+            <Footprints className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Astronaut Mode</span>
+          </button>
+
+          <button
+            onClick={startCinematicLanding}
+            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+            title="Atmospheric Entry & Touchdown"
+          >
+            <Rocket className="w-3.5 h-3.5 text-orange-400" />
+            <span className="hidden md:inline">Cinematic Landing</span>
           </button>
         </div>
 
@@ -379,6 +459,82 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Phase 5: Advanced Tactical Tools */}
+            <div className="border-t border-zinc-800 pt-2 space-y-1.5">
+              <span className="text-[10px] text-zinc-400 block uppercase tracking-wider">
+                Tactical Tools & Overlays
+              </span>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                {/* Terrain Inspector */}
+                <button
+                  onClick={toggleTerrainInspector}
+                  className={`py-1.5 px-2 rounded font-semibold border transition flex items-center gap-1.5 ${
+                    isTerrainInspectorActive
+                      ? 'bg-sky-500/30 border-sky-400 text-sky-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Analyze slope & elevation at any point (Press 'I')"
+                >
+                  <Crosshair className="w-3 h-3 text-sky-400" />
+                  <span>Inspector [I]</span>
+                </button>
+
+                {/* Laser Distance Ruler */}
+                <button
+                  onClick={toggleMeasureMode}
+                  className={`py-1.5 px-2 rounded font-semibold border transition flex items-center gap-1.5 ${
+                    isMeasureMode
+                      ? 'bg-pink-500/30 border-pink-400 text-pink-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Measure 3D distance between 2 points"
+                >
+                  <Ruler className="w-3 h-3 text-pink-400" />
+                  <span>Ruler</span>
+                </button>
+
+                {/* Layer Manager Modal */}
+                <button
+                  onClick={() => setShowLayerManagerModal(true)}
+                  className="py-1.5 px-2 rounded font-semibold border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition flex items-center gap-1.5"
+                  title="Configure NASA layers, opacities & legends (Press 'L')"
+                >
+                  <Sliders className="w-3 h-3 text-amber-400" />
+                  <span>Layers [L]</span>
+                </button>
+
+                {/* Minimap Toggle */}
+                <button
+                  onClick={toggleMinimap}
+                  className={`py-1.5 px-2 rounded font-semibold border transition flex items-center gap-1.5 ${
+                    showMinimap
+                      ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Toggle 2D Jezero Radar (Press 'M')"
+                >
+                  <MapIcon className="w-3 h-3 text-cyan-400" />
+                  <span>Radar [M]</span>
+                </button>
+              </div>
+
+              {/* Mission Replay Button */}
+              {currentRoute && (
+                <button
+                  onClick={toggleMissionReplay}
+                  className={`w-full py-1.5 px-2 rounded-lg font-semibold border transition flex items-center justify-center gap-2 text-xs mt-1 ${
+                    isMissionReplayPlaying
+                      ? 'bg-cyan-600 border-cyan-400 text-white animate-pulse'
+                      : 'bg-cyan-950/60 border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/80'
+                  }`}
+                  title="Replay Marswalk Route (Press 'R')"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>{isMissionReplayPlaying ? 'Pause Marswalk Replay' : 'Replay Marswalk Route [R]'}</span>
+                </button>
+              )}
             </div>
           </aside>
         )}
@@ -726,6 +882,13 @@ Datum: IAU Mars 2000 / MOLA Areoid
           </div>
         </div>
       )}
+
+      {/* Phase 5 Tactical HUD Overlays & Tools */}
+      <Minimap />
+      <AstronautHUD />
+      <TerrainInspector />
+      <LayerManagerModal />
+      <MissionReplayControls />
     </div>
   );
 }

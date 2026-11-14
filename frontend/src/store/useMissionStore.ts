@@ -6,7 +6,9 @@ import {
   MarsRoute, 
   RouteProfile,
   SciencePoint, 
-  MissionEstimate 
+  MissionEstimate,
+  InspectionPoint,
+  AstronautPose
 } from '@/types/mars';
 import { 
   requestRouteAlternatives, 
@@ -68,6 +70,35 @@ interface MissionStore {
   showSciencePoints: boolean;
   showElevationProfile: boolean;
 
+  // Phase 5: Astronaut Mode & Controls
+  isAstronautMode: boolean;
+  astronautPose: AstronautPose;
+  showHelmetHUD: boolean;
+
+  // Phase 5: Minimap
+  showMinimap: boolean;
+
+  // Phase 5: Terrain Inspector & Slope Heatmap
+  isTerrainInspectorActive: boolean;
+  inspectedPoint: InspectionPoint | null;
+  slopeThresholdDeg: number;
+
+  // Phase 5: Distance Measurement Tool
+  isMeasureMode: boolean;
+  measurePoints: MarsCoordinate[];
+
+  // Phase 5: Mission Replay
+  isMissionReplayPlaying: boolean;
+  replayProgress: number; // 0.0 to 1.0
+  replaySpeed: number; // 1, 2, 5
+
+  // Phase 5: Cinematic Landing
+  isCinematicLanding: boolean;
+
+  // Phase 5: Layer Manager & Opacity
+  showLayerManagerModal: boolean;
+  layerOpacity: { satellite: number; hypsometric: number; slope: number };
+
   // Route Planning State (Phase 3 Multi-Profile)
   routeStart: MarsCoordinate | null;
   routeEnd: MarsCoordinate | null;
@@ -100,6 +131,30 @@ interface MissionStore {
   toggleSciencePoints: () => void;
   toggleElevationProfile: () => void;
 
+  // Phase 5 Actions
+  toggleAstronautMode: () => void;
+  setAstronautMode: (active: boolean) => void;
+  setAstronautPose: (pose: Partial<AstronautPose>) => void;
+  toggleHelmetHUD: () => void;
+  toggleMinimap: () => void;
+  toggleTerrainInspector: () => void;
+  setInspectedPoint: (point: InspectionPoint | null) => void;
+  setSlopeThresholdDeg: (val: number) => void;
+
+  toggleMeasureMode: () => void;
+  addMeasurePoint: (c: MarsCoordinate) => void;
+  clearMeasure: () => void;
+
+  toggleMissionReplay: () => void;
+  setReplayProgress: (val: number) => void;
+  setReplaySpeed: (val: number) => void;
+
+  startCinematicLanding: () => void;
+  cancelCinematicLanding: () => void;
+
+  setShowLayerManagerModal: (open: boolean) => void;
+  setLayerOpacity: (layer: 'satellite' | 'hypsometric' | 'slope', opacity: number) => void;
+
   // Route Planning Actions
   setRoutePoint: (coord: MarsCoordinate) => void;
   clearRoute: () => void;
@@ -127,6 +182,23 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   sunTimeMode: 'morning',
   showSciencePoints: true,
   showElevationProfile: true,
+
+  // Phase 5 State Initializers
+  isAstronautMode: false,
+  astronautPose: { x: 0, y: -0.5, z: 0.1, headingDeg: 0, pitchDeg: 0, speed: 0 },
+  showHelmetHUD: true,
+  showMinimap: true,
+  isTerrainInspectorActive: false,
+  inspectedPoint: null,
+  slopeThresholdDeg: 15,
+  isMeasureMode: false,
+  measurePoints: [],
+  isMissionReplayPlaying: false,
+  replayProgress: 0.0,
+  replaySpeed: 1,
+  isCinematicLanding: false,
+  showLayerManagerModal: false,
+  layerOpacity: { satellite: 1.0, hypsometric: 1.0, slope: 1.0 },
 
   routeStart: { latitude: 18.4276, longitude: 77.4516, elevationMeters: -2583 },
   routeEnd: { latitude: 18.4438, longitude: 77.4542, elevationMeters: -2560 },
@@ -252,4 +324,64 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     });
     get().calculateRoute();
   },
+
+  // Phase 5 Action Implementations
+  toggleAstronautMode: () => {
+    const next = !get().isAstronautMode;
+    set({ 
+      isAstronautMode: next, 
+      activeView: next ? 'terrain_prototype' : get().activeView,
+      isAutoRotating: false,
+    });
+  },
+  setAstronautMode: (active) => set({ 
+    isAstronautMode: active,
+    activeView: active ? 'terrain_prototype' : get().activeView,
+    isAutoRotating: false,
+  }),
+  setAstronautPose: (pose) => set((state) => ({ 
+    astronautPose: { ...state.astronautPose, ...pose } 
+  })),
+  toggleHelmetHUD: () => set((state) => ({ showHelmetHUD: !state.showHelmetHUD })),
+  toggleMinimap: () => set((state) => ({ showMinimap: !state.showMinimap })),
+  toggleTerrainInspector: () => set((state) => ({ 
+    isTerrainInspectorActive: !state.isTerrainInspectorActive,
+    inspectedPoint: null,
+    isMeasureMode: false,
+  })),
+  setInspectedPoint: (point) => set({ inspectedPoint: point }),
+  setSlopeThresholdDeg: (val) => set({ slopeThresholdDeg: val }),
+
+  toggleMeasureMode: () => set((state) => ({ 
+    isMeasureMode: !state.isMeasureMode,
+    measurePoints: [],
+    isTerrainInspectorActive: false,
+  })),
+  addMeasurePoint: (c) => set((state) => {
+    if (state.measurePoints.length >= 2) {
+      return { measurePoints: [c] };
+    }
+    return { measurePoints: [...state.measurePoints, c] };
+  }),
+  clearMeasure: () => set({ measurePoints: [] }),
+
+  toggleMissionReplay: () => set((state) => ({ 
+    isMissionReplayPlaying: !state.isMissionReplayPlaying,
+    activeView: 'terrain_prototype',
+  })),
+  setReplayProgress: (val) => set({ replayProgress: Math.max(0, Math.min(1, val)) }),
+  setReplaySpeed: (val) => set({ replaySpeed: val }),
+
+  startCinematicLanding: () => set({
+    isCinematicLanding: true,
+    activeView: 'globe',
+    selectedLandmark: null,
+    isAutoRotating: false,
+  }),
+  cancelCinematicLanding: () => set({ isCinematicLanding: false }),
+
+  setShowLayerManagerModal: (open) => set({ showLayerManagerModal: open }),
+  setLayerOpacity: (layer, opacity) => set((state) => ({
+    layerOpacity: { ...state.layerOpacity, [layer]: opacity }
+  })),
 }));

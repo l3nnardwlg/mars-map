@@ -99,3 +99,28 @@ export interface CameraState {
   isAutoRotating: boolean;
   selectedLandmarkId: string | null;
 }
+
+export interface InspectionPoint {
+  latitude: number;
+  longitude: number;
+  elevationMeters: number;
+  slopeDeg: number;
+  riskLevel: 'safe' | 'caution' | 'hazard';
+}
+
+export interface MeasurementResult {
+  start: MarsCoordinate;
+  end: MarsCoordinate;
+  straightDistanceKm: number;
+  elevationDeltaM: number;
+  bearingDeg: number;
+}
+
+export interface AstronautPose {
+  x: number;
+  y: number;
+  z: number;
+  headingDeg: number;
+  pitchDeg: number;
+  speed: number;
+}

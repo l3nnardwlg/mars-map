@@ -70,6 +70,33 @@
 
 **Milestone:** Stable, demonstrable project ready for submission.
 
+## Phase 5 – Advanced 3D Exploration, Mission Visualization & UX (Dev A)
+
+### P0 – Unbedingt umsetzen
+- [x] **Astronaut Mode:** First-Person-Perspektive mit WASD-Steuerung, PointerLock-Mausblick und realistischer Geländekollision (DEM-gestützt)
+- [x] **Minimap:** 2D-Radarübersicht mit Astronautenposition, Blickrichtung (FoV-Kegel), Route und Science Points
+- [x] **3D Route Visualization:** Erweiterte Routendarstellung mit Richtungspfeilen, Wegpunkten und Gefahrenmarkierungen
+- [x] **Terrain Inspector:** Klick-/Hover-Tool mit Anzeige von Höhe, IAU-Koordinaten und lokaler Steigung
+- [x] **Layer Manager:** NASA-Layer Opacity-Slider, Legenden und konfigurierbare Gefahren-Grenzwerte
+- [x] **Performance Optimization:** Frustum Culling, GPU-Memory-Management, glatte 60 FPS
+
+### P1 – Wissenschaftliche Visualisierung
+- [x] **Interaktives Höhenprofil:** Verknüpfung von Höhenprofil-Hover mit der 3D-Kartenposition
+- [x] **Slope Heatmap & Risk Zones:** Einstellbare Grenzwerte für Neigungsrisiken (10°–25°)
+- [x] **Route Comparison:** Direktes Gegenüberstellen von bis zu 3 Routen im Dashboard
+- [x] **Distance Measurement Tool:** Laser-Messwerkzeug für Distanzen und Höhendifferenzen zwischen beliebigen Punkten
+- [x] **Science Point Viewer:** Detailansicht mit NASA-Bildern, Beschreibungen und Proben-Zielen
+
+### P2 – Immersion & Premium Features
+- [x] **Cinematic Landing Experience:** Kamerafahrt vom Weltraum in den Jezero-Krater mit Skip-Button
+- [x] **Mars Day/Night Simulation:** Dynamischer Sonnenlauf mit Sol-Uhrzeit und Schattenwurf
+- [x] **Astronaut HUD:** Helm-Visier mit Kompassrose, künstlichem Horizont und simulierter Vitaltelemetrie
+- [x] **Mission Replay:** Automatisches Abfahren der geplanten Marswalk-Route mit Timeline-Steuerung
+
+### P3 – Extras & Accessibility
+- [x] **Keyboard Shortcuts:** Schnelltasten für Ansichten (1 Orbit, 2 Terrain, 3 Astronaut, M Minimap, I Inspector, R Replay, L Layer Manager)
+- [ ] **Guided Demo:** Geführte 2-Minuten-Tour für die NASA-Jury
+
 ## Integration Rules
 
 1. All agents must read `AGENTS.md`, `ARCHITECTURE.md`, `API_CONTRACT.md` and `COORDINATE_SYSTEM.md` before implementation.

@@ -8,7 +8,9 @@ import { useMissionStore } from '@/store/useMissionStore';
 import { Html } from '@react-three/drei';
 import RouteMesh from './RouteMesh';
 import SciencePointsLayer from './SciencePointsLayer';
-import { sampleHeightAtUV } from '@/utils/demSampler';
+import MeasurementLaser from './MeasurementLaser';
+import MissionReplayFollower from './MissionReplayFollower';
+import { getElevationMetersAtUV, sampleSlopeAtUV } from '@/utils/demSampler';
 import { useEffect } from 'react';
 
 export default function TerrainPrototype() {
@@ -19,6 +21,12 @@ export default function TerrainPrototype() {
   const terrainColorMode = useMissionStore((state) => state.terrainColorMode);
   const setRoutePoint = useMissionStore((state) => state.setRoutePoint);
   const loadSciencePoints = useMissionStore((state) => state.loadSciencePoints);
+
+  const isMeasureMode = useMissionStore((state) => state.isMeasureMode);
+  const addMeasurePoint = useMissionStore((state) => state.addMeasurePoint);
+  const isTerrainInspectorActive = useMissionStore((state) => state.isTerrainInspectorActive);
+  const setInspectedPoint = useMissionStore((state) => state.setInspectedPoint);
+  const slopeThresholdDeg = useMissionStore((state) => state.slopeThresholdDeg);
 
   useEffect(() => {
     loadSciencePoints();
@@ -80,22 +88,37 @@ export default function TerrainPrototype() {
     return orthoMap;
   }, [terrainColorMode, hypsometricMap, slopeMap, orthoMap]);
 
-  // Interactive Click on Terrain to pick Start / Destination waypoint
+  // Interactive Click on Terrain
   const handleTerrainClick = (e: ThreeEvent<MouseEvent>) => {
     if (!e.uv) return;
     e.stopPropagation();
 
     // Map UV (0..1) to Jezero Crater Bounding Box [17.58, 19.29]N, [76.99, 78.58]E
-    const lat = 17.58 + e.uv.y * (19.29 - 17.58);
-    const lon = 76.99 + e.uv.x * (78.58 - 76.99);
+    const lat = Number((17.58 + e.uv.y * (19.29 - 17.58)).toFixed(4));
+    const lon = Number((76.99 + e.uv.x * (78.58 - 76.99)).toFixed(4));
+    const elev = getElevationMetersAtUV(e.uv.x, e.uv.y);
+    const slope = sampleSlopeAtUV(e.uv.x, e.uv.y);
 
-    // Sample exact elevation in meters from DEM height fraction (-2500m basin floor to -1200m rim)
-    const elevFraction = sampleHeightAtUV(e.uv.x, e.uv.y);
-    const elev = Math.round(-2500 + elevFraction * 1300);
+    if (isMeasureMode) {
+      addMeasurePoint({ latitude: lat, longitude: lon, elevationMeters: elev });
+      return;
+    }
+
+    if (isTerrainInspectorActive) {
+      const risk = slope > slopeThresholdDeg ? 'hazard' : slope > 10 ? 'caution' : 'safe';
+      setInspectedPoint({
+        latitude: lat,
+        longitude: lon,
+        elevationMeters: elev,
+        slopeDeg: slope,
+        riskLevel: risk,
+      });
+      return;
+    }
 
     setRoutePoint({
-      latitude: Number(lat.toFixed(4)),
-      longitude: Number(lon.toFixed(4)),
+      latitude: lat,
+      longitude: lon,
       elevationMeters: elev,
     });
   };
@@ -126,6 +149,12 @@ export default function TerrainPrototype() {
 
       {/* Real NASA Perseverance Science Sample Points */}
       <SciencePointsLayer planeSize={8} />
+
+      {/* Phase 5: Distance Measurement Laser Tool */}
+      <MeasurementLaser planeSize={8} />
+
+      {/* Phase 5: 3D Mission Replay Rover / EVA Follower */}
+      <MissionReplayFollower planeSize={8} />
 
       {/* Surface Landmark Tags - Fixed compact size, never scales up to cover screen */}
       <group position={[-2.2, 0.4, 0.2]}>
