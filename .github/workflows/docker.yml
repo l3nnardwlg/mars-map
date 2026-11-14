@@ -1,0 +1,65 @@
+name: docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev/backend, dev/frontend]
+    paths:
+      - "docker-compose.yml"
+      - "deploy/**"
+      - "backend/Dockerfile"
+      - "backend/pyproject.toml"
+      - "backend/app/**"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "docker-compose.yml"
+      - "deploy/**"
+      - "backend/Dockerfile"
+      - "backend/pyproject.toml"
+      - ".github/workflows/docker.yml"
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Geodaten holen und Kacheln bauen
+        run: |
+          pip install -e backend
+          python backend/scripts/fetch_data.py
+      - name: Compose bauen und starten
+        run: docker compose up -d --build
+      - name: Auf das Backend warten
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://localhost:8000/health > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs
+          exit 1
+      - name: Backend pruefen
+        run: |
+          curl -sf http://localhost:8000/api/layers | grep -q '"ctx_dem"'
+          curl -sf http://localhost:8000/api/terrain/metadata | grep -q '"ctx_dem"'
+          curl -sf -X POST http://localhost:8000/api/routes/calculate \
+            -H "Content-Type: application/json" \
+            -d '{"start":{"latitude":18.44,"longitude":77.45},"end":{"latitude":18.40,"longitude":77.55}}' | grep -q '"distanceMeters"'
+      - name: Frontend und Weiterleitung pruefen
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://localhost:3000/ > /dev/null; then break; fi
+            sleep 3
+          done
+          curl -sf http://localhost:3000/ > /dev/null
+          curl -sf http://localhost:3000/api/layers | grep -q '"ctx_dem"'
+      - name: Protokolle bei Fehler
+        if: failure()
+        run: docker compose logs
+      - name: Aufraeumen
+        if: always()
+        run: docker compose down
