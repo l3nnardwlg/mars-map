@@ -21,7 +21,7 @@ def hoehenbereich(src):
     return float(daten.min()), float(daten.max())
 
 
-def bild_kachel_bauen(src, west, north, grad):
+def bild_kachel_bauen(src, west, north, grad, nearest=False):
     pixel_grad = grad / TILE_SIZE
     ziel = np.zeros((TILE_SIZE, TILE_SIZE), dtype=np.uint8)
     reproject(
@@ -30,7 +30,7 @@ def bild_kachel_bauen(src, west, north, grad):
         dst_transform=Affine(pixel_grad, 0, west, 0, -pixel_grad, north),
         dst_crs=MARS_GEOGRAPHIC,
         dst_nodata=0,
-        resampling=Resampling.bilinear,
+        resampling=Resampling.nearest if nearest else Resampling.bilinear,
     )
     return ziel if ziel.any() else None
 
@@ -61,14 +61,15 @@ def main():
     parser.add_argument("ziel", type=Path)
     parser.add_argument("--name", required=True)
     parser.add_argument("--max-zoom", type=int, default=None)
-    parser.add_argument("--art", choices=["hoehe", "wert", "bild"], default="hoehe")
+    parser.add_argument("--art", choices=["hoehe", "wert", "bild", "klasse"], default="hoehe")
     parser.add_argument("--einheit", default="m")
+    parser.add_argument("--legende", type=Path, default=None)
     args = parser.parse_args()
 
     with rasterio.open(args.quelle) as src:
         west, south, east, north = transform_bounds(src.crs, MARS_GEOGRAPHIC, *src.bounds, densify_pts=21)
         pixel_meter = float(min(src.res))
-        bild = args.art == "bild"
+        bild = args.art in ("bild", "klasse")
         hoehe_min, hoehe_max = (0.0, 255.0) if bild else hoehenbereich(src)
 
         wurzel_grad = max(east - west, north - south)
@@ -86,7 +87,7 @@ def main():
                     if kachel_west > east or kachel_nord - grad > north or kachel_nord < south:
                         continue
                     if bild:
-                        daten = bild_kachel_bauen(src, kachel_west, kachel_nord, grad)
+                        daten = bild_kachel_bauen(src, kachel_west, kachel_nord, grad, args.art == "klasse")
                     else:
                         daten = kachel_bauen(src, kachel_west, kachel_nord, grad, hoehe_min, hoehe_max)
                     if daten is None:
@@ -115,7 +116,11 @@ def main():
             "wertMax": hoehe_max,
             "kacheln": anzahl,
         }
-        if bild:
+        if args.art == "klasse":
+            metadaten["kodierung"] = "uint8 PNG, Pixelwert = Klassennummer aus legende, 0 = keine Daten"
+            if args.legende is not None:
+                metadaten["legende"] = json.loads(args.legende.read_text(encoding="utf-8"))
+        elif bild:
             metadaten["kodierung"] = "uint8 PNG Graustufen, 0 = keine Daten"
         else:
             metadaten["hoeheMin"] = hoehe_min

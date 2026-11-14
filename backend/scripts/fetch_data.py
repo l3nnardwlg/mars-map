@@ -27,6 +27,12 @@ THERMAL = {
     "bytes": 1721889,
     "sha256": "84401e7717d43ae80cbd80213b91bd141ee48197eb8648293197447c43c2829c",
 }
+GEOLOGIE_ZIP = {
+    "url": "https://pubs.usgs.gov/sim/3464/sim3464_database.zip",
+    "datei": "geologie/sim3464_database.zip",
+    "bytes": 349336873,
+    "sha256": "a88bd53a5573743cc4a20036c10e585106d08a433ad2f34af269e9cea1529f87",
+}
 HIRISE_ZIP = {
     "url": "https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/Mars/MSR_TRN_HiRISE_soc_003_USGS_release_aug2024/MSR_TRN_HiRISE_soc_003_USGS_release_aug2024_mosaics.zip",
     "datei": "MSR_TRN_HiRISE_soc_003_USGS_release_aug2024_mosaics.zip",
@@ -122,6 +128,7 @@ def main() -> None:
     parser.add_argument("--data-dir", type=Path, default=BACKEND / "data")
     parser.add_argument("--hirise", action="store_true", help="zusaetzlich HiRISE-Paket (5,5 GB) laden und Kacheln bauen")
     parser.add_argument("--layers", action="store_true", help="zusaetzlich Steigung, Waermetraegheit und CTX-Orthobild laden und als Kacheln bauen")
+    parser.add_argument("--geologie", action="store_true", help="zusaetzlich die Geologiekarte SIM 3464 (349 MB) laden und als Klassenkacheln bauen (braucht Extra build)")
     parser.add_argument("--science", action="store_true", help="zusaetzlich die Quelldateien fuer build_science_points.py laden")
     args = parser.parse_args()
 
@@ -139,6 +146,20 @@ def main() -> None:
         kacheln_bauen(thermik, tiles / "thermal_inertia", "thermal_inertia", extra=["--art", "wert", "--einheit", "J m-2 K-1 s-1/2"])
         ortho = sicherstellen(CTX_ORTHO, raw)
         kacheln_bauen(ortho, tiles / "ctx_ortho", "ctx_ortho", max_zoom=6, extra=["--art", "bild", "--einheit", "Grauwert"])
+    if args.geologie:
+        archiv_pfad = sicherstellen(GEOLOGIE_ZIP, raw)
+        entpackt = raw / "geologie" / "sim3464"
+        if not entpackt.is_dir():
+            print("entpacke: Geologiekarte")
+            with zipfile.ZipFile(archiv_pfad) as archiv:
+                archiv.extractall(entpackt)
+        gdb = next(entpackt.rglob("Nili.gdb"))
+        raster = raw / "derived" / "geologie_20m.tif"
+        legende = raw / "derived" / "geologie_legende.json"
+        if not raster.is_file():
+            print("rastere Geologieeinheiten")
+            subprocess.run([sys.executable, str(HIER / "build_geology.py"), str(gdb), str(raster), str(legende)], check=True, stdout=subprocess.DEVNULL)
+        kacheln_bauen(raster, tiles / "geology", "geology", extra=["--art", "klasse", "--einheit", "Klasse", "--legende", str(legende)])
     if args.science:
         for quelle in SCIENCE_QUELLEN:
             sicherstellen(quelle, raw)

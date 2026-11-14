@@ -6,10 +6,12 @@ MAX_STEIGUNG_GRAD = 15.0
 JOULE_PRO_KG_SAUERSTOFF = 3670 * 1055.056 / (0.605 * 0.45359237)
 SAUERSTOFF_DICHTE_KG_PRO_LITER = 0.001429
 MAX_EVA_SEKUNDEN = 8 * 3600
+STRAHLUNG_MILLIGRAY_PRO_TAG = 0.210
 MITTLERE_STOFFWECHSELRATE_WATT = 350.0
 MAX_STOFFWECHSELRATE_WATT = 530.0
 
 QUELLEN = {
+    "STRAHLUNG_MILLIGRAY_PRO_TAG": "Mittlere Dosisrate der galaktischen kosmischen Strahlung an der Oberflaeche im Gale-Krater: 0,210 plus minus 0,040 mGy pro Tag, gemessen von MSL RAD (Hassler et al. 2014, Science 343, 1244797). Messwert von Curiosity im Gale-Krater, nicht aus Jezero, Hoehe und Abschirmung des Rovers nicht beruecksichtigt. Referenzwert, keine Vorhersage",
     "JOULE_PRO_KG_SAUERSTOFF": "Rechenbeispiel zur Sauerstoffmethode im Apollo PLSS Performance Report (Carson, NASA MSC, NTRS 19720019460): 0,622 lb gelieferter minus 0,017 lb Leckage = 0,605 lb Sauerstoff entsprechen 3670 Btu bei Atemquotient 0,85, ergibt ca. 14,1 MJ je kg Sauerstoff",
     "SAUERSTOFF_DICHTE_KG_PRO_LITER": "Physikalische Konstante: 1,429 g/L bei 0 Grad C und 1 atm, nur zur Umrechnung der Masse in Liter",
     "MAX_EVA_SEKUNDEN": "8 Stunden: laengste nominelle EVA-Dauer in der Mars-PLSS-Studie (ICES 2026, NTRS 20260002884), dazu 0,5 bis 1 Stunde Notfallreserve",

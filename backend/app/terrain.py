@@ -93,6 +93,11 @@ def _plan_routes_cached(start_lat: float, start_lon: float, end_lat: float, end_
                     "average_power_watts": energy / duration if duration > 0 else 0.0,
                 }
             )
+    for route in routes:
+        route["tags"] = []
+    routes[0]["tags"].append("energy_optimal")
+    routes[min(range(len(routes)), key=lambda i: routes[i]["risk_score"])]["tags"].append("lowest_risk")
+    routes[min(range(len(routes)), key=lambda i: routes[i]["distance_meters"])]["tags"].append("shortest")
     return routes
 
 

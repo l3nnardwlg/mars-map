@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from app.models import BoundingBox, Layer, SciencePoint, TerrainMetadata
+from app.models import BoundingBox, Layer, LegendEntry, SciencePoint, TerrainMetadata
 
 KACHELN_STANDARD = Path(__file__).resolve().parent.parent / "data" / "tiles"
 
@@ -86,6 +86,15 @@ LAYER_KATALOG = [
         tile_set="ctx_ortho",
     ),
     Layer(
+        id="geology",
+        name="Geologische Einheiten (SIM 3464)",
+        description="Geologische Karte von Jezero-Krater und Nili Planum (Sun und Stack 2020, 1:75 000), 14 Einheiten als Klassenraster, Legende in `legend`. Deckt nur 76,80 bis 77,80 O und 17,70 bis 18,70 N ab. Die Karte liegt auf einem halbkontrollierten CTX-Mosaik und weicht laut USGS um etwa 100 bis 200 m vom kontrollierten CTX-Mosaik ab, auf dem unser Hoehenmodell beruht",
+        source_url="https://pubs.usgs.gov/publication/sim3464",
+        kind="geologie",
+        unit="Klasse",
+        tile_set="geology",
+    ),
+    Layer(
         id="thermal_inertia",
         name="THEMIS Waermetraegheit (100 m)",
         description="Thermische Traegheit der Oberflaeche aus Nachtaufnahmen von Mars Odyssey THEMIS. Hohe Werte stehen fuer Fels, niedrige fuer Staub und Sand. Rund ein Drittel des Kraters ist ohne Daten",
@@ -98,8 +107,18 @@ LAYER_KATALOG = [
 
 
 def layer_liste(ordner: Path) -> list[Layer]:
-    vorhanden = {info["name"] for info in lade_kachelinfos(ordner)}
-    return [layer.model_copy(update={"available": layer.tile_set in vorhanden}) for layer in LAYER_KATALOG]
+    infos = {info["name"]: info for info in lade_kachelinfos(ordner)}
+    ergebnis = []
+    for layer in LAYER_KATALOG:
+        info = infos.get(layer.tile_set)
+        legende = None
+        if info and info.get("legende"):
+            legende = [
+                LegendEntry(class_id=e["klasse"], name=e["name"], symbol=e["symbol"], color=e["farbe"])
+                for e in info["legende"]
+            ]
+        ergebnis.append(layer.model_copy(update={"available": info is not None, "legend": legende}))
+    return ergebnis
 
 
 SCIENCE_POINTS: list[SciencePoint] = [

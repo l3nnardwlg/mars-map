@@ -13,6 +13,7 @@ Stand 14.11.2026. Alle Daten sind oeffentlich. Rohdaten liegen nicht im Repo, `p
 | Rover-Wegpunkte (`M20_waypoints.json`) | NASA MMGIS Mars 2020 ([Datei](https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json)) | 603 126 Byte, 708 Punkte bis Sol 2022 | - | Jezero | NASA, oeffentlich | Landeplatz und letzte Position (Science Points) |
 | Probenorte (`M20_SAMPLE_v3.json`) | NASA MMGIS Mars 2020 ([Datei](https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_SAMPLE_v3.json)), Tabelle: [science.nasa.gov](https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples) | 11 389 Byte, SHA-256 `60d4b0a2...fcae` | - | 22 Eintraege fuer 30 Proben | NASA, oeffentlich | 22 Science Points |
 | Namensverzeichnis Mars (`MARS_nomenclature_center_pts.zip`) | USGS Gazetteer of Planetary Nomenclature | 5 421 247 Byte, SHA-256 `753f2965...1910` | - | global, 12 Merkmale im Gebiet | oeffentlich | 12 Science Points |
+| Geologische Karte Jezero und Nili Planum (SIM 3464, `sim3464_database.zip`) | USGS, Sun und Stack 2020 ([Seite](https://pubs.usgs.gov/publication/sim3464), [DOI](https://doi.org/10.3133/sim3464)) | 349 336 873 Byte, SHA-256 `a88bd53a...9f87` | Massstab 1:75 000, gerastert mit 20 m | 76,80 bis 77,80 O, 17,70 bis 18,70 N | Public Domain, Zitat von Sun und Stack 2020 verlangt | Layer `geology` (14 Einheiten, Legende) |
 | UAHiRISE-DTMs `DTEEC_002387_1985_003798_1985_A01` und `DTEEC_022680_1985_022746_1985_A01` | University of Arizona ([Katalog](https://www.uahirise.org/hiwish/maps/dtms.jsp)) | 320 045 704 und 479 934 208 Byte | etwa 1 m | 18,39 bis 18,59 N, 77,34 bis 77,47 O und Umgebung 18,2 N 77,4 O | oeffentlich | nur Gegenprobe |
 
 Nicht verwendet: Mars Trek (Weboberflaeche ohne stabile Download-Schnittstelle, Daten kommen von den USGS-Originalquellen), NASA Worldview (zeigt die Erde).
@@ -36,7 +37,8 @@ Skript fuer die Gegenproben: `scripts/compare_dem.py`.
 - Ein 20-m-Raster glaettet Steigungen, kleine steile Stufen sind im Routing nicht sichtbar.
 - Kachelhoehen sind 16 Bit linear quantisiert: Schritt etwa 0,046 m (CTX) und 0,015 m (HiRISE).
 - Probe 30 (Gallants) hat in der NASA-Datei noch keine Sol-Angabe (TBD).
-- Strahlung: keine Karte gefunden, nur Messwerte von Curiosity (MSL RAD, Gale-Krater). Geologie (USGS-Geologiekarte) ist noch nicht als Layer umgesetzt.
+- Strahlung: keine Karte gefunden, nur der Referenzwert von Curiosity (MSL RAD, Gale-Krater, 0,21 mGy pro Tag), siehe README.
+- Geologie: Laut USGS liegt die Karte auf einem halbkontrollierten CTX-Mosaik und weicht um etwa 100 bis 200 m vom kontrollierten CTX-Mosaik ab, auf dem unser Hoehenmodell beruht. Die Karte deckt nur den westlichen Teil des CTX-Gebiets ab. In den Quelldaten steht die Einheit "Upper etched unit" einmal mit der Nummer der Nili-Planum-2-Einheit, und "Crater riim unit" ist ein Tippfehler, beides haben wir nach Namen zusammengefuehrt.
 - Die Waermetraegheit hat in etwa einem Drittel des Gebiets keine Daten (Nodata), dort bleiben die Kacheln leer.
 - Die Steigungskarte (`slope_ctx`) ist aus dem CTX-DEM berechnet und kein eigener NASA-Datensatz. Maximalwerte bis 88 Grad entstehen an Steilkanten und Randartefakten.
 - Die UA-DTMs sind Stichproben, kein Nachweis fuer das ganze Gebiet.

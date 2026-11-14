@@ -17,6 +17,8 @@ dev = [
 ]
 build = [
     "pyshp>=2.3,<3",
+    "pyogrio>=0.9",
+    "shapely>=2",
 ]
 
 [tool.pytest.ini_options]

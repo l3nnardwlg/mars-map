@@ -29,7 +29,17 @@ Das Routing rechnet immer auf dem CTX-DEM (20 m). Die HiRISE-Kacheln (`hirise_de
 Beispiel Jezero: Risk 0,23 / 0,22 / 0,28. Die dritte Route ist die mit dem hoechsten Risiko.
 Vorschlag: neutral beschriften ("Route 1 (energiearmste)", "Alternative 2", "Alternative 3") oder ein Namensfeld in der API ergaenzen, dann bitte Bescheid sagen.
 
+## 6. Leistungs- und Sauerstoffwerte weichen ab
+
+- Das Frontend (HUD) zeigt etwa 285 W Leistung, weil es mit 35 kg Anzuglast rechnet. Die API liefert fuer dieselbe Route etwa 217 W (Last 0, siehe Punkt 2). Beide Zahlen stehen sonst nebeneinander.
+- `SCIENTIFIC_CLAIMS_AUDIT.md` nennt 14,15 MJ je kg Sauerstoff. Im Code gilt 14,11 MJ (aus dem Apollo-Rechenbeispiel, 3670 Btu durch 0,605 lb).
+- Das Audit nennt 791 W bei 15 % Steigung. Unser Pandolf-Wert bei 15 % ist 558 W (Last 0).
+
 ## Weitere Hinweise
+
+- Die API liefert jetzt Namen fuer Alternativrouten im Feld `tags` (`energy_optimal`, `lowest_risk`, `shortest`). Damit laesst sich die Beschriftung aus Punkt 5 wahrheitsgemaess machen.
+- Neuer Layer `geology` in `GET /api/layers` mit Legende, neue Kachelsaetze `slope_ctx`, `thermal_inertia`, `ctx_ortho`.
+- Strahlung: `radiationDoseMilligray` in der Missionssimulation ist ein Referenzwert aus dem Gale-Krater, nicht aus Jezero.
 
 - Zahlen in der README (z. B. 405 kJ gegen 265 kJ, +-0,02 m Kachelaufloesung) sind von uns nicht geprueft. Die Kachelaufloesung betraegt je nach Satz etwa 0,015 m (HiRISE) bis 0,046 m (CTX) Hoehenschritt.
 - Laufzeit `/api/routes/alternatives` mit 3 Routen: kalt etwa 10 s, die Benchmark-Route (18,38 N 77,58 O nach 18,44 N 77,45 O) wird beim Serverstart vorgewaermt und kommt dann unter 10 ms. Eine Ladeanzeige im Frontend ist sinnvoll.

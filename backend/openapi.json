@@ -329,6 +329,20 @@
             "type": "boolean",
             "title": "Available",
             "default": false
+          },
+          "legend": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/LegendEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legend"
           }
         },
         "type": "object",
@@ -339,6 +353,34 @@
           "sourceUrl"
         ],
         "title": "Layer"
+      },
+      "LegendEntry": {
+        "properties": {
+          "classId": {
+            "type": "integer",
+            "title": "Classid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classId",
+          "name",
+          "symbol",
+          "color"
+        ],
+        "title": "LegendEntry"
       },
       "MarsCoordinate": {
         "properties": {
@@ -425,6 +467,13 @@
               }
             ],
             "title": "Averagepowerwatts"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
           }
         },
         "type": "object",
@@ -470,6 +519,28 @@
           "withinAverageMetabolicRate": {
             "type": "boolean",
             "title": "Withinaveragemetabolicrate"
+          },
+          "radiationDoseMilligray": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radiationdosemilligray"
+          },
+          "radiationBasis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Radiationbasis"
           }
         },
         "type": "object",

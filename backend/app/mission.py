@@ -7,6 +7,7 @@ from app.nasa_werte import (
     MAX_EVA_SEKUNDEN,
     MITTLERE_STOFFWECHSELRATE_WATT,
     SAUERSTOFF_DICHTE_KG_PRO_LITER,
+    STRAHLUNG_MILLIGRAY_PRO_TAG,
 )
 from app.routing import step_energy_joule
 
@@ -49,4 +50,6 @@ def simulate(waypoints: list[MarsCoordinate], crew_size: int) -> MissionEstimate
         eva_time_limit_seconds=MAX_EVA_SEKUNDEN,
         within_eva_time_limit=duration <= MAX_EVA_SEKUNDEN,
         within_average_metabolic_rate=average_power <= MITTLERE_STOFFWECHSELRATE_WATT,
+        radiation_dose_milligray=STRAHLUNG_MILLIGRAY_PRO_TAG * duration / 86400.0,
+        radiation_basis="Referenzwert MSL RAD, Gale-Krater, 0,21 mGy pro Tag je Person (Hassler et al. 2014), nicht in Jezero gemessen",
     )
