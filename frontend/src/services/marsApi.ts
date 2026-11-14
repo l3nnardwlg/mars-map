@@ -2,13 +2,18 @@ import {
   MarsCoordinate, 
   MarsRoute, 
   TerrainMetadata, 
-  RouteRequest 
+  SciencePoint,
+  MissionEstimate 
 } from '@/types/mars';
 
 // NASA JSC parameters matching backend (nasa_werte.py)
 const KOERPERMASSE_KG = 80.7;
 const GEHTEMPO_MS = 3.0 / 3.6; // 3.0 km/h = 0.833 m/s
 const GELAENDEFAKTOR = 1.0;
+const MAX_EVA_SEKUNDEN = 8.0 * 3600.0; // 8 hours
+const MITTLERE_STOFFWECHSELRATE_WATT = 300.0;
+const JOULE_PRO_KG_SAUERSTOFF = 14.15e6;
+const SAUERSTOFF_DICHTE_KG_PRO_LITER = 1.141;
 
 export function calculatePandolfWatts(slopePercent: number): number {
   const w = KOERPERMASSE_KG;
@@ -45,6 +50,29 @@ export async function fetchTerrainMetadata(): Promise<TerrainMetadata> {
   };
 }
 
+export async function fetchSciencePoints(): Promise<SciencePoint[]> {
+  try {
+    const res = await fetch('/api/science-points');
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  // Local fallback
+  try {
+    const localRes = await fetch('/data/science_points.json');
+    if (localRes.ok) {
+      return await localRes.json();
+    }
+  } catch {
+    // ignore
+  }
+
+  return [];
+}
+
 export async function requestRoute(
   start: MarsCoordinate,
   end: MarsCoordinate
@@ -72,13 +100,11 @@ export async function requestRoute(
 
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    // Slight terrain curve avoiding the steep crater wall
     const curveOffset = Math.sin(t * Math.PI) * 0.015;
 
     const lat = start.latitude + (end.latitude - start.latitude) * t - curveOffset * 0.4;
     const lon = start.longitude + (end.longitude - start.longitude) * t + curveOffset;
 
-    // Simulated MOLA elevation along Jezero delta fan (-2500m to -2100m)
     const baseElev = (start.elevationMeters ?? -2450) * (1 - t) + (end.elevationMeters ?? -2250) * t;
     const elevationMeters = Math.round(baseElev + Math.sin(t * 8) * 15);
 
@@ -86,7 +112,7 @@ export async function requestRoute(
 
     if (i > 0) {
       const prev = waypoints[i - 1];
-      const dLat = (lat - prev.latitude) * 59274; // meters per degree on Mars
+      const dLat = (lat - prev.latitude) * 59274;
       const dLon = (lon - prev.longitude) * 59274 * Math.cos((lat * Math.PI) / 180);
       const dElev = elevationMeters - (prev.elevationMeters ?? elevationMeters);
       const segDist = Math.sqrt(dLat * dLat + dLon * dLon + dElev * dElev);
@@ -99,6 +125,7 @@ export async function requestRoute(
 
   const estimatedDurationSeconds = totalDistanceMeters / GEHTEMPO_MS;
   const avgWatts = accumulatedSlopeWatts / steps;
+  const totalEnergyJoules = avgWatts * estimatedDurationSeconds;
   const riskScore = Math.min(0.85, Math.max(0.12, (avgWatts - 200) / 350));
 
   return {
@@ -107,5 +134,44 @@ export async function requestRoute(
     distanceMeters: Math.round(totalDistanceMeters),
     estimatedDurationSeconds: Math.round(estimatedDurationSeconds),
     riskScore: Number(riskScore.toFixed(3)),
+    energyJoules: Math.round(totalEnergyJoules),
+    averagePowerWatts: Math.round(avgWatts),
+  };
+}
+
+export async function simulateMission(
+  route: MarsRoute,
+  crewSize: number = 2
+): Promise<MissionEstimate> {
+  try {
+    const res = await fetch('/api/mission/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ route, crewSize }),
+    });
+
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // client fallback
+  }
+
+  const duration = route.estimatedDurationSeconds;
+  const avgWatts = route.averagePowerWatts ?? 285.0;
+  const energyPerPersonJoules = avgWatts * duration;
+  const oxygenKgPerPerson = energyPerPersonJoules / JOULE_PRO_KG_SAUERSTOFF;
+  const oxygenKgTotal = oxygenKgPerPerson * crewSize;
+  const oxygenLitersTotal = oxygenKgTotal / SAUERSTOFF_DICHTE_KG_PRO_LITER;
+
+  return {
+    durationSeconds: duration,
+    oxygenLiters: Number(oxygenLitersTotal.toFixed(2)),
+    oxygenKilograms: Number(oxygenKgTotal.toFixed(3)),
+    energyWattHours: Number(((energyPerPersonJoules / 3600.0) * crewSize).toFixed(1)),
+    averagePowerWatts: Number(avgWatts.toFixed(1)),
+    evaTimeLimitSeconds: MAX_EVA_SEKUNDEN,
+    withinEvaTimeLimit: duration <= MAX_EVA_SEKUNDEN,
+    withinAverageMetabolicRate: avgWatts <= MITTLERE_STOFFWECHSELRATE_WATT,
   };
 }

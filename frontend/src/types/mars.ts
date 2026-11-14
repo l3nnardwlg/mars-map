@@ -39,6 +39,8 @@ export interface MarsRoute {
   distanceMeters: number;
   estimatedDurationSeconds: number;
   riskScore: number;
+  energyJoules?: number | null;
+  averagePowerWatts?: number | null;
 }
 
 export interface RouteRequest {
@@ -54,7 +56,12 @@ export interface MissionRequest {
 export interface MissionEstimate {
   durationSeconds: number;
   oxygenLiters: number;
+  oxygenKilograms: number;
   energyWattHours: number;
+  averagePowerWatts: number;
+  evaTimeLimitSeconds: number;
+  withinEvaTimeLimit: boolean;
+  withinAverageMetabolicRate: boolean;
 }
 
 export interface SciencePoint {

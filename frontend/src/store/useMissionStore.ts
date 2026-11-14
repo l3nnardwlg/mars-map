@@ -1,6 +1,13 @@
 import { create } from 'zustand';
-import { Landmark, CameraViewMode, MarsCoordinate, MarsRoute } from '@/types/mars';
-import { requestRoute } from '@/services/marsApi';
+import { 
+  Landmark, 
+  CameraViewMode, 
+  MarsCoordinate, 
+  MarsRoute, 
+  SciencePoint, 
+  MissionEstimate 
+} from '@/types/mars';
+import { requestRoute, fetchSciencePoints, simulateMission } from '@/services/marsApi';
 
 export const MARS_LANDMARKS: Landmark[] = [
   {
@@ -51,11 +58,16 @@ interface MissionStore {
   terrainExaggeration: number;
   terrainColorMode: TerrainColorMode;
 
-  // Route Planning State (Phase 2)
+  // Route Planning State
   routeStart: MarsCoordinate | null;
   routeEnd: MarsCoordinate | null;
   currentRoute: MarsRoute | null;
   isCalculatingRoute: boolean;
+
+  // Phase 3 Science & Mission Simulation
+  sciencePoints: SciencePoint[];
+  selectedSciencePoint: SciencePoint | null;
+  missionEstimate: MissionEstimate | null;
 
   // Actions
   setActiveView: (view: ActiveView) => void;
@@ -77,6 +89,11 @@ interface MissionStore {
   setRoutePoint: (coord: MarsCoordinate) => void;
   clearRoute: () => void;
   calculateRoute: () => Promise<void>;
+
+  // Science Points Actions
+  loadSciencePoints: () => Promise<void>;
+  selectSciencePoint: (point: SciencePoint | null) => void;
+  routeToSciencePoint: (point: SciencePoint) => void;
 }
 
 export const useMissionStore = create<MissionStore>((set, get) => ({
@@ -92,10 +109,14 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   terrainExaggeration: 1.5,
   terrainColorMode: 'satellite',
 
-  routeStart: { latitude: 18.38, longitude: 77.45, elevationMeters: -2480 },
-  routeEnd: { latitude: 18.42, longitude: 77.62, elevationMeters: -2210 },
+  routeStart: { latitude: 18.4276, longitude: 77.4516, elevationMeters: -2583 },
+  routeEnd: { latitude: 18.4438, longitude: 77.4542, elevationMeters: -2560 },
   currentRoute: null,
   isCalculatingRoute: false,
+
+  sciencePoints: [],
+  selectedSciencePoint: null,
+  missionEstimate: null,
 
   setActiveView: (view) =>
     set({
@@ -132,7 +153,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   setRoutePoint: (coord: MarsCoordinate) => {
     const { routeStart, routeEnd } = get();
     if (!routeStart || (routeStart && routeEnd)) {
-      set({ routeStart: coord, routeEnd: null, currentRoute: null });
+      set({ routeStart: coord, routeEnd: null, currentRoute: null, missionEstimate: null });
     } else {
       set({ routeEnd: coord });
       get().calculateRoute();
@@ -144,6 +165,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
       routeStart: null,
       routeEnd: null,
       currentRoute: null,
+      missionEstimate: null,
     }),
 
   calculateRoute: async () => {
@@ -153,9 +175,28 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     set({ isCalculatingRoute: true });
     try {
       const route = await requestRoute(routeStart, routeEnd);
-      set({ currentRoute: route, isCalculatingRoute: false });
+      const estimate = await simulateMission(route, 2);
+      set({ currentRoute: route, missionEstimate: estimate, isCalculatingRoute: false });
     } catch {
       set({ isCalculatingRoute: false });
     }
+  },
+
+  loadSciencePoints: async () => {
+    const points = await fetchSciencePoints();
+    set({ sciencePoints: points });
+  },
+
+  selectSciencePoint: (point) => set({ selectedSciencePoint: point }),
+
+  routeToSciencePoint: (point) => {
+    const { routeStart } = get();
+    const start = routeStart || { latitude: 18.4276, longitude: 77.4516, elevationMeters: -2583 };
+    set({
+      routeStart: start,
+      routeEnd: point.location,
+      selectedSciencePoint: point,
+    });
+    get().calculateRoute();
   },
 }));

@@ -43,6 +43,7 @@ export default function MissionHUD() {
   const routeStart = useMissionStore((state) => state.routeStart);
   const routeEnd = useMissionStore((state) => state.routeEnd);
   const currentRoute = useMissionStore((state) => state.currentRoute);
+  const missionEstimate = useMissionStore((state) => state.missionEstimate);
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const clearRoute = useMissionStore((state) => state.clearRoute);
@@ -412,13 +413,33 @@ export default function MissionHUD() {
                         <Zap className="w-3 h-3 text-yellow-400" /> ENERGY (PANDOLF)
                       </span>
                       <span className="font-bold text-yellow-300 font-mono">
-                        {estimatedKcal.toLocaleString()} kcal
+                        {currentRoute.energyJoules ? `${Math.round(currentRoute.energyJoules / 4184).toLocaleString()} kcal` : `${estimatedKcal.toLocaleString()} kcal`}
                       </span>
                       <span className="text-[10px] text-zinc-500 block">
-                        (avg. 285 W exertion)
+                        avg. {currentRoute.averagePowerWatts ?? 285} W exertion
                       </span>
                     </div>
                   </div>
+
+                  {/* NASA EVA Life-Support Estimates */}
+                  {missionEstimate && (
+                    <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="rounded bg-sky-950/40 border border-sky-500/20 p-2">
+                        <span className="text-[9px] text-sky-400 font-semibold block">O₂ CONSUMPTION (2 CREW)</span>
+                        <span className="font-bold text-white font-mono">{missionEstimate.oxygenLiters} L</span>
+                        <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg)</span>
+                      </div>
+                      <div className="rounded bg-zinc-900/60 border border-zinc-800 p-2">
+                        <span className="text-[9px] text-zinc-400 font-semibold block">EVA LIMIT (8H MAX)</span>
+                        <span className={`font-bold font-mono ${missionEstimate.withinEvaTimeLimit ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {missionEstimate.withinEvaTimeLimit ? '✅ WITHIN LIMIT' : '⚠️ EXCEEDS LIMIT'}
+                        </span>
+                        <span className="text-[9px] text-zinc-500 block">
+                          {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion' : 'High exertion (>300W)'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

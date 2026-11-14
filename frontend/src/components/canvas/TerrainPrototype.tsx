@@ -7,6 +7,8 @@ import { TextureLoader } from 'three';
 import { useMissionStore } from '@/store/useMissionStore';
 import { Html } from '@react-three/drei';
 import RouteMesh from './RouteMesh';
+import SciencePointsLayer from './SciencePointsLayer';
+import { useEffect } from 'react';
 
 export default function TerrainPrototype() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -15,6 +17,11 @@ export default function TerrainPrototype() {
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
   const terrainColorMode = useMissionStore((state) => state.terrainColorMode);
   const setRoutePoint = useMissionStore((state) => state.setRoutePoint);
+  const loadSciencePoints = useMissionStore((state) => state.loadSciencePoints);
+
+  useEffect(() => {
+    loadSciencePoints();
+  }, [loadSciencePoints]);
 
   // Load NASA DEM heightmap, Ortho texture, and calculated Slope Risk map
   const [demMap, orthoMap, slopeMap] = useLoader(TextureLoader, [
@@ -115,6 +122,9 @@ export default function TerrainPrototype() {
 
       {/* 3D Rendered Route and Waypoint Beacons */}
       <RouteMesh planeSize={8} />
+
+      {/* Real NASA Perseverance Science Sample Points */}
+      <SciencePointsLayer planeSize={8} />
 
       {/* Surface Landmark Tags - Fixed compact size, never scales up to cover screen */}
       <group position={[-2.2, 0.4, 0.2]}>
