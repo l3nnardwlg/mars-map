@@ -65,3 +65,8 @@ class MissionEstimate(ApiModel):
     duration_seconds: float
     oxygen_liters: float
     energy_watt_hours: float
+    oxygen_kilograms: float
+    average_power_watts: float
+    eva_time_limit_seconds: float
+    within_eva_time_limit: bool
+    within_average_metabolic_rate: bool
