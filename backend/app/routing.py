@@ -3,10 +3,9 @@ import math
 
 import numpy as np
 
-MAX_SLOPE_DEGREES = 25.0
-FLAT_SPEED_METERS_PER_SECOND = 1.0
-MIN_SPEED_FACTOR = 0.25
-SLOPE_COST_WEIGHT = 4.0
+from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, MAX_STEIGUNG_GRAD, pandolf_watt
+
+MAX_SLOPE_DEGREES = MAX_STEIGUNG_GRAD
 
 NEIGHBORS = [
     (-1, 0, 1.0),
@@ -30,8 +29,10 @@ def slope_degrees(elevation: np.ndarray, cell_meters: float) -> np.ndarray:
     return np.degrees(np.arctan(np.hypot(d_row, d_col)))
 
 
-def speed_factor(slope: float) -> float:
-    return max(MIN_SPEED_FACTOR, 1.0 - 0.75 * slope / MAX_SLOPE_DEGREES)
+def step_energy_joule(flat_meters: float, rise_meters: float) -> float:
+    length = math.hypot(flat_meters, rise_meters)
+    grade_percent = rise_meters / flat_meters * 100.0
+    return pandolf_watt(grade_percent) * length / GEHTEMPO_METER_PRO_SEKUNDE
 
 
 def find_path(
@@ -47,14 +48,14 @@ def find_path(
         if not (0 <= row < rows and 0 <= col < cols) or not passable[row, col]:
             raise NoRouteError("Start oder Ziel liegt auf unpassierbarem Gelaende")
 
-    cost_factor = 1.0 + SLOPE_COST_WEIGHT * (np.nan_to_num(slope) / MAX_SLOPE_DEGREES) ** 2
     best = np.full((rows, cols), np.inf)
     parent = np.full((rows, cols, 2), -1, dtype=np.int32)
     best[start] = 0.0
     end_row, end_col = end
+    flat_joule_per_meter = pandolf_watt(0.0) / GEHTEMPO_METER_PRO_SEKUNDE
 
     def heuristic(row: int, col: int) -> float:
-        return math.hypot(row - end_row, col - end_col) * cell_meters
+        return math.hypot(row - end_row, col - end_col) * cell_meters * flat_joule_per_meter
 
     queue = [(heuristic(*start), 0.0, start)]
     while queue:
@@ -67,8 +68,8 @@ def find_path(
             n_row, n_col = row + d_row, col + d_col
             if not (0 <= n_row < rows and 0 <= n_col < cols) or not passable[n_row, n_col]:
                 continue
-            step = length * cell_meters * 0.5 * (cost_factor[row, col] + cost_factor[n_row, n_col])
-            new_cost = cost + step
+            rise = float(elevation[n_row, n_col] - elevation[row, col])
+            new_cost = cost + step_energy_joule(length * cell_meters, rise)
             if new_cost < best[n_row, n_col]:
                 best[n_row, n_col] = new_cost
                 parent[n_row, n_col] = (row, col)
@@ -90,16 +91,15 @@ def measure_path(
     elevation: np.ndarray,
     slope: np.ndarray,
     cell_meters: float,
-) -> tuple[float, float, float]:
+) -> tuple[float, float, float, float]:
     distance = 0.0
-    duration = 0.0
+    energy = 0.0
     for (r1, c1), (r2, c2) in zip(path, path[1:]):
         flat = math.hypot(r2 - r1, c2 - c1) * cell_meters
         rise = float(elevation[r2, c2] - elevation[r1, c1])
-        length = math.hypot(flat, rise)
-        mean_slope = float(0.5 * (slope[r1, c1] + slope[r2, c2]))
-        distance += length
-        duration += length / (FLAT_SPEED_METERS_PER_SECOND * speed_factor(mean_slope))
+        distance += math.hypot(flat, rise)
+        energy += step_energy_joule(flat, rise)
+    duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
     fractions = np.array([slope[r, c] for r, c in path]) / MAX_SLOPE_DEGREES
     risk = float(np.clip(0.6 * fractions.mean() + 0.4 * fractions.max(), 0.0, 1.0))
-    return distance, duration, risk
+    return distance, duration, risk, energy
