@@ -21,10 +21,10 @@
 
 ## Phase 1 – Foundation (0–8h)
 
-- [ ] **Dev A:** Initialize Next.js frontend and Three.js
-- [ ] **Agent 1:** Implement interactive 3D Mars globe
+- [x] **Dev A:** Initialize Next.js frontend and Three.js
+- [x] **Agent 1:** Implement interactive 3D Mars globe
 - [ ] **Agent 2:** Research and prototype NASA DEM terrain rendering
-- [ ] **Agent 3:** Create Mission Control UI skeleton
+- [x] **Agent 3:** Create Mission Control UI skeleton
 - [ ] **Dev B:** Initialize FastAPI backend
 - [ ] **Agent 4:** Identify and validate NASA datasets
 - [ ] **Agent 5:** Design routing algorithm and risk model
