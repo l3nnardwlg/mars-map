@@ -10,10 +10,11 @@ import {
   InspectionPoint,
   AstronautPose
 } from '@/types/mars';
-import { 
-  requestRouteAlternatives, 
-  fetchSciencePoints, 
-  simulateMission 
+import {
+  requestRouteAlternatives,
+  fetchSciencePoints,
+  simulateMission,
+  RouteRejectedError
 } from '@/services/marsApi';
 
 export const MARS_LANDMARKS: Landmark[] = [
@@ -107,6 +108,7 @@ interface MissionStore {
   currentRoute: MarsRoute | null;
   alternativeRoutes: { direct?: MarsRoute; safe?: MarsRoute; science?: MarsRoute };
   isCalculatingRoute: boolean;
+  routeError: string | null;
   hoveredRoutePoint: MarsCoordinate | null;
   isComparingRoutes: boolean;
 
@@ -221,6 +223,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   currentRoute: null,
   alternativeRoutes: {},
   isCalculatingRoute: false,
+  routeError: null,
   hoveredRoutePoint: null,
   isComparingRoutes: false,
   showFpsMetrics: true,
@@ -277,7 +280,8 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
         currentRoute: null,
         alternativeRoutes: {},
         missionEstimate: null,
-        isCalculatingRoute: false
+        isCalculatingRoute: false,
+        routeError: null
       });
     } else {
       set({ routeEnd: coord });
@@ -294,6 +298,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
       alternativeRoutes: {},
       missionEstimate: null,
       isCalculatingRoute: false,
+      routeError: null,
     });
   },
 
@@ -302,7 +307,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     if (!routeStart || !routeEnd) return;
 
     const anfrage = ++letzteRouteAnfrage;
-    set({ isCalculatingRoute: true });
+    set({ isCalculatingRoute: true, routeError: null });
     try {
       const nearestScience = sciencePoints[0]?.location;
       const alternatives = await requestRouteAlternatives(routeStart, routeEnd, nearestScience);
@@ -316,8 +321,13 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
         missionEstimate: estimate,
         isCalculatingRoute: false
       });
-    } catch {
-      if (anfrage === letzteRouteAnfrage) set({ isCalculatingRoute: false });
+    } catch (error) {
+      if (anfrage === letzteRouteAnfrage) {
+        set({
+          isCalculatingRoute: false,
+          routeError: error instanceof RouteRejectedError ? error.message : null,
+        });
+      }
     }
   },
 

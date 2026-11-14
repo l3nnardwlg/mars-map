@@ -72,6 +72,7 @@ export default function MissionHUD() {
   const currentRoute = useMissionStore((state) => state.currentRoute);
   const missionEstimate = useMissionStore((state) => state.missionEstimate);
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
+  const routeError = useMissionStore((state) => state.routeError);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const clearRoute = useMissionStore((state) => state.clearRoute);
 
@@ -940,6 +941,11 @@ Datum: IAU Mars 2000 / MOLA Areoid
         <div className="pointer-events-none fixed bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-sky-500/50 bg-zinc-950/90 px-3 py-1.5 font-mono text-[11px] text-sky-300 shadow-lg">
           <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-sky-400/30 border-t-sky-400" />
           Route wird berechnet
+        </div>
+      )}
+      {routeError && !isCalculatingRoute && (
+        <div className="pointer-events-none fixed bottom-16 left-1/2 z-40 max-w-md -translate-x-1/2 rounded-lg border border-amber-500/60 bg-zinc-950/95 px-3 py-2 text-center font-mono text-[11px] text-amber-300 shadow-lg">
+          {routeError}
         </div>
       )}
 
