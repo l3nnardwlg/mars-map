@@ -8,6 +8,7 @@ import TerrainPrototype from './TerrainPrototype';
 import CameraRig from './CameraRig';
 import AstronautController from './AstronautController';
 import CinematicLandingController from './CinematicLandingController';
+import CinematicLandingOverlay from '@/components/ui/CinematicLandingOverlay';
 import { useMissionStore } from '@/store/useMissionStore';
 
 function SceneLoadingFallback() {
@@ -84,6 +85,9 @@ export default function MarsScene() {
           <CinematicLandingController />
         </Canvas>
       </Suspense>
+
+      {/* Cinematic Landing 2D HTML/HUD Overlay */}
+      <CinematicLandingOverlay />
     </div>
   );
 }

@@ -94,6 +94,7 @@ interface MissionStore {
 
   // Phase 5: Cinematic Landing
   isCinematicLanding: boolean;
+  cinematicStage: { stageIndex: number; telemetryText: string };
 
   // Phase 5: Layer Manager & Opacity
   showLayerManagerModal: boolean;
@@ -151,6 +152,7 @@ interface MissionStore {
 
   startCinematicLanding: () => void;
   cancelCinematicLanding: () => void;
+  setCinematicStage: (stage: { stageIndex: number; telemetryText: string }) => void;
 
   setShowLayerManagerModal: (open: boolean) => void;
   setLayerOpacity: (layer: 'satellite' | 'hypsometric' | 'slope', opacity: number) => void;
@@ -197,6 +199,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   replayProgress: 0.0,
   replaySpeed: 1,
   isCinematicLanding: false,
+  cinematicStage: { stageIndex: 1, telemetryText: 'ENTRY INTERFACE INITIATED' },
   showLayerManagerModal: false,
   layerOpacity: { satellite: 1.0, hypsometric: 1.0, slope: 1.0 },
 
@@ -377,8 +380,10 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     activeView: 'globe',
     selectedLandmark: null,
     isAutoRotating: false,
+    cinematicStage: { stageIndex: 1, telemetryText: 'ENTRY INTERFACE INITIATED' },
   }),
   cancelCinematicLanding: () => set({ isCinematicLanding: false }),
+  setCinematicStage: (stage) => set({ cinematicStage: stage }),
 
   setShowLayerManagerModal: (open) => set({ showLayerManagerModal: open }),
   setLayerOpacity: (layer, opacity) => set((state) => ({
