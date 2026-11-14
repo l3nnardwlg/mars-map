@@ -116,27 +116,27 @@ export default function TerrainPrototype() {
       {/* 3D Rendered Route and Waypoint Beacons */}
       <RouteMesh planeSize={8} />
 
-      {/* Surface Landmark Tags */}
-      <group position={[-2.2, 0.4, 0.4]}>
-        <Html center distanceFactor={16}>
-          <div className="pointer-events-none rounded bg-black/85 px-2 py-0.5 text-[9px] font-mono text-amber-300 border border-amber-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
-            🌊 Neretva Vallis (Inlet Breach)
+      {/* Surface Landmark Tags - Fixed compact size, never scales up to cover screen */}
+      <group position={[-2.2, 0.4, 0.2]}>
+        <Html center style={{ pointerEvents: 'none' }}>
+          <div className="rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-mono text-amber-300 border border-amber-500/40 whitespace-nowrap shadow">
+            🌊 Neretva Vallis
           </div>
         </Html>
       </group>
 
-      <group position={[-0.4, 0.6, 0.2]}>
-        <Html center distanceFactor={16}>
-          <div className="pointer-events-none rounded bg-black/85 px-2 py-0.5 text-[9px] font-mono text-sky-300 border border-sky-500/40 backdrop-blur-sm whitespace-nowrap shadow-md">
-            🎯 Ancient Jezero Delta Fan
+      <group position={[-0.4, 0.6, 0.15]}>
+        <Html center style={{ pointerEvents: 'none' }}>
+          <div className="rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-mono text-sky-300 border border-sky-500/40 whitespace-nowrap shadow">
+            🎯 Delta Fan
           </div>
         </Html>
       </group>
 
-      <group position={[1.2, 0.1, -0.3]}>
-        <Html center distanceFactor={16}>
-          <div className="pointer-events-none rounded bg-black/85 px-2 py-0.5 text-[9px] font-mono text-zinc-300 border border-zinc-700 backdrop-blur-sm whitespace-nowrap shadow-md">
-            Elevation: -2,500 m (Lakebed)
+      <group position={[1.2, 0.1, -0.05]}>
+        <Html center style={{ pointerEvents: 'none' }}>
+          <div className="rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 border border-zinc-800 whitespace-nowrap shadow">
+            Crater Basin (-2,500m)
           </div>
         </Html>
       </group>
