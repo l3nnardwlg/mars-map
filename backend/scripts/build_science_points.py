@@ -13,6 +13,8 @@ MARS_GEOGRAPHIC = CRS.from_string("+proj=longlat +R=3396190 +no_defs")
 BOUNDS = (76.99, 17.58, 78.58, 19.29)
 WAYPOINTS_URL = "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
 JEZERO_PAPER = "https://doi.org/10.1126/science.abl4051"
+PROBEN_URL = "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+PROBEN_DATEI = "M20_SAMPLE_v3.json"
 
 TYP_NAMEN = {
     "Crater, craters": "Krater",
@@ -91,18 +93,49 @@ def rover_punkte(waypoints_pfad):
     ]
 
 
+def proben_punkte(proben_pfad):
+    features = json.loads(Path(proben_pfad).read_text(encoding="utf-8"))["features"]
+    punkte = []
+    for feature in features:
+        p = feature["properties"]
+        namen = p["sample_name"].replace("_", " ")
+        offen = "TBD" in str(p["sol"])
+        zeitangabe = "Entnahme laut NASA-Datei noch offen (TBD)" if offen else f"entnommen Sol {p['sol']} ({p['date']})"
+        beschreibung = (
+            f"Probe {p['sample_num']} ({namen}), Typ {p['sample_type']}, Gestein: {p['rock_type']}. "
+            f"Fundort: {p['outcrop_name']}, Gebiet {p['sample_location']}, {zeitangabe}. "
+            f"Koordinaten und Angaben aus der NASA-Datei {PROBEN_DATEI} (MMGIS Mars 2020)."
+        )
+        punkte.append(
+            {
+                "id": f"probe-{slug(str(p['sample_num']).replace(' & ', '-').replace(' ', ''))}",
+                "name": f"Probe {p['sample_num']}: {namen}",
+                "lat": round(float(p["lat"]), 6),
+                "lon": round(float(p["lon"]), 6),
+                "description": beschreibung,
+                "url": PROBEN_URL,
+                "datei_hoehe": float(p["elev"]),
+            }
+        )
+    return punkte
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--gazetteer", type=Path, required=True)
     parser.add_argument("--waypoints", type=Path, required=True)
+    parser.add_argument("--proben", type=Path, required=True)
     parser.add_argument("--dem", type=Path, required=True)
     parser.add_argument("--ausgabe", type=Path, required=True)
     args = parser.parse_args()
 
     ergebnis = []
+    abweichungen = []
     with rasterio.open(args.dem) as dem:
-        for punkt in rover_punkte(args.waypoints) + gazetteer_punkte(args.gazetteer):
+        for punkt in proben_punkte(args.proben) + rover_punkte(args.waypoints) + gazetteer_punkte(args.gazetteer):
             hoehe = hoehe_am_punkt(dem, punkt["lat"], punkt["lon"])
+            if "datei_hoehe" in punkt and hoehe is not None:
+                abweichungen.append(abs(hoehe - punkt["datei_hoehe"]))
             ort = {"latitude": punkt["lat"], "longitude": punkt["lon"]}
             if hoehe is not None:
                 ort["elevationMeters"] = hoehe
@@ -117,6 +150,8 @@ def main():
             )
     args.ausgabe.write_text(json.dumps(ergebnis, indent=2, ensure_ascii=False), encoding="utf-8")
     print(len(ergebnis), "Science Points geschrieben")
+    if abweichungen:
+        print("Hoehe DEM gegen NASA-Probendatei: Mittel", round(sum(abweichungen) / len(abweichungen), 1), "m, Max", round(max(abweichungen), 1), "m")
 
 
 if __name__ == "__main__":

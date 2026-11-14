@@ -1,5 +1,247 @@
 [
   {
+    "id": "probe-1",
+    "name": "Probe 1: Roubion",
+    "location": {
+      "latitude": 18.427668,
+      "longitude": 77.451673,
+      "elevationMeters": -2583.6
+    },
+    "description": "Probe 1 (Roubion), Typ Atmospheric, Gestein: n/a. Fundort: Roubion, Gebiet Polygon Valley, entnommen Sol 164 (Aug. 6, 2021). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-2-3",
+    "name": "Probe 2 & 3: Montdenier + Montagnac",
+    "location": {
+      "latitude": 18.430735,
+      "longitude": 77.444326,
+      "elevationMeters": -2577.9
+    },
+    "description": "Probe 2 & 3 (Montdenier + Montagnac), Typ Rock Core, Gestein: Igneous. Fundort: Rochette, Gebiet Artuby Ridge, entnommen Sol 194 & 196 (Sept. 6&8, 2021). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-4-5",
+    "name": "Probe 4 & 5: Salette + Coulettes",
+    "location": {
+      "latitude": 18.43398,
+      "longitude": 77.443054,
+      "elevationMeters": -2565.8
+    },
+    "description": "Probe 4 & 5 (Salette + Coulettes), Typ Rock Core, Gestein: Igneous. Fundort: Brac, Gebiet South Séítah, entnommen Sol 262 & 271 (Nov. 15&24. 2021). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-6-7",
+    "name": "Probe 6 & 7: Robine + Malay",
+    "location": {
+      "latitude": 18.432636,
+      "longitude": 77.441344,
+      "elevationMeters": -2575.7
+    },
+    "description": "Probe 6 & 7 (Robine + Malay), Typ Rock Core, Gestein: Igneous. Fundort: Issole, Gebiet South Séítah, entnommen Sol 298 & 337 (Dec. 22, 2021 & Jan. 31, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-8-9",
+    "name": "Probe 8 & 9: Ha'ahóni + Atsá",
+    "location": {
+      "latitude": 18.443864,
+      "longitude": 77.452422,
+      "elevationMeters": -2568.6
+    },
+    "description": "Probe 8 & 9 (Ha'ahóni + Atsá), Typ Rock Core, Gestein: Igneous. Fundort: Sid, Gebiet Octavia E. Butler Landing/Ch’ał outcrop, entnommen Sol 371 & 377 (Mar. 7&13, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-10-11",
+    "name": "Probe 10 & 11: Swift Run + Skyland",
+    "location": {
+      "latitude": 18.458931,
+      "longitude": 77.406175,
+      "elevationMeters": -2517.3
+    },
+    "description": "Probe 10 & 11 (Swift Run + Skyland), Typ Rock Core, Gestein: Sedimentary. Fundort: Skinner Ridge, Gebiet Fan Front, entnommen Sol 490 & 495 (Jul. 7&12, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-12-13",
+    "name": "Probe 12 & 13: Hazeltop + Bearwallow",
+    "location": {
+      "latitude": 18.458637,
+      "longitude": 77.405889,
+      "elevationMeters": -2520.5
+    },
+    "description": "Probe 12 & 13 (Hazeltop + Bearwallow), Typ Rock Core, Gestein: Sedimentary. Fundort: Wildcat Ridge, Gebiet Fan Front, entnommen Sol 509 & 516 (Jul. 27&Aug. 3, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-14-15",
+    "name": "Probe 14 & 15: Shuyak + Mageik",
+    "location": {
+      "latitude": 18.450726,
+      "longitude": 77.40144,
+      "elevationMeters": -2526.5
+    },
+    "description": "Probe 14 & 15 (Shuyak + Mageik), Typ Rock Core, Gestein: Sedimentary. Fundort: Amalik, Gebiet Fan Front, entnommen Sol 575 & 579 (Oct. 2&6, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-16",
+    "name": "Probe 16: Kukaklek",
+    "location": {
+      "latitude": 18.453636,
+      "longitude": 77.399114,
+      "elevationMeters": -2517.5
+    },
+    "description": "Probe 16 (Kukaklek), Typ Rock Core, Gestein: Sedimentary. Fundort: Hidden Harbor, Gebiet Fan Front, entnommen Sol 631 (Nov. 29, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-17-18",
+    "name": "Probe 17 & 18: Atmo Mountain + Crosswind Lake",
+    "location": {
+      "latitude": 18.451314,
+      "longitude": 77.401218,
+      "elevationMeters": -2525.7
+    },
+    "description": "Probe 17 & 18 (Atmo Mountain + Crosswind Lake), Typ Regolith, Gestein: Likely mixed sedimentary and igneous grains. Fundort: Observation Mountain, Gebiet Fan Front, entnommen Sol 634 & 639 (Dec. 2&7, 2022). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-19",
+    "name": "Probe 19: Melyn",
+    "location": {
+      "latitude": 18.470217,
+      "longitude": 77.383945,
+      "elevationMeters": -2449.0
+    },
+    "description": "Probe 19 (Melyn), Typ Rock Core, Gestein: Likely mixed sedimentary and igneous grains. Fundort: Berea, Gebiet Upper Fan, entnommen Sol 749 (March 30, 2023). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-20",
+    "name": "Probe 20: Otis Peak",
+    "location": {
+      "latitude": 18.48298,
+      "longitude": 77.368153,
+      "elevationMeters": -2424.6
+    },
+    "description": "Probe 20 (Otis Peak), Typ Rock Core, Gestein: Sedimentary. Fundort: Emerald Lake, Gebiet Upper Fan, entnommen Sol 822 (June 23, 2023). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-21",
+    "name": "Probe 21: Pilot Mountain",
+    "location": {
+      "latitude": 18.483801,
+      "longitude": 77.360469,
+      "elevationMeters": -2415.9
+    },
+    "description": "Probe 21 (Pilot Mountain), Typ Rock Core, Gestein: Sedimentary. Fundort: Dream Lake, Gebiet Upper Fan, entnommen Sol 913 (Sept. 15, 2023). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-22",
+    "name": "Probe 22: Pelican Point",
+    "location": {
+      "latitude": 18.483447,
+      "longitude": 77.350651,
+      "elevationMeters": -2424.8
+    },
+    "description": "Probe 22 (Pelican Point), Typ Rock Core, Gestein: Sedimentary. Fundort: Hans Amundsen Memorial Workspace, Gebiet Margin, entnommen Sol 923 (Sept. 24, 2023). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-23",
+    "name": "Probe 23: Lefroy Bay",
+    "location": {
+      "latitude": 18.483447,
+      "longitude": 77.350651,
+      "elevationMeters": -2424.8
+    },
+    "description": "Probe 23 (Lefroy Bay), Typ Rock Core, Gestein: Sedimentary. Fundort: Turquoise Bay, Gebiet Margin, entnommen Sol 942 (Oct. 13, 2023). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-24",
+    "name": "Probe 24: Comet Geyser",
+    "location": {
+      "latitude": 18.491867,
+      "longitude": 77.327219,
+      "elevationMeters": -2383.1
+    },
+    "description": "Probe 24 (Comet Geyser), Typ Rock Core, Gestein: Silica-cemented Carbonate. Fundort: Bunsen Peak, Gebiet Margin, entnommen Sol 1088 (March 12, 2024). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-25",
+    "name": "Probe 25: Sapphire Canyon",
+    "location": {
+      "latitude": 18.497474,
+      "longitude": 77.305149,
+      "elevationMeters": -2353.0
+    },
+    "description": "Probe 25 (Sapphire Canyon), Typ Rock Core, Gestein: Sedimentary. Fundort: Beaver Falls, Gebiet Neretva Vallis, entnommen Sol 1215 (July 21, 2024). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-26",
+    "name": "Probe 26: Silver Mountain",
+    "location": {
+      "latitude": 18.460592,
+      "longitude": 77.264744,
+      "elevationMeters": -1820.3
+    },
+    "description": "Probe 26 (Silver Mountain), Typ Rock Core, Gestein: Igneous/impactite. Fundort: Shallow Bay, Gebiet Crater Rim (Witch Hazel Hill), entnommen Sol 1401 (Jan. 28, 2025). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-27",
+    "name": "Probe 27: Green Gardens",
+    "location": {
+      "latitude": 18.460593,
+      "longitude": 77.264659,
+      "elevationMeters": -1820.3
+    },
+    "description": "Probe 27 (Green Gardens), Typ Rock Core, Gestein: Serpentinite. Fundort: Tablelands, Gebiet Crater Rim (Witch Hazel Hill), entnommen Sol 1433 (March 2, 2025). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-28",
+    "name": "Probe 28: Main River",
+    "location": {
+      "latitude": 18.461723,
+      "longitude": 77.258464,
+      "elevationMeters": -1925.9
+    },
+    "description": "Probe 28 (Main River), Typ Rock Core, Gestein: Igneous/impactite. Fundort: Broom Point, Gebiet Crater Rim (Witch Hazel Hill), entnommen Sol 1441 (March 10, 2025). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-29",
+    "name": "Probe 29: Bell Island",
+    "location": {
+      "latitude": 18.462251,
+      "longitude": 77.257899,
+      "elevationMeters": -1934.1
+    },
+    "description": "Probe 29 (Bell Island), Typ Rock Core, Gestein: Igneous/impactite. Fundort: Pine Pond, Gebiet Crater Rim (Witch Hazel Hill), entnommen Sol 1483 (April 21, 2025). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
+    "id": "probe-30",
+    "name": "Probe 30: Gallants",
+    "location": {
+      "latitude": 18.460884,
+      "longitude": 77.257231,
+      "elevationMeters": -1941.5
+    },
+    "description": "Probe 30 (Gallants), Typ Rock Core, Gestein: Igneous or Sedimentary. Fundort: Salmon Point, Gebiet Crater Rim (Krokodillen), Entnahme laut NASA-Datei noch offen (TBD). Koordinaten und Angaben aus der NASA-Datei M20_SAMPLE_v3.json (MMGIS Mars 2020).",
+    "nasaSourceUrl": "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples"
+  },
+  {
     "id": "perseverance-landung",
     "name": "Octavia E. Butler Landing",
     "location": {
