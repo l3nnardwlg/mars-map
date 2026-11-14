@@ -115,3 +115,62 @@ def test_alternatives_endpoint_on_real_dem():
     einzel = client.post("/api/routes/calculate", json={k: payload[k] for k in ("start", "end")}).json()
     assert routen[0]["energyJoules"] == pytest.approx(einzel["energyJoules"])
     assert all(r["energyJoules"] <= routen[0]["energyJoules"] * 1.6 + 1 for r in routen)
+
+
+def test_identical_concurrent_requests_are_computed_one_at_a_time(monkeypatch, tmp_path):
+    import threading
+    import time
+
+    from app import terrain
+
+    dem = tmp_path / "dem.tif"
+    dem.write_bytes(b"")
+    monkeypatch.setenv("MARS_DEM_PATH", str(dem))
+    gleichzeitig = {"jetzt": 0, "max": 0, "aufrufe": 0}
+    zaehler = threading.Lock()
+
+    def langsam(*args):
+        with zaehler:
+            gleichzeitig["jetzt"] += 1
+            gleichzeitig["max"] = max(gleichzeitig["max"], gleichzeitig["jetzt"])
+            gleichzeitig["aufrufe"] += 1
+        time.sleep(0.2)
+        with zaehler:
+            gleichzeitig["jetzt"] -= 1
+        return [{"id": "x"}]
+
+    monkeypatch.setattr(terrain, "_plan_routes_cached", langsam)
+    terrain._SPERREN.clear()
+    threads = [threading.Thread(target=terrain.plan_routes, args=((18.4, 77.5), (18.5, 77.6), 3)) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert gleichzeitig["max"] == 1
+    assert gleichzeitig["aufrufe"] == 4
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_parallel_identical_alternatives_requests_search_only_once(monkeypatch):
+    import threading
+
+    from app import terrain
+
+    terrain._plan_routes_cached.cache_clear()
+    suchen = []
+    original = terrain.find_alternatives
+
+    def zaehlend(*args, **kwargs):
+        suchen.append(1)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(terrain, "find_alternatives", zaehlend)
+    ergebnisse = []
+    start, ende = (18.43, 77.46), (18.41, 77.50)
+    threads = [threading.Thread(target=lambda: ergebnisse.append(terrain.plan_routes(start, ende, 2))) for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(suchen) == 1
+    assert len(ergebnisse) == 3
