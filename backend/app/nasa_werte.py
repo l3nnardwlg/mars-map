@@ -33,3 +33,10 @@ def pandolf_watt(steigung_prozent: float) -> float:
         + 2.0 * (w + last) * (last / w) ** 2
         + GELAENDEFAKTOR * (w + last) * (1.5 * v**2 + 0.35 * v * g)
     )
+
+
+RISIKO_INDEX = """Normalized Terrain Slope Risk Index (dimensionslos, 0 bis 1), kein Unfallrisiko und keine Wahrscheinlichkeit.
+R = 0,6 * (mittlere Steigung entlang der Route / Bezugswinkel) + 0,4 * (steilste Steigung / Bezugswinkel), begrenzt auf 0 bis 1.
+Bezugswinkel ist MAX_STEIGUNG_GRAD (15 Grad, siehe QUELLEN). Steilere Zellen sind fuer die Route gesperrt.
+Die Gewichtung 60 zu 40 ist eine eigene Festlegung dieses Projekts und nicht aus einer NASA-Quelle abgeleitet:
+der Mittelwert steht fuer die anhaltende Belastung ueber die Strecke, der Spitzenwert fuer einzelne steile Stellen."""

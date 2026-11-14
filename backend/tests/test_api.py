@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
+from app.data import KACHELN_STANDARD
 from app.main import app
+from app.terrain import DEM_STANDARD
 
 client = TestClient(app)
 
@@ -76,3 +80,41 @@ def test_all_nasa_sample_sites_are_science_points():
     assert "Neretva Vallis" in canyon["description"]
     assert canyon["location"]["latitude"] == pytest.approx(18.4975, abs=1e-3)
     assert all("Probe" in p["description"] and "Gestein" in p["description"] for p in proben)
+
+
+def test_cors_allows_local_frontend():
+    antwort = client.options(
+        "/api/layers",
+        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"},
+    )
+    assert antwort.status_code == 200
+    assert antwort.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_cors_rejects_foreign_origin():
+    antwort = client.options(
+        "/api/layers",
+        headers={"Origin": "http://boese.example", "Access-Control-Request-Method": "GET"},
+    )
+    assert "access-control-allow-origin" not in antwort.headers
+
+
+@pytest.mark.skipif(not Path(DEM_STANDARD).is_file(), reason="Jezero-DEM nicht lokal vorhanden")
+def test_routes_alternatives_endpoint():
+    payload = {"start": {"latitude": 18.44, "longitude": 77.45}, "end": {"latitude": 18.40, "longitude": 77.55}, "count": 2}
+    antwort = client.post("/api/routes/alternatives", json=payload)
+    assert antwort.status_code == 200
+    routen = antwort.json()
+    assert 1 <= len(routen) <= 2
+    assert len({route["id"] for route in routen}) == len(routen)
+    for route in routen:
+        assert {"id", "waypoints", "distanceMeters", "estimatedDurationSeconds", "riskScore", "energyJoules"} <= set(route)
+        assert 0 <= route["riskScore"] <= 1
+
+
+@pytest.mark.skipif(not (KACHELN_STANDARD / "ctx_dem" / "0" / "0" / "0.png").is_file(), reason="Kacheln nicht lokal vorhanden")
+def test_tiles_are_served_as_png():
+    antwort = client.get("/api/terrain/tiles/ctx_dem/0/0/0.png")
+    assert antwort.status_code == 200
+    assert antwort.headers["content-type"] == "image/png"
+    assert antwort.content[:8] == b"\x89PNG\r\n\x1a\n"

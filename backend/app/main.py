@@ -1,12 +1,15 @@
+import threading
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.data import LAYERS, SCIENCE_POINTS, kachelordner, terrain_metadaten
 from app.mission import MissingElevationError, simulate
 from app.routing import NoRouteError
-from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route, plan_routes
+from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route, plan_routes, vorwaermen
 from app.models import (
     AlternativesRequest,
     Layer,
@@ -75,7 +78,19 @@ def simulate_mission(request: MissionRequest) -> MissionEstimate:
         raise HTTPException(status_code=422, detail=str(fehler)) from fehler
 
 
-app = FastAPI(title="Mars Map API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    threading.Thread(target=vorwaermen, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="Mars Map API", version="0.1.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(api)
 
 if kachelordner().is_dir():

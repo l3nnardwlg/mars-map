@@ -6,6 +6,8 @@ import numpy as np
 from app.nasa_werte import GEHTEMPO_METER_PRO_SEKUNDE, MAX_STEIGUNG_GRAD, pandolf_watt
 
 MAX_SLOPE_DEGREES = MAX_STEIGUNG_GRAD
+RISK_WEIGHT_MEAN = 0.6
+RISK_WEIGHT_PEAK = 0.4
 
 NEIGHBORS = [
     (-1, 0, 1.0),
@@ -105,7 +107,7 @@ def measure_path(
         energy += step_energy_joule(flat, rise)
     duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
     fractions = np.array([slope[r, c] for r, c in path]) / MAX_SLOPE_DEGREES
-    risk = float(np.clip(0.6 * fractions.mean() + 0.4 * fractions.max(), 0.0, 1.0))
+    risk = float(np.clip(RISK_WEIGHT_MEAN * fractions.mean() + RISK_WEIGHT_PEAK * fractions.max(), 0.0, 1.0))
     return distance, duration, risk, energy
 
 
@@ -135,7 +137,7 @@ def find_alternatives(
     radius = max(1, int(ALTERNATIVE_CORRIDOR_METERS / cell_meters))
     penalty = np.zeros(elevation.shape)
     penalty[corridor(elevation.shape, best_path, radius)] = ALTERNATIVE_PENALTY
-    for _ in range(count * 3):
+    for _ in range(count + 2):
         if len(results) >= count:
             break
         try:
