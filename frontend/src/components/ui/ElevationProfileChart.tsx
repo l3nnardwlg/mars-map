@@ -239,6 +239,19 @@ export default function ElevationProfileChart() {
             </div>
           </div>
 
+          {/* Provenance & Risk Index Definition */}
+          <div className="flex items-center justify-between text-[9px] bg-zinc-900/60 rounded px-2 py-1 border border-zinc-800/80 font-mono">
+            <span className="text-zinc-400 truncate max-w-[55%]">
+              SOURCE: <span className="text-sky-300">{currentRoute.dataSource?.includes('Backend') ? 'A* Backend Live' : 'Reference Case Study'}</span>
+            </span>
+            <span
+              className="text-amber-300 font-semibold"
+              title="Risk Formula: 0.6*(Mean Slope / 20°) + 0.4*(Max Slope / 20°)"
+            >
+              RISK: {((currentRoute.riskScore ?? 0) * 100).toFixed(0)}% <span className="text-zinc-500 font-normal">(0.6·μ + 0.4·max)</span>
+            </span>
+          </div>
+
           {/* Multi-Route Quick Selector under Comparison */}
           {isComparingRoutes && (
             <div className="pt-2 border-t border-zinc-800 space-y-1">

@@ -88,6 +88,7 @@ export default function MissionHUD() {
   const setShowLayerManagerModal = useMissionStore((state) => state.setShowLayerManagerModal);
   const showMinimap = useMissionStore((state) => state.showMinimap);
   const toggleMinimap = useMissionStore((state) => state.toggleMinimap);
+  const fpsMetrics = useMissionStore((state) => state.fpsMetrics);
 
   // Keyboard Shortcuts (P3 feature)
   useEffect(() => {
@@ -248,6 +249,17 @@ Datum: IAU Mars 2000 / MOLA Areoid
             <div>
               <span className="text-zinc-500 block text-[10px]">COORDINATE DATUM</span>
               <span className="font-semibold text-amber-300">IAU MARS 2000 (EAST+)</span>
+            </div>
+          </div>
+
+          {/* Real-Time Live Measured FPS & GPU Telemetry */}
+          <div className="bg-black/60 border border-zinc-800 rounded px-2.5 py-1.5 hidden md:flex items-center gap-2 font-mono">
+            <div className={`w-2 h-2 rounded-full ${fpsMetrics.fps >= 55 ? 'bg-emerald-400' : fpsMetrics.fps >= 30 ? 'bg-yellow-400' : 'bg-red-400'} animate-pulse`} />
+            <div>
+              <span className="text-zinc-500 block text-[9px] uppercase tracking-wider">LIVE GPU RENDER</span>
+              <span className="font-semibold text-emerald-300 text-xs">
+                {fpsMetrics.fps} FPS <span className="text-zinc-500 text-[10px]">({fpsMetrics.frameTimeMs} ms)</span>
+              </span>
             </div>
           </div>
 

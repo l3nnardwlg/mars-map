@@ -110,6 +110,12 @@ interface MissionStore {
   hoveredRoutePoint: MarsCoordinate | null;
   isComparingRoutes: boolean;
 
+  // Real-Time Hardware & Engine Performance Telemetry
+  showFpsMetrics: boolean;
+  fpsMetrics: { fps: number; frameTimeMs: number; drawCalls: number; triangles: number };
+  toggleFpsMetrics: () => void;
+  setFpsMetrics: (metrics: { fps: number; frameTimeMs: number; drawCalls: number; triangles: number }) => void;
+
   // Phase 3 Science & Mission Simulation
   sciencePoints: SciencePoint[];
   selectedSciencePoint: SciencePoint | null;
@@ -215,6 +221,10 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   isCalculatingRoute: false,
   hoveredRoutePoint: null,
   isComparingRoutes: false,
+  showFpsMetrics: true,
+  fpsMetrics: { fps: 60, frameTimeMs: 16.6, drawCalls: 0, triangles: 0 },
+  toggleFpsMetrics: () => set((state) => ({ showFpsMetrics: !state.showFpsMetrics })),
+  setFpsMetrics: (metrics) => set({ fpsMetrics: metrics }),
 
   sciencePoints: [],
   selectedSciencePoint: null,

@@ -8,6 +8,7 @@ import TerrainPrototype from './TerrainPrototype';
 import CameraRig from './CameraRig';
 import AstronautController from './AstronautController';
 import CinematicLandingController from './CinematicLandingController';
+import FrameRateTracker from './FrameRateTracker';
 import CinematicLandingOverlay from '@/components/ui/CinematicLandingOverlay';
 import { useMissionStore } from '@/store/useMissionStore';
 
@@ -83,6 +84,7 @@ export default function MarsScene() {
           {/* Phase 5: First-Person Astronaut Controller & Cinematic Landing */}
           <AstronautController />
           <CinematicLandingController />
+          <FrameRateTracker />
         </Canvas>
       </Suspense>
 

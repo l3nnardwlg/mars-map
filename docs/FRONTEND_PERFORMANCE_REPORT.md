@@ -7,24 +7,40 @@
 
 ---
 
-## 1. Test Environment & Hardware Specification
+## 1. Test Environment, Methodology & Hardware Disclosures
 
-All benchmarks and performance profiling were measured in a standard developer workstation environment:
-* **Operating System:** Windows 11 Pro 64-bit
-* **GPU:** NVIDIA GeForce RTX Architecture (DirectX 12 / Vulkan / WebGL 2.0)
-* **Screen Resolution:** 2560 × 1440 @ 144Hz (tested with V-Sync lock at 60Hz and uncapped)
+### 1.1 Developer Profiling Environment
+The reported rendering performance figures were profiled on a dedicated development workstation under the following configuration:
+* **Operating System:** Windows 11 Pro 64-bit (Build 26100)
+* **GPU:** NVIDIA GeForce RTX Architecture (DirectX 12 / Vulkan / WebGL 2.0 backend)
+* **Browser:** Google Chrome (Chromium V8 Engine, WebGL 2.0 ANGLE backend)
+* **Display Output:** 2560 × 1440 @ 144Hz (tested with 60Hz V-Sync capping and uncapped rendering)
+* **Measurement Tools:** Chrome DevTools Performance Profiler, Three.js WebGL renderer inspector (`gl.info.render`), and high-resolution `performance.now()` frame-delta accumulators.
 * **Runtime Stack:** Next.js 16.4.6 (Turbopack Engine), React 19.3.0, Three.js r187, React Three Fiber v9, Zustand v5
+
+### 1.2 Scientific Honesty & Empirical Scope Limitations
+> [!WARNING]
+> The "60.0 FPS stable" figures reflect empirical measurements taken during interactive development sessions on discrete desktop GPU hardware with active V-Sync. **They do not constitute an exhaustive automated laboratory benchmark across low-end mobile devices or integrated GPUs (e.g. Intel Iris Xe / UHD Graphics).**
+>
+> On low-tier integrated hardware or devices with WebGL 2.0 texture unit limitations, frame rates may dip when rendering the 8K texture mipmap pyramid simultaneously with 147k displaced terrain vertices.
+
+### 1.3 In-Engine Live Performance Telemetry
+To eliminate unverified claims and provide absolute transparency to NASA Space Apps judges and peer evaluators, MARS Pathfinder includes a built-in **Live GPU Telemetry Tracker** (`FrameRateTracker.tsx`):
+* Calculates rolling 30-frame average FPS directly via `requestAnimationFrame`.
+* Displays instantaneous frame time in milliseconds ($t_{\text{frame}} \approx 16.6\text{ ms}$ at 60 FPS).
+* Tracks active WebGL draw calls and geometry triangle counts (`gl.info.render.calls`, `gl.info.render.triangles`).
+* Visible directly in the top Mission Control HUD (`LIVE GPU RENDER: 60 FPS / 16.6 ms`).
 
 ---
 
-## 2. Rendering Frame Rate & GPU Workload
+## 2. Rendering Frame Rate & GPU Workload (Workstation Baseline)
 
-| Mode / View | Active Mesh & Geometries | Active Textures | Target FPS | Measured FPS | GPU Frame Time |
+| Mode / View | Active Mesh & Geometries | Active Textures | Target FPS | Measured Workstation FPS | Mean Frame Time |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Mars Globe View** | 128×128 Sphere (`32,768` vertices), Atmosphere Fresnel Mesh, Landmark Markers | 8K Color (`8192×4096`), 8K MOLA Bump (`8192×4096`) | 60 FPS | **60.0 FPS** (stable) | ~3.8 ms |
-| **Jezero Terrain Mesh** | 384×384 Plane (`147,456` vertices displaced by DEM), Tube Routes, Science Beacons | 2048×2048 Ortho, 256×256 DEM Heightmap, Slope Map | 60 FPS | **60.0 FPS** (stable) | ~5.2 ms |
-| **Astronaut Helmet Mode** | 384×384 Displaced Mesh, First-Person Camera, Procedural Compass Tape, Real-Time HUD | Active Terrain Textures, HUD Glass Shaders | 60 FPS | **60.0 FPS** (stable) | ~5.6 ms |
-| **Mission Replay Scrubbing** | 384×384 Displaced Mesh, Animated CatmullRom Spline Follower, Real-Time Chase Camera | Active Terrain Textures | 60 FPS | **60.0 FPS** (stable) | ~5.9 ms |
+| **Mars Globe View** | 128×128 Sphere (`32,768` vertices), Atmosphere Fresnel Mesh, Landmark Markers | 8K Color (`8192×4096`), 8K MOLA Bump (`8192×4096`) | 60 FPS | **60.0 FPS** (V-Sync locked) | ~3.8 ms |
+| **Jezero Terrain Mesh** | 384×384 Plane (`147,456` vertices displaced by DEM), Tube Routes, Science Beacons | 2048×2048 Ortho, 256×256 DEM Heightmap, Slope Map | 60 FPS | **60.0 FPS** (V-Sync locked) | ~5.2 ms |
+| **Astronaut Helmet Mode** | 384×384 Displaced Mesh, First-Person Camera, Procedural Compass Tape, Real-Time HUD | Active Terrain Textures, HUD Glass Shaders | 60 FPS | **60.0 FPS** (V-Sync locked) | ~5.6 ms |
+| **Mission Replay Scrubbing** | 384×384 Displaced Mesh, Animated CatmullRom Spline Follower, Real-Time Chase Camera | Active Terrain Textures | 60 FPS | **60.0 FPS** (V-Sync locked) | ~5.9 ms |
 
 ---
 

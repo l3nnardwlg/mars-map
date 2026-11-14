@@ -77,11 +77,39 @@ $$\text{lon} = \left(\text{atan2}(Z, -X) \cdot \frac{180}{\pi} - 180\right) \pmo
 * **Horizontal Grid Steps:**
   * $\Delta X = 89,410\text{ m} / 256 = 349.26\text{ m/pixel}$
   * $\Delta Y = 101,358\text{ m} / 256 = 395.93\text{ m/pixel}$
-* **Quantization Resolution (Client 8-Bit Heightmap):**
-  $$\text{Quantization Step} = \frac{1,303.0\text{ m}}{255} = 5.11\text{ meters/level}$$
-  $$\text{Elevation Uncertainty} = \pm \frac{5.11\text{ m}}{2} = \pm 2.56\text{ meters (half-LSB)}$$
-* **Comparison with Backend 16-Bit Tiles:**
-  The FastAPI backend serves 16-bit PNG tiles where step size is $1,303.0\text{ m} / 65,535 \approx \pm 0.02\text{ m}$. All uncertainty values are explicitly disclosed in the Terrain Inspector UI.
+### 3.1 Comprehensive Multi-Source Elevation Error Budget
+
+A common misconception in planetary web visualization is confusing **texture quantization precision** with **total geodetic elevation uncertainty**. The complete elevation error budget consists of four distinct components:
+
+$$\sigma_{\text{total}} = \sqrt{\sigma_{\text{sensor}}^2 + \sigma_{\text{georef}}^2 + \sigma_{\text{interp}}^2 + \sigma_{\text{quant}}^2}$$
+
+| Error Component | Symbol | Source & Physical Mechanism | Magnitude |
+| :--- | :--- | :--- | :--- |
+| **Photogrammetric Sensor Noise** | $\sigma_{\text{sensor}}$ | CTX stereo convergence angle, parallax uncertainty, atmospheric dust haze | $\pm 3.0\text{ m}$ to $\pm 5.0\text{ m}$ RMS |
+| **Georeferencing / Coregistration** | $\sigma_{\text{georef}}$ | Horizontal/vertical bundle adjustment tied to MGS MOLA MEGDR areoid tracks | $\pm 5.0\text{ m}$ to $\pm 8.0\text{ m}$ RMS |
+| **Grid Resampling & Interpolation** | $\sigma_{\text{interp}}$ | Bilinear / bicubic sub-pixel height estimation across 20m grid cells | $\pm 0.5\text{ m}$ to $\pm 1.5\text{ m}$ |
+| **Discrete Quantization Error** | $\sigma_{\text{quant}}$ | Client 8-bit heightmap texture discretization ($1,303\text{ m} / 255 = 5.11\text{ m}$ / step) | **$\pm 2.56\text{ m}$ (half-LSB)** |
+| **Composite Orbital DTM Uncertainty** | **$\sigma_{\text{total}}$** | **Root-Sum-Square (RSS) of all orbital, sensor, and digital error components** | **$\approx \pm 6.5\text{ m}$ to $\pm 10.0\text{ m}$ RMS** |
+
+> [!IMPORTANT]
+> The value **$\pm 2.56\text{ m}$ displayed in the UI represents strictly the client-side 8-bit quantization uncertainty** ($\frac{1}{2} \text{LSB}$). The true orbital DTM elevation uncertainty relative to the absolute MOLA Areoid datum is $\approx \pm 6\text{ m}$ to $\pm 10\text{ m}$ RMS. In the 16-bit GeoTIFF backend pipeline, the quantization error drops to $\pm 0.02\text{ m}$, leaving sensor and coregistration noise as the dominant factors.
+
+---
+
+### 3.2 Definition of Traversal Risk Score & Benchmark Scenarios
+
+The traversal risk score ($R \in [0.0, 1.0]$) is a dimensionless compound index evaluating topographic locomotion hazard relative to NASA's maximum allowable slope threshold for astronaut/rover EVA ($\theta_{\max, \text{EVA}} = 20.0^\circ$):
+
+$$R = \text{clip}\left(0.6 \cdot \frac{\bar{\theta}}{\theta_{\max, \text{EVA}}} + 0.4 \cdot \frac{\theta_{\text{peak}}}{\theta_{\max, \text{EVA}}}, 0.0, 1.0\right)$$
+
+Where:
+* $\bar{\theta}$ = mean slope angle along the entire traverse
+* $\theta_{\text{peak}}$ = maximum local slope angle encountered on any segment
+* $\theta_{\max, \text{EVA}} = 20.0^\circ$ (NASA EVA critical limit)
+
+#### Reference Benchmark Scenario vs. Live Dynamic Routing:
+* **Benchmark Case Study (Western Delta Scarp):** The comparison numbers featured in the Jury Tour narrative ($18.5^\circ$ vs $7.8^\circ$, $140\text{ kJ}$ energy delta, $65\%$ vs $22\%$ risk) represent a **standardized, reproducible test case** traversing from the delta breach crest ($18.38^\circ\text{ N}, 77.58^\circ\text{ E}$) down to the Jezero crater floor ($18.44^\circ\text{ N}, 77.45^\circ\text{ E}$). In offline mode, this is transparently flagged as `[REFERENCE BENCHMARK SCENARIO]`.
+* **Dynamic Backend Routing:** When connected to the FastAPI backend, the 3D slope-constrained A* algorithm (`plan_routes` in `backend/app/terrain.py`) dynamically computes cost-optimal traverses for arbitrary user coordinates, flagged as `[A* CTX-DEM LIVE]`.
 
 ---
 

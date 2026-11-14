@@ -72,17 +72,22 @@ export default function TerrainInspector() {
               </span>
             </div>
 
-            {/* Elevation with Datum & Uncertainty */}
+            {/* Elevation with Datum & Complete Error Budget */}
             <div className="rounded-lg bg-zinc-900/80 p-2 border border-zinc-800">
-              <span className="text-[10px] text-zinc-500 block">ELEVATION (MOLA)</span>
-              <div className="flex items-baseline gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500 block">ELEVATION (MOLA)</span>
+                <span className="text-[8px] text-sky-400 bg-sky-950/80 px-1 py-0.2 rounded border border-sky-800/50">
+                  AREOID 0M
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="text-sky-300 font-bold text-sm">
                   {inspectedPoint.elevationMeters.toLocaleString()} m
                 </span>
-                <span className="text-[9px] text-zinc-500">
-                  ±{inspectedPoint.uncertaintyMeters ?? NASA_DEM_METADATA.elevationUncertaintyMeters}m
-                </span>
               </div>
+              <span className="text-[9px] text-zinc-500 block mt-0.5 leading-tight">
+                Quant: ±{inspectedPoint.uncertaintyMeters ?? NASA_DEM_METADATA.elevationUncertaintyMeters}m | Total DTM: ±6–10m RMS
+              </span>
             </div>
 
             {/* Local Slope */}
