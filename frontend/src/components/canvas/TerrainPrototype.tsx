@@ -79,9 +79,16 @@ export default function TerrainPrototype() {
     const lat = 17.58 + e.uv.y * (19.29 - 17.58);
     const lon = 76.99 + e.uv.x * (78.58 - 76.99);
 
+    // Estimate elevation in meters from terrain center
+    const dx = e.uv.x - 0.5;
+    const dy = e.uv.y - 0.5;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const elev = Math.round(-2500 + Math.min(1.0, dist * 1.8) * 1100);
+
     setRoutePoint({
       latitude: Number(lat.toFixed(4)),
       longitude: Number(lon.toFixed(4)),
+      elevationMeters: elev,
     });
   };
 
