@@ -33,14 +33,24 @@ export interface Layer {
   sourceUrl: string;
 }
 
+export type RouteProfile = 'direct' | 'safe' | 'science';
+
+export interface ElevationPoint {
+  distanceKm: number;
+  elevationM: number;
+  slopeDeg: number;
+}
+
 export interface MarsRoute {
   id: string;
+  profile?: RouteProfile;
   waypoints: MarsCoordinate[];
   distanceMeters: number;
   estimatedDurationSeconds: number;
   riskScore: number;
   energyJoules?: number | null;
   averagePowerWatts?: number | null;
+  elevationProfile?: ElevationPoint[];
 }
 
 export interface RouteRequest {

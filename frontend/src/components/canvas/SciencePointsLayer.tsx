@@ -81,8 +81,11 @@ function SciencePointMarker({
 }
 
 export default function SciencePointsLayer({ planeSize = 8 }: SciencePointsLayerProps) {
+  const showSciencePoints = useMissionStore((state) => state.showSciencePoints);
   const sciencePoints = useMissionStore((state) => state.sciencePoints);
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
+
+  if (!showSciencePoints) return null;
 
   return (
     <group>

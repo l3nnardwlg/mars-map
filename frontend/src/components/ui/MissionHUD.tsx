@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useMissionStore, MARS_LANDMARKS } from '@/store/useMissionStore';
+import ElevationProfileChart from './ElevationProfileChart';
 import { 
   RotateCw, 
   Globe2, 
@@ -13,15 +14,20 @@ import {
   Radio, 
   Grid3X3,
   Navigation,
-  Activity,
-  Flame,
   AlertTriangle,
   RefreshCw,
   Zap,
-  Clock
+  Clock,
+  ShieldCheck,
+  FlaskConical,
+  Sun,
+  FileText,
+  Check
 } from 'lucide-react';
 
 export default function MissionHUD() {
+  const [copiedBriefing, setCopiedBriefing] = useState(false);
+
   const activeView = useMissionStore((state) => state.activeView);
   const setActiveView = useMissionStore((state) => state.setActiveView);
   const cameraDistance = useMissionStore((state) => state.cameraDistance);
@@ -31,41 +37,65 @@ export default function MissionHUD() {
   const selectLandmark = useMissionStore((state) => state.selectLandmark);
   const resetToOrbit = useMissionStore((state) => state.resetToOrbit);
 
-  // Terrain Controls
+  // Terrain & Environment Controls
   const terrainWireframe = useMissionStore((state) => state.terrainWireframe);
   const toggleTerrainWireframe = useMissionStore((state) => state.toggleTerrainWireframe);
   const terrainExaggeration = useMissionStore((state) => state.terrainExaggeration);
   const setTerrainExaggeration = useMissionStore((state) => state.setTerrainExaggeration);
   const terrainColorMode = useMissionStore((state) => state.terrainColorMode);
   const setTerrainColorMode = useMissionStore((state) => state.setTerrainColorMode);
+  const sunTimeMode = useMissionStore((state) => state.sunTimeMode);
+  const setSunTimeMode = useMissionStore((state) => state.setSunTimeMode);
+  const showSciencePoints = useMissionStore((state) => state.showSciencePoints);
+  const toggleSciencePoints = useMissionStore((state) => state.toggleSciencePoints);
 
-  // Route Planning State
+  // Route Planning State & Alternatives
   const routeStart = useMissionStore((state) => state.routeStart);
   const routeEnd = useMissionStore((state) => state.routeEnd);
+  const selectedRouteProfile = useMissionStore((state) => state.selectedRouteProfile);
+  const selectRouteProfile = useMissionStore((state) => state.selectRouteProfile);
   const currentRoute = useMissionStore((state) => state.currentRoute);
   const missionEstimate = useMissionStore((state) => state.missionEstimate);
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const clearRoute = useMissionStore((state) => state.clearRoute);
 
-  // Calculate default demo route once terrain is entered
+  // Auto-calculate on mount if not yet generated
   useEffect(() => {
     if (activeView === 'terrain_prototype' && !currentRoute && routeStart && routeEnd) {
       calculateRoute();
     }
   }, [activeView, currentRoute, routeStart, routeEnd, calculateRoute]);
 
-  // Scaled altitude in kilometers
   const altitudeKm = Math.max(0, Math.round(((cameraDistance - 2.0) / 2.0) * 3389.5));
-
-  // Pandolf Energy calculation: Watts to kcal (1 Watt * 1 sec = 1 Joule, 4184 J = 1 kcal)
   const durationSeconds = currentRoute?.estimatedDurationSeconds ?? 0;
   const estimatedKcal = Math.round((285 * durationSeconds) / 4184);
 
+  // Export Briefing to Clipboard
+  const handleCopyBriefing = () => {
+    if (!currentRoute) return;
+    const text = `=== NASA MARS PATHFINDER // EVA-01 BRIEFING ===
+Target: Jezero Crater (Western Delta)
+Profile: ${selectedRouteProfile.toUpperCase()}
+Start: ${routeStart?.latitude.toFixed(4)}°N, ${routeStart?.longitude.toFixed(4)}°E
+Destination: ${routeEnd?.latitude.toFixed(4)}°N, ${routeEnd?.longitude.toFixed(4)}°E
+Total Distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km
+Estimated Duration: ${Math.floor(durationSeconds / 3600)}h ${Math.floor((durationSeconds % 3600) / 60)}m
+Metabolic Power: ${currentRoute.averagePowerWatts ?? 285} W (Pandolf)
+Risk Score: ${(currentRoute.riskScore * 100).toFixed(1)}%
+O2 Requirement: ${missionEstimate?.oxygenLiters ?? 0} L (${missionEstimate?.oxygenKilograms ?? 0} kg)
+EVA Limit: ${missionEstimate?.withinEvaTimeLimit ? 'NOMINAL (< 8h)' : 'EXCEEDED (> 8h)'}
+Datum: IAU Mars 2000 / MOLA Areoid
+=================================================`;
+    navigator.clipboard.writeText(text);
+    setCopiedBriefing(true);
+    setTimeout(() => setCopiedBriefing(false), 2500);
+  };
+
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 md:p-6 text-zinc-200 font-mono select-none">
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 md:p-5 text-zinc-200 font-mono select-none">
       {/* Top Header & Telemetry Bar */}
-      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-white/10 pb-4 backdrop-blur-sm bg-black/40 px-4 py-3 rounded-lg">
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-white/10 pb-3 backdrop-blur-sm bg-black/40 px-4 py-2.5 rounded-lg">
         <div className="flex items-center gap-3">
           <div className="relative flex h-3.5 w-3.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -77,11 +107,11 @@ export default function MissionHUD() {
                 MARS PATHFINDER
               </span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {activeView === 'globe' ? 'DEV A // PLANET ENGINE' : 'DEV A // ROUTING & TERRAIN ENGINE'}
+                {activeView === 'globe' ? 'DEV A // PLANET ENGINE' : 'PHASE 3 // MISSION CONTROL DASHBOARD'}
               </span>
             </div>
             <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
-              <span>{activeView === 'globe' ? 'ORBITAL RECONNAISSANCE' : 'EVA MISSION PLANNING'}</span>
+              <span>{activeView === 'globe' ? 'ORBITAL RECONNAISSANCE' : 'EVA TRAVERSE PLANNING'}</span>
               <span>•</span>
               <span className="text-emerald-400">TELEMETRY NOMINAL</span>
             </div>
@@ -115,7 +145,7 @@ export default function MissionHUD() {
           </button>
         </div>
 
-        {/* Real-time Telemetry Readout */}
+        {/* Telemetry Readout */}
         <div className="flex items-center gap-3 text-xs">
           <div className="bg-black/60 border border-zinc-800 rounded px-3 py-1.5 flex items-center gap-2">
             <Radio className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
@@ -139,11 +169,11 @@ export default function MissionHUD() {
         </div>
       </header>
 
-      {/* Center Section: Context Cards & Route Planning Panel */}
-      <div className="flex-1 flex items-center justify-between py-4">
+      {/* Center Section: Context Cards & HUD Sidebars */}
+      <div className="flex-1 flex items-start justify-between py-3 overflow-hidden gap-3">
         {/* Globe View: Landmark Inspector */}
         {activeView === 'globe' && selectedLandmark && (
-          <aside className="pointer-events-auto w-80 md:w-96 rounded-xl border border-sky-500/30 bg-black/85 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left duration-200">
+          <aside className="pointer-events-auto w-80 md:w-96 rounded-xl border border-sky-500/30 bg-black/85 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left duration-200 mt-6">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-sky-400" />
@@ -210,263 +240,327 @@ export default function MissionHUD() {
           </aside>
         )}
 
-        {/* Terrain Mode: Left Panel (Layers & Mesh Controls) */}
+        {/* Terrain Mode: Left Panel (Layers & Sol Environment Controls) */}
         {activeView === 'terrain_prototype' && (
-          <aside className="pointer-events-auto w-72 md:w-80 rounded-xl border border-sky-500/40 bg-black/90 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+          <aside className="pointer-events-auto w-72 md:w-80 rounded-xl border border-sky-500/40 bg-black/90 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left duration-200 space-y-3">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <div className="flex items-center gap-2">
-                <Mountain className="w-4 h-4 text-sky-400" />
+                <Layers className="w-4 h-4 text-sky-400" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
-                  Terrain & Layers
+                  Layers & Sol Time
                 </span>
               </div>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                256² Tiles Ready
+                Interactive
               </span>
             </div>
 
-            <div className="mt-3 text-xs space-y-3">
-              {/* Layer Selection */}
-              <div>
-                <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1.5">
-                  Surface Visualization
-                </span>
-                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                  <button
-                    onClick={() => setTerrainColorMode('satellite')}
-                    className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
-                      terrainColorMode === 'satellite'
-                        ? 'bg-amber-600 border-amber-400 text-white'
-                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    Ortho
-                  </button>
-                  <button
-                    onClick={() => setTerrainColorMode('hypsometric')}
-                    className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
-                      terrainColorMode === 'hypsometric'
-                        ? 'bg-purple-600 border-purple-400 text-white'
-                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    Elevation
-                  </button>
-                  <button
-                    onClick={() => setTerrainColorMode('slope')}
-                    className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
-                      terrainColorMode === 'slope'
-                        ? 'bg-red-600 border-red-400 text-white'
-                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    Risk &gt;15°
-                  </button>
-                </div>
-              </div>
-
-              {/* Wireframe Toggle */}
-              <div className="rounded bg-zinc-900/80 p-2.5 border border-zinc-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Grid3X3 className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-xs text-white">Wireframe Mesh</span>
-                </div>
+            {/* Layer Selection */}
+            <div>
+              <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1">
+                Surface Visualization
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                 <button
-                  onClick={toggleTerrainWireframe}
-                  className={`px-2.5 py-0.5 rounded text-xs font-semibold border transition ${
-                    terrainWireframe
-                      ? 'bg-amber-500 border-amber-400 text-black'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white'
+                  onClick={() => setTerrainColorMode('satellite')}
+                  className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
+                    terrainColorMode === 'satellite'
+                      ? 'bg-amber-600 border-amber-400 text-white'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                   }`}
                 >
-                  {terrainWireframe ? 'ON' : 'OFF'}
+                  Ortho
+                </button>
+                <button
+                  onClick={() => setTerrainColorMode('hypsometric')}
+                  className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
+                    terrainColorMode === 'hypsometric'
+                      ? 'bg-purple-600 border-purple-400 text-white'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Elevation
+                </button>
+                <button
+                  onClick={() => setTerrainColorMode('slope')}
+                  className={`py-1.5 px-1 rounded font-semibold border transition text-center ${
+                    terrainColorMode === 'slope'
+                      ? 'bg-red-600 border-red-400 text-white'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Risk &gt;15°
                 </button>
               </div>
+            </div>
 
-              {/* Elevation Exaggeration */}
-              <div>
-                <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1">
-                  Relief Scaling ({terrainExaggeration}x)
-                </span>
-                <div className="grid grid-cols-3 gap-1.5 text-center">
-                  {[1.0, 1.5, 2.5].map((scale) => (
-                    <button
-                      key={scale}
-                      onClick={() => setTerrainExaggeration(scale)}
-                      className={`py-1 rounded text-xs font-semibold border transition ${
-                        terrainExaggeration === scale
-                          ? 'bg-sky-600 border-sky-400 text-white'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      {scale.toFixed(1)}x
-                    </button>
-                  ))}
-                </div>
+            {/* Sun / Mars Sol Time */}
+            <div>
+              <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1 flex items-center gap-1">
+                <Sun className="w-3 h-3 text-amber-400" /> Mars Sol Lighting
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                {(['morning', 'noon', 'evening'] as const).map((time) => (
+                  <button
+                    key={time}
+                    onClick={() => setSunTimeMode(time)}
+                    className={`py-1 px-1 rounded font-semibold border capitalize transition ${
+                      sunTimeMode === time
+                        ? 'bg-amber-500 border-amber-400 text-black'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Coordinate info */}
-              <div className="rounded bg-black/60 p-2 border border-zinc-800 text-[10px] text-zinc-400 space-y-0.5">
-                <div className="flex justify-between">
-                  <span>Jezero Datum:</span>
-                  <span className="text-zinc-200">MOLA Areoid 0m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Max Safe Slope:</span>
-                  <span className="text-red-400 font-semibold">15.0° (Pandolf)</span>
-                </div>
+            {/* Feature Toggles */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                onClick={toggleTerrainWireframe}
+                className={`py-1.5 px-2 rounded font-semibold border transition flex items-center justify-center gap-1.5 ${
+                  terrainWireframe
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Grid3X3 className="w-3 h-3" />
+                <span>Wireframe</span>
+              </button>
+
+              <button
+                onClick={toggleSciencePoints}
+                className={`py-1.5 px-2 rounded font-semibold border transition flex items-center justify-center gap-1.5 ${
+                  showSciencePoints
+                    ? 'bg-sky-500/20 border-sky-400 text-sky-300'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                <FlaskConical className="w-3 h-3 text-amber-400" />
+                <span>Samples</span>
+              </button>
+            </div>
+
+            {/* Relief Scaling */}
+            <div>
+              <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1">
+                Relief Exaggeration ({terrainExaggeration}x)
+              </span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                {[1.0, 1.5, 2.5].map((scale) => (
+                  <button
+                    key={scale}
+                    onClick={() => setTerrainExaggeration(scale)}
+                    className={`py-1 rounded font-semibold border transition ${
+                      terrainExaggeration === scale
+                        ? 'bg-sky-600 border-sky-400 text-white'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {scale.toFixed(1)}x
+                  </button>
+                ))}
               </div>
             </div>
           </aside>
         )}
 
-        {/* Terrain Mode: Right Panel (Interactive Route Planner) */}
+        {/* Terrain Mode: Right Column (Route Planner & Elevation Cross-Section) */}
         {activeView === 'terrain_prototype' && (
-          <aside className="pointer-events-auto w-80 md:w-96 rounded-xl border border-sky-500/40 bg-black/90 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right duration-200">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
-              <div className="flex items-center gap-2">
-                <Navigation className="w-4 h-4 text-sky-400" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
-                  Marswalk Routing Engine
+          <div className="flex flex-col items-end gap-3 max-h-[82vh] overflow-y-auto pr-1">
+            {/* Route Planning Card */}
+            <aside className="pointer-events-auto w-80 md:w-96 rounded-xl border border-sky-500/40 bg-black/90 p-4 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-right duration-200">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <div className="flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-sky-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
+                    Mission Routing & Life-Support
+                  </span>
+                </div>
+                <span className="text-[10px] bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded">
+                  A* Pandolf
                 </span>
               </div>
-              <span className="text-[10px] bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded">
-                A* Engine Active
-              </span>
-            </div>
 
-            <div className="mt-3 text-xs space-y-3">
-              <div className="rounded bg-sky-950/40 border border-sky-500/30 p-2.5 text-[11px] text-sky-200 flex items-center gap-2">
-                <Crosshair className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>Click directly on the 3D terrain to place <strong>Start</strong> and <strong>Destination</strong>.</span>
-              </div>
-
-              {/* Waypoint Coordinates Readout */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
-                  <span className="text-[10px] text-emerald-400 font-semibold block flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> START POINT
-                  </span>
-                  <span className="text-zinc-300 font-mono text-[11px]">
-                    {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Select on map...'}
-                  </span>
-                </div>
-                <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
-                  <span className="text-[10px] text-red-400 font-semibold block flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> DESTINATION
-                  </span>
-                  <span className="text-zinc-300 font-mono text-[11px]">
-                    {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Select on map...'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Calculated Metrics */}
-              {currentRoute && (
-                <div className="space-y-2 rounded bg-zinc-950/80 p-3 border border-zinc-800">
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-sky-400" /> DISTANCE
-                      </span>
-                      <span className="text-base font-bold text-white font-mono">
-                        {(currentRoute.distanceMeters / 1000).toFixed(2)} km
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        ({currentRoute.distanceMeters.toLocaleString()} m)
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-amber-400" /> EVA TIME
-                      </span>
-                      <span className="text-base font-bold text-amber-300 font-mono">
-                        {Math.floor(durationSeconds / 3600)}h {Math.floor((durationSeconds % 3600) / 60)}m
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        @ 3.0 km/h NASA pace
-                      </span>
-                    </div>
+              <div className="mt-2.5 text-xs space-y-2.5">
+                {/* Waypoint Coordinates Readout */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
+                    <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> START POINT
+                    </span>
+                    <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
+                      {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                    </span>
                   </div>
+                  <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
+                    <span className="text-[10px] text-red-400 font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> DESTINATION
+                    </span>
+                    <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
+                      {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                    </span>
+                  </div>
+                </div>
 
-                  <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3 text-orange-400" /> RISK SCORE
-                      </span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`font-bold ${currentRoute.riskScore > 0.5 ? 'text-red-400' : 'text-emerald-400'}`}>
-                          {(currentRoute.riskScore * 100).toFixed(1)}%
+                {/* Phase 3: Route Profile Alternatives Switcher */}
+                <div>
+                  <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1">
+                    Route Alternatives
+                  </span>
+                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                    <button
+                      onClick={() => selectRouteProfile('direct')}
+                      className={`p-1.5 rounded border text-left transition ${
+                        selectedRouteProfile === 'direct'
+                          ? 'border-sky-400 bg-sky-950/80 text-sky-200'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-semibold flex items-center gap-1">
+                        <Navigation className="w-3 h-3 text-sky-400" /> Direct
+                      </div>
+                      <div className="text-[9px] text-zinc-500">Fastest line</div>
+                    </button>
+
+                    <button
+                      onClick={() => selectRouteProfile('safe')}
+                      className={`p-1.5 rounded border text-left transition ${
+                        selectedRouteProfile === 'safe'
+                          ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-semibold flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" /> Safe
+                      </div>
+                      <div className="text-[9px] text-zinc-500">&lt;8° Slope</div>
+                    </button>
+
+                    <button
+                      onClick={() => selectRouteProfile('science')}
+                      className={`p-1.5 rounded border text-left transition ${
+                        selectedRouteProfile === 'science'
+                          ? 'border-amber-400 bg-amber-950/80 text-amber-200'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-semibold flex items-center gap-1">
+                        <FlaskConical className="w-3 h-3 text-amber-400" /> Science
+                      </div>
+                      <div className="text-[9px] text-zinc-500">Sample detour</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Calculated Metrics */}
+                {currentRoute && (
+                  <div className="space-y-2 rounded bg-zinc-950/80 p-2.5 border border-zinc-800">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-sky-400" /> DISTANCE
                         </span>
-                        <div className="w-16 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                          <div 
-                            className={`h-full ${currentRoute.riskScore > 0.5 ? 'bg-red-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${Math.min(100, currentRoute.riskScore * 100)}%` }}
-                          />
+                        <span className="text-base font-bold text-white font-mono">
+                          {(currentRoute.distanceMeters / 1000).toFixed(2)} km
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-400" /> EVA TIME
+                        </span>
+                        <span className="text-base font-bold text-amber-300 font-mono">
+                          {Math.floor(durationSeconds / 3600)}h {Math.floor((durationSeconds % 3600) / 60)}m
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 text-orange-400" /> RISK SCORE
+                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`font-bold ${currentRoute.riskScore > 0.4 ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {(currentRoute.riskScore * 100).toFixed(1)}%
+                          </span>
                         </div>
                       </div>
+
+                      <div>
+                        <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-yellow-400" /> ENERGY (PANDOLF)
+                        </span>
+                        <span className="font-bold text-yellow-300 font-mono">
+                          {currentRoute.energyJoules ? `${Math.round(currentRoute.energyJoules / 4184).toLocaleString()} kcal` : `${estimatedKcal.toLocaleString()} kcal`}
+                        </span>
+                      </div>
                     </div>
 
-                    <div>
-                      <span className="text-[10px] text-zinc-400 flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-yellow-400" /> ENERGY (PANDOLF)
-                      </span>
-                      <span className="font-bold text-yellow-300 font-mono">
-                        {currentRoute.energyJoules ? `${Math.round(currentRoute.energyJoules / 4184).toLocaleString()} kcal` : `${estimatedKcal.toLocaleString()} kcal`}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        avg. {currentRoute.averagePowerWatts ?? 285} W exertion
-                      </span>
-                    </div>
+                    {/* NASA EVA Life-Support Estimates */}
+                    {missionEstimate && (
+                      <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="rounded bg-sky-950/40 border border-sky-500/20 p-2">
+                          <span className="text-[9px] text-sky-400 font-semibold block">O₂ CONSUMPTION (2 CREW)</span>
+                          <span className="font-bold text-white font-mono">{missionEstimate.oxygenLiters} L</span>
+                          <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg)</span>
+                        </div>
+                        <div className="rounded bg-zinc-900/60 border border-zinc-800 p-2">
+                          <span className="text-[9px] text-zinc-400 font-semibold block">EVA LIMIT (8H MAX)</span>
+                          <span className={`font-bold font-mono ${missionEstimate.withinEvaTimeLimit ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {missionEstimate.withinEvaTimeLimit ? '✅ WITHIN LIMIT' : '⚠️ EXCEEDS LIMIT'}
+                          </span>
+                          <span className="text-[9px] text-zinc-500 block">
+                            {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion' : 'High exertion (>300W)'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  {/* NASA EVA Life-Support Estimates */}
-                  {missionEstimate && (
-                    <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="rounded bg-sky-950/40 border border-sky-500/20 p-2">
-                        <span className="text-[9px] text-sky-400 font-semibold block">O₂ CONSUMPTION (2 CREW)</span>
-                        <span className="font-bold text-white font-mono">{missionEstimate.oxygenLiters} L</span>
-                        <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg)</span>
-                      </div>
-                      <div className="rounded bg-zinc-900/60 border border-zinc-800 p-2">
-                        <span className="text-[9px] text-zinc-400 font-semibold block">EVA LIMIT (8H MAX)</span>
-                        <span className={`font-bold font-mono ${missionEstimate.withinEvaTimeLimit ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {missionEstimate.withinEvaTimeLimit ? '✅ WITHIN LIMIT' : '⚠️ EXCEEDS LIMIT'}
-                        </span>
-                        <span className="text-[9px] text-zinc-500 block">
-                          {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion' : 'High exertion (>300W)'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => calculateRoute()}
+                    disabled={!routeStart || !routeEnd || isCalculatingRoute}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-semibold py-2 text-xs shadow-md shadow-sky-600/30 transition"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isCalculatingRoute ? 'animate-spin' : ''}`} />
+                    <span>{isCalculatingRoute ? 'Calculating...' : 'Recalculate Route'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleCopyBriefing}
+                    disabled={!currentRoute}
+                    className="flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 px-2.5 text-zinc-200 text-xs transition"
+                    title="Export Mission Briefing to Clipboard"
+                  >
+                    {copiedBriefing ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <FileText className="w-3.5 h-3.5" />}
+                    <span>{copiedBriefing ? 'Copied' : 'Briefing'}</span>
+                  </button>
+
+                  <button
+                    onClick={clearRoute}
+                    className="rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-2.5 text-zinc-400 hover:text-white text-xs transition"
+                  >
+                    Clear
+                  </button>
                 </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => calculateRoute()}
-                  disabled={!routeStart || !routeEnd || isCalculatingRoute}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-semibold py-2 text-xs shadow-md shadow-sky-600/30 transition"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isCalculatingRoute ? 'animate-spin' : ''}`} />
-                  <span>{isCalculatingRoute ? 'Calculating A*...' : 'Calculate Route'}</span>
-                </button>
-                <button
-                  onClick={clearRoute}
-                  className="rounded border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-3 text-zinc-400 hover:text-white text-xs transition"
-                >
-                  Reset
-                </button>
               </div>
-            </div>
-          </aside>
+            </aside>
+
+            {/* Terrain Elevation Cross-Section Chart */}
+            <ElevationProfileChart />
+          </div>
         )}
       </div>
 
       {/* Bottom Command Dock */}
-      <footer className="pointer-events-auto flex flex-col md:flex-row items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/60 p-3 backdrop-blur-md">
+      <footer className="pointer-events-auto flex flex-col md:flex-row items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/60 p-2.5 backdrop-blur-md">
         {activeView === 'globe' ? (
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -511,7 +605,7 @@ export default function MissionHUD() {
               <span>Back to Global Orbit</span>
             </button>
             <span className="text-xs text-zinc-400 hidden sm:inline">
-              Active Mode: 3D Marswalk Planning on Jezero Crater Western Delta
+              Active Mode: Jezero Crater Neretva Delta EVA Mission Planning
             </span>
           </div>
         )}
@@ -532,7 +626,7 @@ export default function MissionHUD() {
           )}
 
           <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-zinc-500 px-2 py-1">
-            <span>🖱️ Click terrain to place waypoints • Drag to rotate</span>
+            <span>🖱️ Click terrain to set waypoints • Drag to pan</span>
           </div>
         </div>
       </footer>

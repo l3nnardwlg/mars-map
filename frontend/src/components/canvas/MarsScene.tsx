@@ -20,6 +20,14 @@ function SceneLoadingFallback() {
 
 export default function MarsScene() {
   const activeView = useMissionStore((state) => state.activeView);
+  const sunTimeMode = useMissionStore((state) => state.sunTimeMode);
+
+  // Dynamic Sun illumination reflecting Mars Sol time
+  const sunLightConfig = {
+    morning: { pos: [14, 6, 8] as [number, number, number], color: '#ffe6cc', intensity: 3.2 },
+    noon: { pos: [2, 16, 5] as [number, number, number], color: '#fff8f2', intensity: 3.5 },
+    evening: { pos: [-14, 4, 7] as [number, number, number], color: '#ffb380', intensity: 2.9 },
+  }[sunTimeMode] || { pos: [6, 10, 8] as [number, number, number], color: '#fff8f2', intensity: 3.2 };
 
   return (
     <div className="relative w-full h-full bg-[#030308] overflow-hidden">
@@ -51,9 +59,9 @@ export default function MarsScene() {
           {/* Solar Illumination */}
           <ambientLight intensity={activeView === 'globe' ? 0.12 : 0.25} color="#ffe8d6" />
           <directionalLight
-            position={activeView === 'globe' ? [12, 6, 10] : [6, 10, 8]}
-            intensity={activeView === 'globe' ? 2.8 : 3.2}
-            color="#fff8f2"
+            position={activeView === 'globe' ? [12, 6, 10] : sunLightConfig.pos}
+            intensity={activeView === 'globe' ? 2.8 : sunLightConfig.intensity}
+            color={activeView === 'globe' ? '#fff8f2' : sunLightConfig.color}
             castShadow
           />
 

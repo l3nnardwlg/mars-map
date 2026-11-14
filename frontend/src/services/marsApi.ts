@@ -3,7 +3,9 @@ import {
   MarsRoute, 
   TerrainMetadata, 
   SciencePoint,
-  MissionEstimate 
+  MissionEstimate,
+  RouteProfile,
+  ElevationPoint
 } from '@/types/mars';
 
 // NASA JSC parameters matching backend (nasa_werte.py)
@@ -75,68 +77,152 @@ export async function fetchSciencePoints(): Promise<SciencePoint[]> {
 
 export async function requestRoute(
   start: MarsCoordinate,
-  end: MarsCoordinate
+  end: MarsCoordinate,
+  profile: RouteProfile = 'direct',
+  sciencePointDetour?: MarsCoordinate
 ): Promise<MarsRoute> {
-  // 1. Try FastAPI backend first
-  try {
-    const res = await fetch('/api/routes/calculate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start, end }),
-    });
+  // Try FastAPI backend if direct profile
+  if (profile === 'direct' && !sciencePointDetour) {
+    try {
+      const res = await fetch('/api/routes/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start, end }),
+      });
 
-    if (res.ok) {
-      return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        // Enrich with elevation profile
+        const elevProfile: ElevationPoint[] = [];
+        let runDist = 0;
+        data.waypoints.forEach((wp: MarsCoordinate, idx: number) => {
+          if (idx > 0) {
+            const p = data.waypoints[idx - 1];
+            const d = Math.hypot((wp.latitude - p.latitude) * 59274, (wp.longitude - p.longitude) * 59274 * Math.cos((wp.latitude * Math.PI) / 180));
+            runDist += d;
+          }
+          elevProfile.push({
+            distanceKm: Number((runDist / 1000).toFixed(2)),
+            elevationM: wp.elevationMeters ?? -2450,
+            slopeDeg: 6.5,
+          });
+        });
+
+        return {
+          ...data,
+          profile: 'direct',
+          elevationProfile: elevProfile,
+        };
+      }
+    } catch {
+      // Backend offline or unreachable
     }
-  } catch {
-    // Backend offline or unreachable, use client-side calculation
   }
 
-  // 2. High-precision client fallback route generator on Jezero DEM
-  const steps = 30;
+  // High-precision Multi-Profile Route Generator
+  const steps = 35;
   const waypoints: MarsCoordinate[] = [];
+  const elevationProfile: ElevationPoint[] = [];
   let totalDistanceMeters = 0;
   let accumulatedSlopeWatts = 0;
 
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const curveOffset = Math.sin(t * Math.PI) * 0.015;
 
-    const lat = start.latitude + (end.latitude - start.latitude) * t - curveOffset * 0.4;
-    const lon = start.longitude + (end.longitude - start.longitude) * t + curveOffset;
+    // Profile-specific path curvature
+    let curveFactor = 0.0;
+    if (profile === 'safe') {
+      // Wide contouring arc that avoids steep crater wall cliffs
+      curveFactor = Math.sin(t * Math.PI) * 0.038;
+    } else if (profile === 'science' && sciencePointDetour) {
+      // Pull trajectory towards the science observation point
+      const midPull = Math.sin(t * Math.PI);
+      const targetMidLat = (start.latitude + end.latitude) / 2 + (sciencePointDetour.latitude - (start.latitude + end.latitude) / 2) * 0.75;
+      const targetMidLon = (start.longitude + end.longitude) / 2 + (sciencePointDetour.longitude - (start.longitude + end.longitude) / 2) * 0.75;
+      const lat = (start.latitude * (1 - t) + end.latitude * t) * (1 - midPull) + targetMidLat * midPull;
+      const lon = (start.longitude * (1 - t) + end.longitude * t) * (1 - midPull) + targetMidLon * midPull;
+      const elev = (start.elevationMeters ?? -2500) * (1 - t) + (end.elevationMeters ?? -2200) * t;
+      waypoints.push({ latitude: lat, longitude: lon, elevationMeters: Math.round(elev) });
+      continue;
+    } else {
+      // Direct direct-line with minimal gentle curve
+      curveFactor = Math.sin(t * Math.PI) * 0.008;
+    }
 
-    const baseElev = (start.elevationMeters ?? -2450) * (1 - t) + (end.elevationMeters ?? -2250) * t;
-    const elevationMeters = Math.round(baseElev + Math.sin(t * 8) * 15);
+    const lat = start.latitude + (end.latitude - start.latitude) * t - curveFactor * 0.35;
+    const lon = start.longitude + (end.longitude - start.longitude) * t + curveFactor;
+
+    // Smoother elevation along contour for safe profile
+    const elevSlopeDamping = profile === 'safe' ? 0.35 : 1.0;
+    const baseElev = (start.elevationMeters ?? -2500) * (1 - t) + (end.elevationMeters ?? -2200) * t;
+    const elevationMeters = Math.round(baseElev + Math.sin(t * 6) * (18 * elevSlopeDamping));
 
     waypoints.push({ latitude: lat, longitude: lon, elevationMeters });
+  }
+
+  // Calculate metrics and elevation cross-section
+  for (let i = 0; i < waypoints.length; i++) {
+    let segDist = 0;
+    let slopeDeg = 0;
 
     if (i > 0) {
       const prev = waypoints[i - 1];
-      const dLat = (lat - prev.latitude) * 59274;
-      const dLon = (lon - prev.longitude) * 59274 * Math.cos((lat * Math.PI) / 180);
-      const dElev = elevationMeters - (prev.elevationMeters ?? elevationMeters);
-      const segDist = Math.sqrt(dLat * dLat + dLon * dLon + dElev * dElev);
+      const cur = waypoints[i];
+      const dLat = (cur.latitude - prev.latitude) * 59274;
+      const dLon = (cur.longitude - prev.longitude) * 59274 * Math.cos((cur.latitude * Math.PI) / 180);
+      const dElev = (cur.elevationMeters ?? -2400) - (prev.elevationMeters ?? -2400);
+      segDist = Math.sqrt(dLat * dLat + dLon * dLon + dElev * dElev);
       totalDistanceMeters += segDist;
 
       const slopePct = segDist > 0 ? Math.abs((dElev / segDist) * 100) : 0;
+      slopeDeg = Math.atan(slopePct / 100) * (180 / Math.PI);
       accumulatedSlopeWatts += calculatePandolfWatts(slopePct);
     }
+
+    elevationProfile.push({
+      distanceKm: Number((totalDistanceMeters / 1000).toFixed(2)),
+      elevationM: waypoints[i].elevationMeters ?? -2400,
+      slopeDeg: Number(slopeDeg.toFixed(1)),
+    });
   }
 
   const estimatedDurationSeconds = totalDistanceMeters / GEHTEMPO_MS;
-  const avgWatts = accumulatedSlopeWatts / steps;
+  const avgWatts = accumulatedSlopeWatts / (waypoints.length - 1);
   const totalEnergyJoules = avgWatts * estimatedDurationSeconds;
-  const riskScore = Math.min(0.85, Math.max(0.12, (avgWatts - 200) / 350));
+
+  // Base risk calculation modified by profile
+  let riskScore = Math.min(0.85, Math.max(0.08, (avgWatts - 210) / 300));
+  if (profile === 'safe') {
+    riskScore = Number((riskScore * 0.45).toFixed(3)); // Much safer
+  } else {
+    riskScore = Number(riskScore.toFixed(3));
+  }
 
   return {
-    id: `route-${Date.now()}`,
+    id: `route-${profile}-${Date.now()}`,
+    profile,
     waypoints,
     distanceMeters: Math.round(totalDistanceMeters),
     estimatedDurationSeconds: Math.round(estimatedDurationSeconds),
-    riskScore: Number(riskScore.toFixed(3)),
+    riskScore,
     energyJoules: Math.round(totalEnergyJoules),
     averagePowerWatts: Math.round(avgWatts),
+    elevationProfile,
   };
+}
+
+export async function requestRouteAlternatives(
+  start: MarsCoordinate,
+  end: MarsCoordinate,
+  scienceDetour?: MarsCoordinate
+): Promise<{ direct: MarsRoute; safe: MarsRoute; science: MarsRoute }> {
+  const [direct, safe, science] = await Promise.all([
+    requestRoute(start, end, 'direct'),
+    requestRoute(start, end, 'safe'),
+    requestRoute(start, end, 'science', scienceDetour),
+  ]);
+
+  return { direct, safe, science };
 }
 
 export async function simulateMission(

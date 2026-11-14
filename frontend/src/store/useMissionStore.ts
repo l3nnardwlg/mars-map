@@ -4,10 +4,15 @@ import {
   CameraViewMode, 
   MarsCoordinate, 
   MarsRoute, 
+  RouteProfile,
   SciencePoint, 
   MissionEstimate 
 } from '@/types/mars';
-import { requestRoute, fetchSciencePoints, simulateMission } from '@/services/marsApi';
+import { 
+  requestRouteAlternatives, 
+  fetchSciencePoints, 
+  simulateMission 
+} from '@/services/marsApi';
 
 export const MARS_LANDMARKS: Landmark[] = [
   {
@@ -40,8 +45,10 @@ export const MARS_LANDMARKS: Landmark[] = [
   },
 ];
 
+export type { RouteProfile } from '@/types/mars';
 export type ActiveView = 'globe' | 'terrain_prototype';
 export type TerrainColorMode = 'satellite' | 'hypsometric' | 'slope';
+export type SunTimeMode = 'morning' | 'noon' | 'evening';
 
 interface MissionStore {
   // Global View State
@@ -53,15 +60,20 @@ interface MissionStore {
   cameraTarget: [number, number, number];
   cameraDesiredPosition: [number, number, number] | null;
 
-  // DEM Terrain State
+  // DEM Terrain & Environment State
   terrainWireframe: boolean;
   terrainExaggeration: number;
   terrainColorMode: TerrainColorMode;
+  sunTimeMode: SunTimeMode;
+  showSciencePoints: boolean;
+  showElevationProfile: boolean;
 
-  // Route Planning State
+  // Route Planning State (Phase 3 Multi-Profile)
   routeStart: MarsCoordinate | null;
   routeEnd: MarsCoordinate | null;
+  selectedRouteProfile: RouteProfile;
   currentRoute: MarsRoute | null;
+  alternativeRoutes: { direct?: MarsRoute; safe?: MarsRoute; science?: MarsRoute };
   isCalculatingRoute: boolean;
 
   // Phase 3 Science & Mission Simulation
@@ -84,11 +96,15 @@ interface MissionStore {
   toggleTerrainWireframe: () => void;
   setTerrainExaggeration: (val: number) => void;
   setTerrainColorMode: (mode: TerrainColorMode) => void;
+  setSunTimeMode: (time: SunTimeMode) => void;
+  toggleSciencePoints: () => void;
+  toggleElevationProfile: () => void;
 
   // Route Planning Actions
   setRoutePoint: (coord: MarsCoordinate) => void;
   clearRoute: () => void;
   calculateRoute: () => Promise<void>;
+  selectRouteProfile: (profile: RouteProfile) => Promise<void>;
 
   // Science Points Actions
   loadSciencePoints: () => Promise<void>;
@@ -108,10 +124,15 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   terrainWireframe: false,
   terrainExaggeration: 1.5,
   terrainColorMode: 'satellite',
+  sunTimeMode: 'morning',
+  showSciencePoints: true,
+  showElevationProfile: true,
 
   routeStart: { latitude: 18.4276, longitude: 77.4516, elevationMeters: -2583 },
   routeEnd: { latitude: 18.4438, longitude: 77.4542, elevationMeters: -2560 },
+  selectedRouteProfile: 'direct',
   currentRoute: null,
+  alternativeRoutes: {},
   isCalculatingRoute: false,
 
   sciencePoints: [],
@@ -149,11 +170,20 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   toggleTerrainWireframe: () => set((state) => ({ terrainWireframe: !state.terrainWireframe })),
   setTerrainExaggeration: (val) => set({ terrainExaggeration: val }),
   setTerrainColorMode: (mode) => set({ terrainColorMode: mode }),
+  setSunTimeMode: (time) => set({ sunTimeMode: time }),
+  toggleSciencePoints: () => set((state) => ({ showSciencePoints: !state.showSciencePoints })),
+  toggleElevationProfile: () => set((state) => ({ showElevationProfile: !state.showElevationProfile })),
 
   setRoutePoint: (coord: MarsCoordinate) => {
     const { routeStart, routeEnd } = get();
     if (!routeStart || (routeStart && routeEnd)) {
-      set({ routeStart: coord, routeEnd: null, currentRoute: null, missionEstimate: null });
+      set({ 
+        routeStart: coord, 
+        routeEnd: null, 
+        currentRoute: null, 
+        alternativeRoutes: {}, 
+        missionEstimate: null 
+      });
     } else {
       set({ routeEnd: coord });
       get().calculateRoute();
@@ -165,20 +195,43 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
       routeStart: null,
       routeEnd: null,
       currentRoute: null,
+      alternativeRoutes: {},
       missionEstimate: null,
     }),
 
   calculateRoute: async () => {
-    const { routeStart, routeEnd } = get();
+    const { routeStart, routeEnd, sciencePoints, selectedRouteProfile } = get();
     if (!routeStart || !routeEnd) return;
 
     set({ isCalculatingRoute: true });
     try {
-      const route = await requestRoute(routeStart, routeEnd);
-      const estimate = await simulateMission(route, 2);
-      set({ currentRoute: route, missionEstimate: estimate, isCalculatingRoute: false });
+      const nearestScience = sciencePoints[0]?.location;
+      const alternatives = await requestRouteAlternatives(routeStart, routeEnd, nearestScience);
+      const active = alternatives[selectedRouteProfile] || alternatives.direct;
+      const estimate = await simulateMission(active, 2);
+
+      set({ 
+        alternativeRoutes: alternatives,
+        currentRoute: active, 
+        missionEstimate: estimate, 
+        isCalculatingRoute: false 
+      });
     } catch {
       set({ isCalculatingRoute: false });
+    }
+  },
+
+  selectRouteProfile: async (profile: RouteProfile) => {
+    const { alternativeRoutes } = get();
+    const targetRoute = alternativeRoutes[profile];
+    if (!targetRoute) return;
+
+    set({ selectedRouteProfile: profile, currentRoute: targetRoute });
+    try {
+      const estimate = await simulateMission(targetRoute, 2);
+      set({ missionEstimate: estimate });
+    } catch {
+      // ignore
     }
   },
 

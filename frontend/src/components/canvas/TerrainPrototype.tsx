@@ -8,6 +8,7 @@ import { useMissionStore } from '@/store/useMissionStore';
 import { Html } from '@react-three/drei';
 import RouteMesh from './RouteMesh';
 import SciencePointsLayer from './SciencePointsLayer';
+import { sampleHeightAtUV } from '@/utils/demSampler';
 import { useEffect } from 'react';
 
 export default function TerrainPrototype() {
@@ -30,7 +31,8 @@ export default function TerrainPrototype() {
     '/terrain/jezero_slope.png',
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
+    /* eslint-disable react-hooks/immutability */
     if (demMap) {
       demMap.wrapS = THREE.ClampToEdgeWrapping;
       demMap.wrapT = THREE.ClampToEdgeWrapping;
@@ -47,6 +49,7 @@ export default function TerrainPrototype() {
       slopeMap.wrapS = THREE.ClampToEdgeWrapping;
       slopeMap.wrapT = THREE.ClampToEdgeWrapping;
     }
+    /* eslint-enable react-hooks/immutability */
   }, [demMap, orthoMap, slopeMap]);
 
   // Hypsometric Colormap texture
@@ -86,11 +89,9 @@ export default function TerrainPrototype() {
     const lat = 17.58 + e.uv.y * (19.29 - 17.58);
     const lon = 76.99 + e.uv.x * (78.58 - 76.99);
 
-    // Estimate elevation in meters from terrain center
-    const dx = e.uv.x - 0.5;
-    const dy = e.uv.y - 0.5;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const elev = Math.round(-2500 + Math.min(1.0, dist * 1.8) * 1100);
+    // Sample exact elevation in meters from DEM height fraction (-2500m basin floor to -1200m rim)
+    const elevFraction = sampleHeightAtUV(e.uv.x, e.uv.y);
+    const elev = Math.round(-2500 + elevFraction * 1300);
 
     setRoutePoint({
       latitude: Number(lat.toFixed(4)),

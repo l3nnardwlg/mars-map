@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
@@ -22,7 +22,8 @@ export default function MarsGlobe() {
     '/textures/mars_bump.jpg',
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
+    /* eslint-disable react-hooks/immutability */
     if (colorMap) {
       colorMap.colorSpace = THREE.SRGBColorSpace;
       colorMap.wrapS = THREE.ClampToEdgeWrapping;
@@ -31,6 +32,7 @@ export default function MarsGlobe() {
     if (bumpMap) {
       bumpMap.wrapS = THREE.ClampToEdgeWrapping;
       bumpMap.wrapT = THREE.ClampToEdgeWrapping;
+      /* eslint-enable react-hooks/immutability */
     }
   }, [colorMap, bumpMap]);
 

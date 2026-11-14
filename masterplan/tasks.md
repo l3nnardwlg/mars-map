@@ -47,12 +47,12 @@
 ## Phase 3 – Mission Planning (20–32h)
 
 - [x] Implement NASA science points
-- [ ] Implement route alternatives
+- [x] Implement route alternatives
 - [x] Add EVA duration and resource estimates
-- [ ] Display mission risks and terrain information
-- [ ] Build interactive layer controls
-- [ ] Finalize Mission Control dashboard
-- [ ] Integrate science points into 3D scene
+- [x] Display mission risks and terrain information
+- [x] Build interactive layer controls
+- [x] Finalize Mission Control dashboard
+- [x] Integrate science points into 3D scene
 
 **Milestone:** Complete interactive Marswalk planning workflow.
 
