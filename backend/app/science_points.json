@@ -1,0 +1,156 @@
+[
+  {
+    "id": "perseverance-landung",
+    "name": "Octavia E. Butler Landing",
+    "location": {
+      "latitude": 18.44462715,
+      "longitude": 77.45088572,
+      "elevationMeters": -2567.4
+    },
+    "description": "Landeplatz von Perseverance im Jezero-Krater, Landung am 18. Februar 2021. Koordinaten aus der ersten lokalisierten Rover-Position (Sol 13) der NASA-Wegpunktdatei.",
+    "nasaSourceUrl": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+  },
+  {
+    "id": "perseverance-letzte-position",
+    "name": "Perseverance, Position Sol 2022",
+    "location": {
+      "latitude": 18.43559434,
+      "longitude": 77.23322287,
+      "elevationMeters": -1937.1
+    },
+    "description": "Letzte Position in der NASA-Wegpunktdatei (Sol 2022), 45.2 km Fahrstrecke seit der Landung.",
+    "nasaSourceUrl": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+  },
+  {
+    "id": "gazetteer-jezero",
+    "name": "Jezero",
+    "location": {
+      "latitude": 18.4082,
+      "longitude": 77.6873,
+      "elevationMeters": -2628.4
+    },
+    "description": "Krater, Durchmesser 47.5 km. Adopted by IAU am 2007/07/25. Namensherkunft laut USGS-Namensverzeichnis: Town in Bosnia-Herzegovina. Ehemaliges Seebecken mit Flussdelta, Zielgebiet der Perseverance-Mission (Mangold et al. 2021, https://doi.org/10.1126/science.abl4051).",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/14300"
+  },
+  {
+    "id": "gazetteer-hartwell",
+    "name": "Hartwell",
+    "location": {
+      "latitude": 18.53,
+      "longitude": 77.72,
+      "elevationMeters": -2625.9
+    },
+    "description": "Krater, Durchmesser 1.7 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Town in Georgia, USA.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15871"
+  },
+  {
+    "id": "gazetteer-belva",
+    "name": "Belva",
+    "location": {
+      "latitude": 18.48,
+      "longitude": 77.38,
+      "elevationMeters": -2488.8
+    },
+    "description": "Krater, Durchmesser 0.9 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Town in West Virginia, USA.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15872"
+  },
+  {
+    "id": "gazetteer-marysville",
+    "name": "Marysville",
+    "location": {
+      "latitude": 18.13,
+      "longitude": 77.18,
+      "elevationMeters": -2221.0
+    },
+    "description": "Krater, Durchmesser 1.9 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Town in California, USA.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15874"
+  },
+  {
+    "id": "gazetteer-sedona",
+    "name": "Sedona",
+    "location": {
+      "latitude": 17.84,
+      "longitude": 77.54,
+      "elevationMeters": -3007.3
+    },
+    "description": "Krater, Durchmesser 7.4 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Town in Arizona, USA.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15876"
+  },
+  {
+    "id": "gazetteer-una-vallis",
+    "name": "Una Vallis",
+    "location": {
+      "latitude": 18.29,
+      "longitude": 77.07,
+      "elevationMeters": -2017.5
+    },
+    "description": "Tal, Durchmesser 5.0 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: River in Bosnia and Herzegovina and Croatia.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15878"
+  },
+  {
+    "id": "gazetteer-neretva-vallis",
+    "name": "Neretva Vallis",
+    "location": {
+      "latitude": 18.55,
+      "longitude": 77.2,
+      "elevationMeters": -1928.5
+    },
+    "description": "Tal, Durchmesser 17.0 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: River in Bosnia and Herzegovina and Croatia.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15879"
+  },
+  {
+    "id": "gazetteer-dacono",
+    "name": "Dacono",
+    "location": {
+      "latitude": 18.34,
+      "longitude": 77.95,
+      "elevationMeters": -2917.9
+    },
+    "description": "Krater, Durchmesser 2.2 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Town in Colorado, USA.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15877"
+  },
+  {
+    "id": "gazetteer-nili-planum",
+    "name": "Nili Planum",
+    "location": {
+      "latitude": 18.6,
+      "longitude": 77.1,
+      "elevationMeters": -2046.5
+    },
+    "description": "Hochebene, Durchmesser 128.5 km. Adopted by IAU am 2020/01/17. Namensherkunft laut USGS-Namensverzeichnis: Classical albedo feature name.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15880"
+  },
+  {
+    "id": "gazetteer-pliva-vallis",
+    "name": "Pliva Vallis",
+    "location": {
+      "latitude": 18.67,
+      "longitude": 78.35,
+      "elevationMeters": -2624.9
+    },
+    "description": "Tal, Durchmesser 30.0 km. Adopted by IAU am 2020/03/26. Namensherkunft laut USGS-Namensverzeichnis: River in Bosnia and Herzegovina.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15903"
+  },
+  {
+    "id": "gazetteer-sava-vallis",
+    "name": "Sava Vallis",
+    "location": {
+      "latitude": 19.09,
+      "longitude": 77.13,
+      "elevationMeters": -1834.1
+    },
+    "description": "Tal, Durchmesser 62.0 km. Adopted by IAU am 2020/03/26. Namensherkunft laut USGS-Namensverzeichnis: River in Slovenia.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/15904"
+  },
+  {
+    "id": "gazetteer-jezero-mons",
+    "name": "Jezero Mons",
+    "location": {
+      "latitude": 18.16,
+      "longitude": 78.23,
+      "elevationMeters": -602.7
+    },
+    "description": "Berg, Durchmesser 27.0 km. Adopted by IAU am 2021/09/17. Namensherkunft laut USGS-Namensverzeichnis: Named for nearby crater, Jezero.",
+    "nasaSourceUrl": "https://planetarynames.wr.usgs.gov/Feature/16005"
+  }
+]
