@@ -66,3 +66,13 @@ def test_terrain_metadata_reads_tile_info(monkeypatch, tmp_path):
     assert body["availableTiles"] == ["ctx_dem"]
     assert body["bounds"]["minLatitude"] == 17.6
     assert body["resolutionMetersPerPixel"] == 12.4
+
+
+def test_all_nasa_sample_sites_are_science_points():
+    punkte = client.get("/api/science-points").json()
+    proben = [p for p in punkte if p["id"].startswith("probe-")]
+    assert len(proben) == 22
+    canyon = next(p for p in proben if "Sapphire Canyon" in p["name"])
+    assert "Neretva Vallis" in canyon["description"]
+    assert canyon["location"]["latitude"] == pytest.approx(18.4975, abs=1e-3)
+    assert all("Probe" in p["description"] and "Gestein" in p["description"] for p in proben)
