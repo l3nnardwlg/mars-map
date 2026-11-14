@@ -40,11 +40,22 @@ The scientific foundation of this project is anchored in verified external groun
 
 ---
 
-## 4. Known Limitations & Disclosures
+## 4. Known Limitations, Model Boundaries & Scientific Disclosures
 
 1. **Quantization of Client 8-Bit Heightmap:**
-   * While the backend tiles are full 16-bit raster data ($\pm 0.02\text{ m}$ precision), the lightweight client-side preview DEM is encoded as an 8-bit PNG, resulting in a known half-LSB quantization uncertainty of $\pm 2.56\text{ m}$. This uncertainty is explicitly flagged to the user in the Terrain Inspector.
-2. **Sub-Resolution Obstacles:**
+   * While the backend tiles are full 16-bit GeoTIFF raster data ($\pm 0.02\text{ m}$ quantization step), the lightweight client-side preview DEM is encoded as an 8-bit PNG, resulting in a maximum round-off error of $\pm 2.555\text{ m}$ ($\approx \pm 2.56\text{ m}$) and a theoretical uniform RMS error of $\pm 1.475\text{ m}$ ($\approx \pm 1.48\text{ m}$). Total composite DTM uncertainty relative to the MOLA Areoid is estimated at $\pm 6\text{ m}$ to $\pm 10\text{ m}$ RMS based on USGS literature (Fergason et al., 2020).
+2. **Normalized Terrain Slope Risk Index vs. Accident Risk:**
+   * The risk score is explicitly defined as a **topographic slope hazard index** ($R = 0.6 \cdot \bar{\theta}/20^\circ + 0.4 \cdot \theta_{\max}/20^\circ$). It is not an empirical statistical probability of an accident or equipment failure.
+3. **Reference Benchmark Scenario Distinction:**
+   * The jury presentation figures (Direct: 72.4% risk, Safe: 28.2% risk) originate from a standardized Western Delta Scarp test case ($18.38^\circ\text{ N}, 77.58^\circ\text{ E} \to 18.44^\circ\text{ N}, 77.45^\circ\text{ E}$). The UI explicitly labels this as `[REFERENCE BENCHMARK SCENARIO]` to prevent confusion with dynamic live calculations.
+4. **Sub-Resolution Obstacles:**
    * The primary DEM resolution is 20 meters per pixel. Micro-topographic features such as boulders $< 20\text{ m}$ across or small fissures are below CTX resolution.
-3. **Simulated Biometrics Disclaimer:**
-   * Telemetry such as heart rate, suit pressure, and oxygen flow are explicitly labeled in the HUD as `SIMULATED [NASA IST-1]`. They represent predictive bio-energetic modeling, not live biomedical sensors.
+5. **Simulated Biometrics Disclaimer:**
+   * Telemetry such as heart rate, suit pressure, and oxygen flow are explicitly labeled in the HUD as `SIMULATED [NASA IST-1]`. They represent predictive bio-energetic modeling, not live biomedical telemetry.
+6. **Automated Quality Verification Pipelines:**
+   * Every line of code committed is validated by four automated gates:
+     - `npm run lint` (ESLint 9 + TypeScript strict mode)
+     - `npm run test:science` (10 mathematical geodetic tests)
+     - `npm run test:contract` (Pydantic / FastAPI wire schema tests)
+     - `npm run test:e2e` (13-step mission acceptance test)
+     - `npm run build` (Turbopack production compilation)

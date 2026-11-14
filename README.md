@@ -21,7 +21,7 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 
 ### 2. Multi-Objective Traverse Comparison
 - **Direct Path (Euclidean):** Demonstrates naive shortest paths encountering dangerous $18.5^\circ$ scarp grades and steep metabolic costs ($405\text{ kJ}$).
-- **Safe Path (Ridge Traversal):** Traverses stable delta alluvial contours ($<8^\circ$ slopes), avoiding hazardous escarpments and saving $140\text{ kJ}$ ($265\text{ kJ}$ total).
+- **Safe Path (Ridge Traversal):** Traverses stable delta alluvial contours ($<8^\circ$ slopes), avoiding hazardous escarpments and reducing the Normalized Terrain Slope Risk Index from $72.4\%$ down to $28.2\%$.
 - **Science Path (Outcrop Sampling):** Strategic waypoint routing targeting Jezero Western Fan outcrop mudstones and delta deposits while staying well within human EVA physiological limits.
 
 ### 3. Synchronized Topographic & EVA Telemetry
@@ -39,8 +39,12 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 
 | Document | Description |
 | :--- | :--- |
+| **[PART_B_TONIGHT_HANDOFF.md](docs/PART_B_TONIGHT_HANDOFF.md)** | Tonight's actionable, prioritized engineering handoff for Part B (FastAPI backend). |
+| **[PART_B_TASK_BOARD.md](docs/PART_B_TASK_BOARD.md)** | Compact operational sprint board tracking P0/P1 backend deliverables and blockers. |
+| **[SCIENTIFIC_CLAIMS_AUDIT.md](docs/SCIENTIFIC_CLAIMS_AUDIT.md)** | Master scientific claims registry mapping every numerical claim to equations, datasets, and tests. |
+| **[FINAL_INTEGRATION_CHECKLIST.md](docs/FINAL_INTEGRATION_CHECKLIST.md)** | Joint operational sign-off checklist and contingency assurances for Part A and Part B. |
 | **[FRONTEND_SCIENTIFIC_VALIDATION.md](docs/FRONTEND_SCIENTIFIC_VALIDATION.md)** | Geodetic coordinate transforms, MOLA datum proofs, central-difference slope math, and error budgets. |
-| **[FRONTEND_PERFORMANCE_REPORT.md](docs/FRONTEND_PERFORMANCE_REPORT.md)** | VRAM profiling, 60 FPS benchmarks, 8K texture anisotropy, and WebGL resource lifecycle management. |
+| **[FRONTEND_PERFORMANCE_REPORT.md](docs/FRONTEND_PERFORMANCE_REPORT.md)** | VRAM profiling, in-engine live rAF frame rate tracker, 8K texture anisotropy, and WebGL lifecycle. |
 | **[JURY_DEMO_SCRIPT.md](docs/JURY_DEMO_SCRIPT.md)** | Rehearsable step-by-step 2.5-minute presentation script for NASA Space Apps evaluation. |
 | **[FRONTEND_BACKEND_INTEGRATION.md](docs/FRONTEND_BACKEND_INTEGRATION.md)** | Complete API contract, tile serving protocols, error resilience (503/422/timeout), and fallback modes. |
 | **[AI_USAGE.md](docs/AI_USAGE.md)** | Transparent disclosure of AI assistance, automated verification pipelines, and technical limitations. |

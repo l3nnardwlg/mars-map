@@ -67,7 +67,6 @@ export function calculatePandolfWatts(
  */
 export function enrichWaypointsWithTopography(
   waypoints: MarsCoordinate[],
-  profile: RouteProfile = 'direct',
   dataSource: string = 'NASA PDS CTX/MOLA DTM'
 ): {
   enrichedWaypoints: MarsCoordinate[];
@@ -144,11 +143,13 @@ export function enrichWaypointsWithTopography(
   const estimatedDuration = runDistMeters / NASA_EVA_CONSTANTS.walkingSpeedMs;
   const totalJoules = avgWatts * estimatedDuration;
 
-  // Scientific risk classification based on maximum slope, energy and duration
-  let riskScore = Math.min(0.95, Math.max(0.05, (maxSlopeDeg / 25.0) * 0.6 + (avgWatts / 450.0) * 0.4));
-  if (profile === 'safe') {
-    riskScore = Math.min(riskScore, 0.28);
-  }
+  // Normalized Terrain Slope Risk Index:
+  // R = clip(0.6 * meanSlope / 20° + 0.4 * maxSlope / 20°, 0, 1)
+  // Calibrated against NASA MER/MSL/M20 20.0° operational mobility threshold.
+  const MAX_SLOPE_THRESHOLD_DEG = 20.0;
+  const meanFraction = avgSlopeDeg / MAX_SLOPE_THRESHOLD_DEG;
+  const maxFraction = maxSlopeDeg / MAX_SLOPE_THRESHOLD_DEG;
+  const riskScore = Math.min(1.0, Math.max(0.0, 0.6 * meanFraction + 0.4 * maxFraction));
 
   return {
     enrichedWaypoints,
@@ -234,7 +235,6 @@ export async function requestRoute(
         const data = await res.json();
         const enriched = enrichWaypointsWithTopography(
           data.waypoints,
-          'direct',
           'NASA FastAPI Backend [A* CTX-DEM Raster]'
         );
 
@@ -286,7 +286,6 @@ export async function requestRoute(
 
   const enriched = enrichWaypointsWithTopography(
     rawWaypoints,
-    profile,
     'NASA PDS M20 Jezero CTX Model [Offline Reference]'
   );
 
@@ -330,7 +329,6 @@ export async function requestRouteAlternatives(
         const enrich = (r: MarsRoute, prof: RouteProfile): MarsRoute => {
           const topo = enrichWaypointsWithTopography(
             r.waypoints,
-            prof,
             'NASA FastAPI Backend [A* CTX-DEM]'
           );
           return {

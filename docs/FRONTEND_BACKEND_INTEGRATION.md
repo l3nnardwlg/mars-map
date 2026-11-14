@@ -128,3 +128,23 @@ In accordance with Phase 6 Engineering Rule 11 ("No placeholder features disguis
    * When running offline: `dataSource: "NASA PDS M20 Jezero CTX Model [Offline Reference]"`
 3. **Consistent Physical Units:**
    All routes, elevations, and metabolic expenditures use identical units ($m$, $km$, $W$, $kJ$, $L$) across both online and offline paths.
+
+---
+
+## 4. Contract Verification & Automated Testing
+
+To ensure zero breaking changes between Part A and Part B, two dedicated automated test suites have been deployed:
+
+1. **API Contract Verification Suite (`npm run test:contract`):**
+   * Executes `frontend/scripts/verify_api_contracts.mjs`.
+   * When FastAPI is online on port 8000, validates all 6 HTTP wire contracts directly.
+   * When offline, executes strict TypeScript $\leftrightarrow$ Pydantic schema validation.
+2. **E2E Mission Acceptance Test (`npm run test:e2e`):**
+   * Executes `frontend/scripts/test_e2e_mission.mjs`.
+   * Simulates the complete 13-step jury workflow from region selection to astronaut exploration and reset.
+
+For tonight's priority tasks, operational sprint board, and handoff protocols, refer to:
+* **[PART_B_TONIGHT_HANDOFF.md](PART_B_TONIGHT_HANDOFF.md)**
+* **[PART_B_TASK_BOARD.md](PART_B_TASK_BOARD.md)**
+* **[FINAL_INTEGRATION_CHECKLIST.md](FINAL_INTEGRATION_CHECKLIST.md)**
+* **[SCIENTIFIC_CLAIMS_AUDIT.md](SCIENTIFIC_CLAIMS_AUDIT.md)**

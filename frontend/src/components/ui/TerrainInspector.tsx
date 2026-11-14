@@ -86,7 +86,7 @@ export default function TerrainInspector() {
                 </span>
               </div>
               <span className="text-[9px] text-zinc-500 block mt-0.5 leading-tight">
-                Quant: ±{inspectedPoint.uncertaintyMeters ?? NASA_DEM_METADATA.elevationUncertaintyMeters}m | Total DTM: ±6–10m RMS
+                Quant: ±2.56m max (±1.48m RMS) | Est. DTM: ±6–10m RMS
               </span>
             </div>
 

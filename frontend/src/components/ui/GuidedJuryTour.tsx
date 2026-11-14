@@ -48,8 +48,8 @@ export default function GuidedJuryTour() {
       step: 3,
       badge: 'THE CORE DISCOVERY',
       title: 'The Shortest Path is Fatal: Direct vs. Safe Traverses',
-      narrative: 'CRITICAL FINDING (Western Delta Benchmark): On Mars, the shortest Euclidean path is hazardous. In this benchmark traverse, the "Direct" path ascends an 18.5° scarp causing regolith slip and +35% metabolic spike. The "Safe" path contours along a <8° alluvial terrace, saving 140 kJ and dropping Risk Score from 65% to 22%.',
-      evidence: 'Benchmark Case Study (18.38°N, 77.58°E → 18.44°N, 77.45°E) • Pandolf Bio-Model • Risk = 0.6·μ + 0.4·max',
+      narrative: 'CRITICAL FINDING (Western Delta Benchmark): On Mars, the shortest Euclidean path is hazardous. In this benchmark traverse, the "Direct" path ascends an 18.5° scarp, causing severe regolith slip and a steep metabolic power spike. The "Safe" path contours along a <8° alluvial terrace, cutting metabolic power and reducing the Normalized Slope Risk Index from 72.4% to 28.2%.',
+      evidence: 'Benchmark Case Study (18.38°N, 77.58°E → 18.44°N, 77.45°E) • Pandolf Bio-Model • Normalized Risk Index = 0.6·(mean/20°) + 0.4·(max/20°)',
       action: () => {
         setTerrainColorMode('slope');
         selectRouteProfile('safe');

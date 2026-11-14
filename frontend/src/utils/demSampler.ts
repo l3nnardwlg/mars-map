@@ -23,6 +23,8 @@ export interface DemMetadata {
   sampleResolutionYMeters: number;
   quantizationLevels: number;
   quantizationStepMeters: number;
+  quantizationMaxErrorMeters: number;
+  quantizationRmsMeters: number;
   elevationUncertaintyMeters: number;
   bounds: {
     minLat: number;
@@ -72,6 +74,8 @@ export const NASA_DEM_METADATA: DemMetadata = {
   sampleResolutionYMeters: 395.93,
   quantizationLevels: 256,
   quantizationStepMeters: 5.11,
+  quantizationMaxErrorMeters: 2.555,
+  quantizationRmsMeters: 1.475,
   elevationUncertaintyMeters: 2.56,
   bounds: {
     minLat: 17.58,

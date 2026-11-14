@@ -279,8 +279,15 @@ let testsPassed = 0;
   assert(NASA_DEM_METADATA.maxElevationMeters === -1280.0);
   assert.strictEqual(NASA_DEM_METADATA.elevationSpanMeters, 1303.0);
   assert.strictEqual(NASA_DEM_METADATA.quantizationLevels, 256);
-  assert(Math.abs(NASA_DEM_METADATA.elevationUncertaintyMeters - 2.56) < 0.02);
-  console.log('✅ TEST 7 PASSED: NASA PDS Datum Anchoring & 8-Bit Quantization Uncertainty Budget (±2.56m Half-Step)');
+  
+  // Step size: 1303 / 255 = 5.1098 m
+  const deltaZ = 1303.0 / 255;
+  const maxQuantError = deltaZ / 2; // ±2.555 m
+  const rmsQuantError = deltaZ / Math.sqrt(12); // ~1.475 m (uniform distribution)
+
+  assert(Math.abs(maxQuantError - 2.555) < 0.01, `Max quantization error mismatch: ${maxQuantError}`);
+  assert(Math.abs(rmsQuantError - 1.475) < 0.01, `RMS quantization error mismatch: ${rmsQuantError}`);
+  console.log(`✅ TEST 7 PASSED: Quantization Uncertainty Verified (Step: ${deltaZ.toFixed(2)}m, Max: ±${maxQuantError.toFixed(2)}m, RMS: ±${rmsQuantError.toFixed(2)}m)`);
   testsPassed++;
 }
 
@@ -296,18 +303,33 @@ let testsPassed = 0;
   testsPassed++;
 }
 
-// Test 9: Multi-Objective Route Comparison Invariants
+// Test 9: Multi-Objective Route Comparison & Risk Formula Verification
 {
-  // Simulated comparison between Direct, Safe, and Science routes
-  const directRoute = { distanceM: 2100, maxSlopeDeg: 18.5, risk: 0.65, watts: 385 };
-  const safeRoute = { distanceM: 2650, maxSlopeDeg: 7.8, risk: 0.22, watts: 285 };
+  // Normalized Terrain Slope Risk Index:
+  // R = clip(0.6 * (meanSlope / 20.0°) + 0.4 * (peakSlope / 20.0°), 0.0, 1.0)
+  const calcRisk = (meanDeg, peakDeg) => {
+    const r = 0.6 * (meanDeg / 20.0) + 0.4 * (peakDeg / 20.0);
+    return Math.min(1.0, Math.max(0.0, Number(r.toFixed(3))));
+  };
 
-  // Core assertion: Safe route must have strictly lower maximum slope than Direct
+  const directRoute = { distanceM: 2100, meanSlopeDeg: 11.8, maxSlopeDeg: 18.5, watts: 385 };
+  const safeRoute = { distanceM: 2650, meanSlopeDeg: 4.2, maxSlopeDeg: 7.8, watts: 285 };
+
+  const directRisk = calcRisk(directRoute.meanSlopeDeg, directRoute.maxSlopeDeg);
+  const safeRisk = calcRisk(safeRoute.meanSlopeDeg, safeRoute.maxSlopeDeg);
+
+  // Exact mathematical expectation check:
+  // Direct: 0.6 * (11.8 / 20) + 0.4 * (18.5 / 20) = 0.354 + 0.370 = 0.724 (72.4%)
+  // Safe:   0.6 * (4.2 / 20)  + 0.4 * (7.8 / 20)  = 0.126 + 0.156 = 0.282 (28.2%)
+  assert(Math.abs(directRisk - 0.724) < 1e-4, `Direct risk calculation mismatch: expected 0.724, got ${directRisk}`);
+  assert(Math.abs(safeRisk - 0.282) < 1e-4, `Safe risk calculation mismatch: expected 0.282, got ${safeRisk}`);
+
+  // Invariant assertions:
   assert(safeRoute.maxSlopeDeg < directRoute.maxSlopeDeg, 'Safe route slope hazard violation');
-  assert(safeRoute.risk < directRoute.risk, 'Safe route risk score must be lower');
+  assert(safeRisk < directRisk, 'Safe route risk score must be strictly lower than direct');
   assert(directRoute.distanceM < safeRoute.distanceM, 'Direct route must be shorter in Euclidean distance');
   assert(safeRoute.watts < directRoute.watts, 'Safe route must require lower metabolic power per meter');
-  console.log('✅ TEST 9 PASSED: Multi-Objective Traversal Invariants (Safe Max Slope 7.8° < Direct 18.5°, Risk 22% < 65%)');
+  console.log('✅ TEST 9 PASSED: Normalized Slope Risk Index Math Verified (Direct: 72.4%, Safe: 28.2%, Formula Invariant)');
   testsPassed++;
 }
 

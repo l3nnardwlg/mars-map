@@ -39,7 +39,7 @@
 * **Spoken Script:**
   > "Here is our core discovery: **The shortest path is not the most suitable path on Mars.**  
   > If an astronaut takes the direct Euclidean line to the delta rim, they encounter an $18.5^\circ$ scarp. In Martian regolith, that causes severe wheel slip and a $+35\%$ metabolic power spike.  
-  > Watch our multi-objective routing: By selecting the **Safe** traverse, our algorithm contours along the lower alluvial terrace at under $8^\circ$ slope. It adds $550\text{ meters}$ of distance, but saves $140\text{ kilojoules}$ of metabolic energy and keeps our crew safely within nominal oxygen reserves."
+  > Watch our multi-objective routing: By selecting the **Safe** traverse, our algorithm contours along the lower alluvial terrace at under $8^\circ$ slope. It adds $550\text{ meters}$ of distance, but cuts metabolic power demand substantially and drops our Normalized Terrain Slope Risk Index from $72.4\%$ down to a safe $28.2\%$, keeping our crew well within nominal oxygen reserves."
 * **Action:** Switch between **"Direct"** and **"Safe"** buttons. Hover over the Elevation Cross-Section to highlight the synchronized yellow cursor on the 3D route.
 
 ---

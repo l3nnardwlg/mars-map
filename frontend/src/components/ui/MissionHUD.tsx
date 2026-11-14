@@ -137,7 +137,7 @@ Destination: ${routeEnd?.latitude.toFixed(4)}°N, ${routeEnd?.longitude.toFixed(
 Total Distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km
 Estimated Duration: ${Math.floor(durationSeconds / 3600)}h ${Math.floor((durationSeconds % 3600) / 60)}m
 Metabolic Power: ${currentRoute.averagePowerWatts ?? 285} W (Pandolf)
-Risk Score: ${(currentRoute.riskScore * 100).toFixed(1)}%
+Normalized Slope Risk Index: ${(currentRoute.riskScore * 100).toFixed(1)}% (Ref limit: 20° slope)
 O2 Requirement: ${missionEstimate?.oxygenLiters ?? 0} L (${missionEstimate?.oxygenKilograms ?? 0} kg)
 EVA Limit: ${missionEstimate?.withinEvaTimeLimit ? 'NOMINAL (< 8h)' : 'EXCEEDED (> 8h)'}
 Datum: IAU Mars 2000 / MOLA Areoid
@@ -256,9 +256,9 @@ Datum: IAU Mars 2000 / MOLA Areoid
           <div className="bg-black/60 border border-zinc-800 rounded px-2.5 py-1.5 hidden md:flex items-center gap-2 font-mono">
             <div className={`w-2 h-2 rounded-full ${fpsMetrics.fps >= 55 ? 'bg-emerald-400' : fpsMetrics.fps >= 30 ? 'bg-yellow-400' : 'bg-red-400'} animate-pulse`} />
             <div>
-              <span className="text-zinc-500 block text-[9px] uppercase tracking-wider">LIVE GPU RENDER</span>
+              <span className="text-zinc-500 block text-[9px] uppercase tracking-wider">LIVE FRAME RATE</span>
               <span className="font-semibold text-emerald-300 text-xs">
-                {fpsMetrics.fps} FPS <span className="text-zinc-500 text-[10px]">({fpsMetrics.frameTimeMs} ms)</span>
+                {fpsMetrics.fps} FPS <span className="text-zinc-500 text-[10px]">({fpsMetrics.frameTimeMs} ms rAF)</span>
               </span>
             </div>
           </div>

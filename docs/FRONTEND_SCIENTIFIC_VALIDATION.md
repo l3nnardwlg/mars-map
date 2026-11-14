@@ -88,27 +88,35 @@ $$\sigma_{\text{total}} = \sqrt{\sigma_{\text{sensor}}^2 + \sigma_{\text{georef}
 | **Photogrammetric Sensor Noise** | $\sigma_{\text{sensor}}$ | CTX stereo convergence angle, parallax uncertainty, atmospheric dust haze | $\pm 3.0\text{ m}$ to $\pm 5.0\text{ m}$ RMS |
 | **Georeferencing / Coregistration** | $\sigma_{\text{georef}}$ | Horizontal/vertical bundle adjustment tied to MGS MOLA MEGDR areoid tracks | $\pm 5.0\text{ m}$ to $\pm 8.0\text{ m}$ RMS |
 | **Grid Resampling & Interpolation** | $\sigma_{\text{interp}}$ | Bilinear / bicubic sub-pixel height estimation across 20m grid cells | $\pm 0.5\text{ m}$ to $\pm 1.5\text{ m}$ |
-| **Discrete Quantization Error** | $\sigma_{\text{quant}}$ | Client 8-bit heightmap texture discretization ($1,303\text{ m} / 255 = 5.11\text{ m}$ / step) | **$\pm 2.56\text{ m}$ (half-LSB)** |
-| **Composite Orbital DTM Uncertainty** | **$\sigma_{\text{total}}$** | **Root-Sum-Square (RSS) of all orbital, sensor, and digital error components** | **$\approx \pm 6.5\text{ m}$ to $\pm 10.0\text{ m}$ RMS** |
+| **Discrete Quantization (Maximum)** | $\Delta z_{\max}$ | Client 8-bit heightmap half-step discretization ($\pm \Delta z / 2 = \pm 1,303\text{ m} / 510$) | **$\pm 2.555\text{ m}$ ($\approx \pm 2.56\text{ m}$)** |
+| **Discrete Quantization (RMS)** | $\sigma_{\text{quant}}$ | Uniform error distribution round-off: $\frac{\Delta z}{\sqrt{12}} = \frac{5.1098\text{ m}}{\sqrt{12}}$ | **$\pm 1.475\text{ m}$ ($\approx \pm 1.48\text{ m}$)** |
+| **Composite Orbital DTM Uncertainty** | **$\sigma_{\text{total}}$** | **Root-Sum-Square (RSS) of all orbital, sensor, and digital error components** | **$\approx \pm 6.5\text{ m}$ to $\pm 10.0\text{ m}$ RMS (literature baseline)** |
 
 > [!IMPORTANT]
-> The value **$\pm 2.56\text{ m}$ displayed in the UI represents strictly the client-side 8-bit quantization uncertainty** ($\frac{1}{2} \text{LSB}$). The true orbital DTM elevation uncertainty relative to the absolute MOLA Areoid datum is $\approx \pm 6\text{ m}$ to $\pm 10\text{ m}$ RMS. In the 16-bit GeoTIFF backend pipeline, the quantization error drops to $\pm 0.02\text{ m}$, leaving sensor and coregistration noise as the dominant factors.
+> The value **$\pm 2.56\text{ m}$ displayed in the UI represents strictly the client-side 8-bit maximum quantization error** ($\frac{1}{2} \text{LSB}$), with an expected RMS quantization error of $\pm 1.48\text{ m}$. The true orbital DTM elevation uncertainty relative to the absolute MOLA Areoid datum is estimated at $\approx \pm 6\text{ m}$ to $\pm 10\text{ m}$ RMS based on published USGS photogrammetric evaluations (Fergason et al., 2020). In the 16-bit GeoTIFF backend pipeline, the quantization error drops to $\pm 0.02\text{ m}$, leaving sensor and coregistration noise as the dominant factors.
 
 ---
 
-### 3.2 Definition of Traversal Risk Score & Benchmark Scenarios
+### 3.2 Definition of Normalized Terrain Slope Risk Index & Benchmark Scenarios
 
-The traversal risk score ($R \in [0.0, 1.0]$) is a dimensionless compound index evaluating topographic locomotion hazard relative to NASA's maximum allowable slope threshold for astronaut/rover EVA ($\theta_{\max, \text{EVA}} = 20.0^\circ$):
+The traversal risk score ($R \in [0.0, 1.0]$) is a dimensionless compound index evaluating topographic locomotion hazard relative to NASA's maximum allowable slope threshold for rover and astronaut EVA ($\theta_{\max, \text{EVA}} = 20.0^\circ$):
 
 $$R = \text{clip}\left(0.6 \cdot \frac{\bar{\theta}}{\theta_{\max, \text{EVA}}} + 0.4 \cdot \frac{\theta_{\text{peak}}}{\theta_{\max, \text{EVA}}}, 0.0, 1.0\right)$$
 
 Where:
 * $\bar{\theta}$ = mean slope angle along the entire traverse
 * $\theta_{\text{peak}}$ = maximum local slope angle encountered on any segment
-* $\theta_{\max, \text{EVA}} = 20.0^\circ$ (NASA EVA critical limit)
+* $\theta_{\max, \text{EVA}} = 20.0^\circ$ (**Assumed Model Reference Threshold** based on NASA MER/MSL/M20 rover mobility engineering limits, beyond which sand/regolith slip causes loss of traction; e.g. Arvidson et al., 2011; Heverly et al., 2013).
+* **Weighting Rationale:**
+  * **$60\%$ Mean Slope:** Reflects cumulative biomechanical and metabolic energy drain across the entire mission duration (Pandolf equation).
+  * **$40\%$ Peak Slope:** Penalizes localized acute hazards (cliff edges, scarp breaches, loose scree banks) that introduce critical rollover or slipping hazards.
+* **Interpretation:** This index is a **topographic hazard metric**, NOT an empirical accident probability.
 
 #### Reference Benchmark Scenario vs. Live Dynamic Routing:
-* **Benchmark Case Study (Western Delta Scarp):** The comparison numbers featured in the Jury Tour narrative ($18.5^\circ$ vs $7.8^\circ$, $140\text{ kJ}$ energy delta, $65\%$ vs $22\%$ risk) represent a **standardized, reproducible test case** traversing from the delta breach crest ($18.38^\circ\text{ N}, 77.58^\circ\text{ E}$) down to the Jezero crater floor ($18.44^\circ\text{ N}, 77.45^\circ\text{ E}$). In offline mode, this is transparently flagged as `[REFERENCE BENCHMARK SCENARIO]`.
+* **Benchmark Case Study (Western Delta Scarp):** The comparison numbers featured in the Jury Tour narrative ($18.5^\circ$ vs $7.8^\circ$, Normalized Slope Risk Index of **$72.4\%$ vs $28.2\%$**) represent a **standardized, reproducible test case** traversing from the delta breach crest ($18.38^\circ\text{ N}, 77.58^\circ\text{ E}$) down to the Jezero crater floor ($18.44^\circ\text{ N}, 77.45^\circ\text{ E}$):
+  * **Direct:** Mean: $11.8^\circ$, Peak: $18.5^\circ \implies R = 0.6 \times (11.8 / 20) + 0.4 \times (18.5 / 20) = 0.354 + 0.370 = \mathbf{0.724} \implies \mathbf{72.4\%}$.
+  * **Safe:** Mean: $4.2^\circ$, Peak: $7.8^\circ \implies R = 0.6 \times (4.2 / 20) + 0.4 \times (7.8 / 20) = 0.126 + 0.156 = \mathbf{0.282} \implies \mathbf{28.2\%}$.
+* In offline mode, this is transparently flagged as `[REFERENCE BENCHMARK SCENARIO (WESTERN DELTA SCARP)]`.
 * **Dynamic Backend Routing:** When connected to the FastAPI backend, the 3D slope-constrained A* algorithm (`plan_routes` in `backend/app/terrain.py`) dynamically computes cost-optimal traverses for arbitrary user coordinates, flagged as `[A* CTX-DEM LIVE]`.
 
 ---

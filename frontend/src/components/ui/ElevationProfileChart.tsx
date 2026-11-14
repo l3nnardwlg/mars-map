@@ -245,10 +245,10 @@ export default function ElevationProfileChart() {
               SOURCE: <span className="text-sky-300">{currentRoute.dataSource?.includes('Backend') ? 'A* Backend Live' : 'Reference Case Study'}</span>
             </span>
             <span
-              className="text-amber-300 font-semibold"
-              title="Risk Formula: 0.6*(Mean Slope / 20°) + 0.4*(Max Slope / 20°)"
+              className="text-amber-300 font-semibold cursor-help"
+              title="Normalized Terrain Slope Risk Index = 0.6*(Mean Slope / 20°) + 0.4*(Max Slope / 20°). Topographic hazard metric, not accident probability."
             >
-              RISK: {((currentRoute.riskScore ?? 0) * 100).toFixed(0)}% <span className="text-zinc-500 font-normal">(0.6·μ + 0.4·max)</span>
+              RISK INDEX: {((currentRoute.riskScore ?? 0) * 100).toFixed(1)}% <span className="text-zinc-500 font-normal">(0.6·μ + 0.4·max)</span>
             </span>
           </div>
 
