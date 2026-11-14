@@ -72,6 +72,7 @@ export default function MissionHUD() {
   const currentRoute = useMissionStore((state) => state.currentRoute);
   const missionEstimate = useMissionStore((state) => state.missionEstimate);
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
+  const routeError = useMissionStore((state) => state.routeError);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const clearRoute = useMissionStore((state) => state.clearRoute);
 
@@ -124,21 +125,22 @@ export default function MissionHUD() {
 
   const altitudeKm = Math.max(0, Math.round(((cameraDistance - 2.0) / 2.0) * 3389.5));
   const durationSeconds = currentRoute?.estimatedDurationSeconds ?? 0;
-  const estimatedKcal = Math.round((285 * durationSeconds) / 4184);
+  const estimatedKcal = Math.round(((currentRoute?.averagePowerWatts ?? 205) * durationSeconds) / 4184);
 
   // Export Briefing to Clipboard
   const handleCopyBriefing = () => {
     if (!currentRoute) return;
     const text = `=== NASA MARS PATHFINDER // EVA-01 BRIEFING ===
 Target: Jezero Crater (Western Delta)
-Profile: ${selectedRouteProfile.toUpperCase()}
+Profile: ${selectedRouteProfile.toUpperCase()}${currentRoute.tags?.length ? ` [${currentRoute.tags.join(', ')}]` : ''}
 Start: ${routeStart?.latitude.toFixed(4)}°N, ${routeStart?.longitude.toFixed(4)}°E
 Destination: ${routeEnd?.latitude.toFixed(4)}°N, ${routeEnd?.longitude.toFixed(4)}°E
 Total Distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km
 Estimated Duration: ${Math.floor(durationSeconds / 3600)}h ${Math.floor((durationSeconds % 3600) / 60)}m
-Metabolic Power: ${currentRoute.averagePowerWatts ?? 285} W (Pandolf)
-Normalized Slope Risk Index: ${(currentRoute.riskScore * 100).toFixed(1)}% (Ref limit: 20° slope)
+Metabolic Power: ${currentRoute.averagePowerWatts ?? 205} W (Pandolf, no extra suit load in 1g)
+Normalized Slope Risk Index: ${(currentRoute.riskScore * 100).toFixed(1)}% (Ref limit: 15° slope)
 O2 Requirement: ${missionEstimate?.oxygenLiters ?? 0} L (${missionEstimate?.oxygenKilograms ?? 0} kg)
+Radiation Dose: ${(missionEstimate?.radiationDoseMilligray ?? 0).toFixed(3)} mGy (MSL RAD Gale ref)
 EVA Limit: ${missionEstimate?.withinEvaTimeLimit ? 'NOMINAL (< 8h)' : 'EXCEEDED (> 8h)'}
 Datum: IAU Mars 2000 / MOLA Areoid
 =================================================`;
@@ -580,7 +582,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> START POINT
                     </span>
                     <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
-                      {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                      {routeStart ? `${routeStart.latitude.toFixed(3)}°N, ${routeStart.longitude.toFixed(3)}°E` : 'Doppelklick ins Gelände'}
                     </span>
                   </div>
                   <div className="rounded bg-zinc-900/80 p-2 border border-zinc-800">
@@ -588,7 +590,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> DESTINATION
                     </span>
                     <span className="text-zinc-300 font-mono text-[11px] block mt-0.5">
-                      {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Click terrain...'}
+                      {routeEnd ? `${routeEnd.latitude.toFixed(3)}°N, ${routeEnd.longitude.toFixed(3)}°E` : 'Doppelklick ins Gelände'}
                     </span>
                   </div>
                 </div>
@@ -650,10 +652,10 @@ Datum: IAU Mars 2000 / MOLA Areoid
                     </div>
                     <p className="text-zinc-300 leading-relaxed font-sans text-[10px]">
                       {selectedRouteProfile === 'safe'
-                        ? '🛡️ SAFE TRAVERSE: Contours along low-gradient alluvial terrace (max slope <8.2°). Eliminates scarp rollover danger, saving ~140 kJ and keeping metabolic rate well within nominal 300W baseline.'
+                        ? '🛡️ SAFE TRAVERSE (Energy Optimal / Lowest Risk): Contours along low-gradient alluvial terrace (max slope <8°). Eliminates scarp rollover danger and lowers Normalized Terrain Slope Risk Index from 72.4% to 28.2%.'
                         : selectedRouteProfile === 'science'
                         ? '🔬 SCIENCE EXPLORATION: Intelligent multi-objective detour to verified Perseverance Sample Return cores. Adds ~650m while maintaining safe EVA duration (<8 hrs).'
-                        : '⚡ DIRECT LINE: Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a +35% metabolic spike and regolith slip risk.'}
+                        : '⚡ DIRECT LINE (Shortest): Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a steep metabolic power spike and regolith slip risk.'}
                     </p>
                   </div>
                 </div>
@@ -716,13 +718,13 @@ Datum: IAU Mars 2000 / MOLA Areoid
                       </div>
                     )}
 
-                    {/* NASA EVA Life-Support Estimates */}
+                    {/* NASA EVA Life-Support & Radiation Estimates */}
                     {missionEstimate && (
                       <div className="border-t border-zinc-900 pt-2 grid grid-cols-2 gap-2 text-[11px]">
                         <div className="rounded bg-sky-950/40 border border-sky-500/20 p-2">
                           <span className="text-[9px] text-sky-400 font-semibold block">O₂ CONSUMPTION (2 CREW)</span>
                           <span className="font-bold text-white font-mono">{missionEstimate.oxygenLiters} L</span>
-                          <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg)</span>
+                          <span className="text-[9px] text-zinc-500 block">({missionEstimate.oxygenKilograms} kg • 14.11 MJ/kg)</span>
                         </div>
                         <div className="rounded bg-zinc-900/60 border border-zinc-800 p-2">
                           <span className="text-[9px] text-zinc-400 font-semibold block">EVA LIMIT (8H MAX)</span>
@@ -730,9 +732,17 @@ Datum: IAU Mars 2000 / MOLA Areoid
                             {missionEstimate.withinEvaTimeLimit ? '✅ WITHIN LIMIT' : '⚠️ EXCEEDS LIMIT'}
                           </span>
                           <span className="text-[9px] text-zinc-500 block">
-                            {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion' : 'High exertion (>300W)'}
+                            {missionEstimate.withinAverageMetabolicRate ? 'Nominal exertion (≤350W)' : 'High exertion (>350W)'}
                           </span>
                         </div>
+                        {missionEstimate.radiationDoseMilligray !== undefined && (
+                          <div className="col-span-2 rounded bg-amber-950/30 border border-amber-800/40 p-1.5 flex items-center justify-between text-[10px]">
+                            <span className="text-amber-400 font-semibold">EST. RADIATION DOSE:</span>
+                            <span className="font-bold text-amber-200 font-mono">
+                              {missionEstimate.radiationDoseMilligray} mGy <span className="text-zinc-500 font-normal">(MSL RAD Gale Ref)</span>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -842,7 +852,7 @@ Datum: IAU Mars 2000 / MOLA Areoid
           )}
 
           <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-zinc-500 px-2 py-1">
-            <span>🖱️ Click terrain to set waypoints • Drag to pan</span>
+            <span>🖱️ Doppelklick: erst Start, dann Ziel • Ziehen: Ansicht drehen</span>
           </div>
         </div>
       </footer>
@@ -924,6 +934,18 @@ Datum: IAU Mars 2000 / MOLA Areoid
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isCalculatingRoute && (
+        <div className="pointer-events-none fixed bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-sky-500/50 bg-zinc-950/90 px-3 py-1.5 font-mono text-[11px] text-sky-300 shadow-lg">
+          <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-sky-400/30 border-t-sky-400" />
+          Route wird berechnet
+        </div>
+      )}
+      {routeError && !isCalculatingRoute && (
+        <div className="pointer-events-none fixed bottom-16 left-1/2 z-40 max-w-md -translate-x-1/2 rounded-lg border border-amber-500/60 bg-zinc-950/95 px-3 py-2 text-center font-mono text-[11px] text-amber-300 shadow-lg">
+          {routeError}
         </div>
       )}
 

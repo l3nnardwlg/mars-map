@@ -26,11 +26,23 @@ export interface TerrainMetadata {
   availableTiles: string[];
 }
 
+export interface LegendEntry {
+  classId: number;
+  name: string;
+  symbol: string;
+  color: string;
+}
+
 export interface Layer {
   id: string;
   name: string;
   description: string;
   sourceUrl: string;
+  kind?: string | null;
+  unit?: string | null;
+  tileSet?: string | null;
+  available?: boolean;
+  legend?: LegendEntry[] | null;
 }
 
 export type RouteProfile = 'direct' | 'safe' | 'science';
@@ -50,6 +62,7 @@ export interface MarsRoute {
   riskScore: number;
   energyJoules?: number | null;
   averagePowerWatts?: number | null;
+  tags?: string[];
   elevationGainMeters?: number;
   elevationLossMeters?: number;
   maxSlopeDeg?: number;
@@ -77,6 +90,8 @@ export interface MissionEstimate {
   evaTimeLimitSeconds: number;
   withinEvaTimeLimit: boolean;
   withinAverageMetabolicRate: boolean;
+  radiationDoseMilligray?: number | null;
+  radiationBasis?: string | null;
 }
 
 export interface SciencePoint {

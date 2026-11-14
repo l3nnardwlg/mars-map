@@ -5,37 +5,42 @@ import {
   SciencePoint, 
   MissionEstimate, 
   RouteProfile, 
-  ElevationPoint 
+  ElevationPoint,
+  Layer
 } from '@/types/mars';
 import { jezeroLatLonToLocal } from '@/utils/coordinates';
 import { getElevationMetersAtUV, sampleSlopeAtUV } from '@/utils/demSampler';
 
 /**
  * NASA Johnson Space Center (JSC) Bio-Energetic Parameters:
- * Reference: Pandolf et al. (1977), Santee et al. (2001) adapted for Martian Gravity (0.38g).
+ * Reference: NASA JSC Integrated Suit Test-1 (IST-1) & Kim et al. APACHE Study (ICES 2022, NTRS 20220003008).
  * 
- * - Body mass (W): 80.7 kg (50th percentile NASA astronaut)
- * - Suit / EVA Pack mass (L): 35.0 kg (lightweight Mars surface suit)
- * - Walking speed (V): 3.0 km/h = 0.833 m/s (standard Mars EVA pace)
- * - Terrain coefficient (η): 1.0 (compact sand / regolith) to 1.3 (loose sand)
+ * - Body mass (W): 80.7 kg (IST-1 Table 1)
+ * - Suit payload in 1g: 0.0 kg (ZUSATZLAST_KG = 0.0: Pandolf applies to 1g terrestrial; load in 0.38g is unverified)
+ * - Walking speed (V): 3.0 km/h = 0.833 m/s
+ * - Max slope threshold: 15.0° (steepest incline in NASA JSC Rock Yard walked by subjects)
+ * - Terrain coefficient (η): 1.0 (compact surface)
  * - Nominal EVA time limit: 8.0 hours = 28,800 seconds
- * - Metabolic rate baseline: 300 Watts
- * - Oxygen consumption equivalent: 14.15 MJ per kg of O2 (RQ ~0.83)
- * - Oxygen density at standard conditions: 1.141 kg/m³
+ * - Baseline metabolic power: ~205 Watts (flat level walking at 3 km/h; ~217 W average on gentle terrain)
+ * - Oxygen consumption equivalent: 14.11 MJ per kg of O2 (Apollo PLSS Carson calculation: 3670 Btu / 0.605 lb)
+ * - Oxygen density: 1.429 g/L = 0.001429 kg/L at 0°C, 1 atm
+ * - Radiation reference: 0.21 mGy/day per person (MSL RAD Gale Crater, Hassler et al. 2014)
  */
 export const NASA_EVA_CONSTANTS = {
   astronautMassKg: 80.7,
-  suitMassKg: 35.0,
+  suitMassKg: 0.0,
   walkingSpeedMs: 3.0 / 3.6, // 0.833 m/s
   terrainFactorEta: 1.0,
+  maxSteigungGrad: 15.0,
   maxEvaSeconds: 8.0 * 3600.0,
-  nominalMetabolicWatts: 300.0,
-  joulesPerKgOxygen: 14.15e6,
-  oxygenDensityKgPerLiter: 1.141,
+  nominalMetabolicWatts: 205.0,
+  joulesPerKgOxygen: 14.11e6,
+  oxygenDensityKgPerLiter: 0.001429,
+  dailyRadiationMilligray: 0.21,
 };
 
 /**
- * Calculates human metabolic power expenditure in Watts using the Pandolf/Santee equation.
+ * Calculates human metabolic power expenditure in Watts using the Pandolf equation.
  * M = 1.5*W + 2.0*(W + L)*(L/W)^2 + η*(W + L)*(1.5*V^2 + 0.35*V*G)
  *
  * @param slopePercent Slope grade in percent (rise / run * 100)
@@ -46,19 +51,16 @@ export function calculatePandolfWatts(
   speedMs: number = NASA_EVA_CONSTANTS.walkingSpeedMs
 ): number {
   const w = NASA_EVA_CONSTANTS.astronautMassKg;
-  const l = NASA_EVA_CONSTANTS.suitMassKg;
+  const last = NASA_EVA_CONSTANTS.suitMassKg;
   const v = speedMs;
   const g = Math.max(0.0, slopePercent);
   const eta = NASA_EVA_CONSTANTS.terrainFactorEta;
 
-  const totalMass = w + l;
-  const loadRatio = l / w;
-
-  const restingTerm = 1.5 * w;
-  const loadCarriageTerm = 2.0 * totalMass * (loadRatio * loadRatio);
-  const movementTerm = eta * totalMass * (1.5 * v * v + 0.35 * v * g);
-
-  return restingTerm + loadCarriageTerm + movementTerm;
+  return (
+    1.5 * w +
+    2.0 * (w + last) * Math.pow(last / w, 2) +
+    eta * (w + last) * (1.5 * v * v + 0.35 * v * g)
+  );
 }
 
 /**
@@ -144,9 +146,9 @@ export function enrichWaypointsWithTopography(
   const totalJoules = avgWatts * estimatedDuration;
 
   // Normalized Terrain Slope Risk Index:
-  // R = clip(0.6 * meanSlope / 20° + 0.4 * maxSlope / 20°, 0, 1)
-  // Calibrated against NASA MER/MSL/M20 20.0° operational mobility threshold.
-  const MAX_SLOPE_THRESHOLD_DEG = 20.0;
+  // R = clip(0.6 * meanSlope / 15° + 0.4 * maxSlope / 15°, 0, 1)
+  // Calibrated against NASA JSC Rock Yard 15.0° slope limit (Kim et al., APACHE, ICES 2022).
+  const MAX_SLOPE_THRESHOLD_DEG = 15.0;
   const meanFraction = avgSlopeDeg / MAX_SLOPE_THRESHOLD_DEG;
   const maxFraction = maxSlopeDeg / MAX_SLOPE_THRESHOLD_DEG;
   const riskScore = Math.min(1.0, Math.max(0.0, 0.6 * meanFraction + 0.4 * maxFraction));
@@ -189,6 +191,80 @@ export async function fetchTerrainMetadata(): Promise<TerrainMetadata> {
     resolutionMetersPerPixel: 20.0,
     availableTiles: ['ctx_dem', 'hirise_dem'],
   };
+}
+
+export async function fetchLayers(): Promise<Layer[]> {
+  try {
+    const res = await fetch('/api/layers');
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback
+  }
+
+  return [
+    {
+      id: 'ctx_dem',
+      name: 'CTX Hoehenmodell (20 m)',
+      description: 'Hoehenmodell des Jezero-Kraters aus MRO-CTX-Stereobildern, an MOLA gebunden. Grundlage des Routings',
+      sourceUrl: 'https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic',
+      kind: 'hoehe',
+      unit: 'm',
+      tileSet: 'ctx_dem',
+      available: true,
+    },
+    {
+      id: 'hirise_dem',
+      name: 'HiRISE Hoehenmodell (1 m)',
+      description: 'Hochaufloesendes Hoehenmodell der Landestelle und der westlichen Kraterkante aus MRO-HiRISE-Stereobildern',
+      sourceUrl: 'https://astrogeology.usgs.gov/search/map/mars-sample-return-terrain-relative-navigation-hirise-dtm-mosaic',
+      kind: 'hoehe',
+      unit: 'm',
+      tileSet: 'hirise_dem',
+      available: true,
+    },
+    {
+      id: 'slope_ctx',
+      name: 'Steigung (aus CTX-DEM)',
+      description: 'Hangneigung in Grad, aus dem CTX-DEM per Zentraldifferenz berechnet. Sperrzellen ab 15 Grad',
+      sourceUrl: 'https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic',
+      kind: 'steigung',
+      unit: 'Grad',
+      tileSet: 'slope_ctx',
+      available: true,
+    },
+    {
+      id: 'ctx_ortho',
+      name: 'CTX Orthobild (5 m)',
+      description: 'Entzerrtes Graustufenbild des Jezero-Kraters aus MRO-CTX, passend zum CTX-Hoehenmodell',
+      sourceUrl: 'https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic',
+      kind: 'bild',
+      unit: 'Grauwert',
+      tileSet: 'ctx_ortho',
+      available: false,
+    },
+    {
+      id: 'geology',
+      name: 'Geologische Einheiten (SIM 3464)',
+      description: 'Geologische Karte von Jezero-Krater und Nili Planum (Sun und Stack 2020, 1:75 000), 14 Einheiten mit Legende',
+      sourceUrl: 'https://pubs.usgs.gov/publication/sim3464',
+      kind: 'geologie',
+      unit: 'Klasse',
+      tileSet: 'geology',
+      available: false,
+    },
+    {
+      id: 'thermal_inertia',
+      name: 'THEMIS Waermetraegheit (100 m)',
+      description: 'Thermische Traegheit der Oberflaeche aus Nachtaufnahmen von Mars Odyssey THEMIS',
+      sourceUrl: 'https://zenodo.org/records/4931348',
+      kind: 'thermik',
+      unit: 'J m-2 K-1 s-1/2',
+      tileSet: 'thermal_inertia',
+      available: false,
+    },
+  ];
 }
 
 export async function fetchSciencePoints(): Promise<SciencePoint[]> {
@@ -307,6 +383,8 @@ export async function requestRoute(
   };
 }
 
+export class RouteRejectedError extends Error {}
+
 /**
  * Requests or computes alternative multi-objective routes for scientific comparison.
  */
@@ -323,10 +401,15 @@ export async function requestRouteAlternatives(
       body: JSON.stringify({ start, end, count: 3 }),
     });
 
+    if (res.status === 422) {
+      const info = await res.json().catch(() => null);
+      throw new RouteRejectedError(info?.detail || 'Für diese Punkte ist keine Route möglich');
+    }
+
     if (res.ok) {
       const routes: MarsRoute[] = await res.json();
-      if (routes && routes.length >= 2) {
-        const enrich = (r: MarsRoute, prof: RouteProfile): MarsRoute => {
+      if (routes && routes.length >= 1) {
+        const enrich = (r: MarsRoute, prof: RouteProfile, defaultTag: string): MarsRoute => {
           const topo = enrichWaypointsWithTopography(
             r.waypoints,
             'NASA FastAPI Backend [A* CTX-DEM]'
@@ -334,6 +417,7 @@ export async function requestRouteAlternatives(
           return {
             ...r,
             profile: prof,
+            tags: r.tags && r.tags.length > 0 ? r.tags : [defaultTag],
             waypoints: topo.enrichedWaypoints,
             elevationProfile: topo.elevationProfile,
             elevationGainMeters: topo.elevationGainMeters,
@@ -344,16 +428,19 @@ export async function requestRouteAlternatives(
           };
         };
 
-        const direct = enrich(routes[0], 'direct');
-        const safe = enrich(routes[1], 'safe');
-        const science = routes[2] 
-          ? enrich(routes[2], 'science') 
-          : await requestRoute(start, end, 'science', scienceDetour);
+        const direct = enrich(routes[0], 'direct', 'energy_optimal');
+        const safe = routes[1] ? enrich(routes[1], 'safe', 'lowest_risk') : direct;
+        const science = routes[2]
+          ? enrich(routes[2], 'science', 'shortest')
+          : routes[1]
+            ? await requestRoute(start, end, 'science', scienceDetour)
+            : direct;
 
         return { direct, safe, science };
       }
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof RouteRejectedError) throw error;
     // Backend offline -> fallback to offline model with explicit provenance
   }
 
@@ -363,6 +450,10 @@ export async function requestRouteAlternatives(
     requestRoute(start, end, 'safe'),
     requestRoute(start, end, 'science', scienceDetour),
   ]);
+
+  direct.tags = ['shortest'];
+  safe.tags = ['energy_optimal', 'lowest_risk'];
+  science.tags = ['science_detour'];
 
   return { direct, safe, science };
 }
@@ -389,11 +480,13 @@ export async function simulateMission(
   }
 
   const duration = route.estimatedDurationSeconds;
-  const avgWatts = route.averagePowerWatts ?? 285.0;
+  const avgWatts = route.averagePowerWatts ?? 205.0;
   const energyPerPersonJoules = avgWatts * duration;
   const oxygenKgPerPerson = energyPerPersonJoules / NASA_EVA_CONSTANTS.joulesPerKgOxygen;
   const oxygenKgTotal = oxygenKgPerPerson * crewSize;
-  const oxygenLitersTotal = (oxygenKgTotal * 1000) / NASA_EVA_CONSTANTS.oxygenDensityKgPerLiter;
+  const oxygenLitersTotal = oxygenKgTotal / NASA_EVA_CONSTANTS.oxygenDensityKgPerLiter;
+  const dailyRad = NASA_EVA_CONSTANTS.dailyRadiationMilligray;
+  const radDose = (dailyRad * duration) / 86400.0;
 
   return {
     durationSeconds: duration,
@@ -403,6 +496,8 @@ export async function simulateMission(
     averagePowerWatts: Number(avgWatts.toFixed(1)),
     evaTimeLimitSeconds: NASA_EVA_CONSTANTS.maxEvaSeconds,
     withinEvaTimeLimit: duration <= NASA_EVA_CONSTANTS.maxEvaSeconds,
-    withinAverageMetabolicRate: avgWatts <= NASA_EVA_CONSTANTS.nominalMetabolicWatts,
+    withinAverageMetabolicRate: avgWatts <= 350.0,
+    radiationDoseMilligray: Number(radDose.toFixed(4)),
+    radiationBasis: "Referenzwert MSL RAD, Gale-Krater, 0,21 mGy pro Tag je Person (Hassler et al. 2014), nicht in Jezero gemessen",
   };
 }

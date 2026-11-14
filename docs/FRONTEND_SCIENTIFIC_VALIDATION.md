@@ -162,14 +162,15 @@ Metabolic power expenditure during Mars Extravehicular Activity (EVA) is modeled
 $$M = 1.5 W + 2.0 (W + L) \left(\frac{L}{W}\right)^2 + \eta (W + L) (1.5 V^2 + 0.35 V G)$$
 
 Where:
-* $W = 80.7\text{ kg}$ (Astronaut body mass)
-* $L = 35.0\text{ kg}$ (EVA suit and life-support pack mass)
+* $W = 80.7\text{ kg}$ (Astronaut body mass, IST-1 Table 1)
+* $L = 0.0\text{ kg}$ (Suit payload omitted in Pandolf formula; 1g terrestrial load equations cannot be extrapolated to 0.38g without empirical validation)
 * $V = 0.833\text{ m/s}$ ($3.0\text{ km/h}$ nominal walking pace)
 * $G = \text{Slope grade in percent}$ ($\text{rise} / \text{run} \cdot 100$)
 * $\eta = 1.0$ (Terrain coefficient for Martian compact sand/regolith)
 
-### Oxygen Consumption
-Based on a respiratory quotient of $0.83$, $1\text{ kg of } O_2 \equiv 14.15\text{ MJ}$. At STP, oxygen gas density is $1.141\text{ kg/m}^3$ ($1.141\text{ g/L}$).
+### Oxygen & Radiation Model
+Based on the Apollo PLSS calculation (Carson, NASA MSC, NTRS 19720019460: 3670 Btu / 0.605 lb), $1\text{ kg of } O_2 \equiv 14.11\text{ MJ}$. At STP, oxygen gas density is $1.429\text{ kg/m}^3$ ($1.429\text{ g/L}$).
+Martian surface radiation reference is grounded in MSL RAD in-situ Gale Crater measurements ($\approx 0.21\text{ mGy/day}$).
 
 ---
 
@@ -200,6 +201,6 @@ npm run test:science
 * ✅ TEST 5: Downslope Aspect Azimuth & Compass Octant Classification Verified
 * ✅ TEST 6: Mars Geodesic Metric Scale Verified ($1.0^\circ\text{ Lat} = 59.16\text{ km}$, error $< 0.01\%$)
 * ✅ TEST 7: NASA PDS Datum Anchoring & 8-Bit Quantization Uncertainty Budget ($\pm 2.56\text{ m}$)
-* ✅ TEST 8: NASA JSC Pandolf/Santee Bio-Model (Flat: 285W, +15% Slope: 791W)
-* ✅ TEST 9: Multi-Objective Traversal Invariants (Safe Max Slope $7.8^\circ <$ Direct $18.5^\circ$, Risk $22\% < 65\%$)
+* ✅ TEST 8: NASA JSC Pandolf/Santee Bio-Model (Flat: 205W, +15% Slope: 558W)
+* ✅ TEST 9: Normalized Slope Risk Index Math Verified (15° Base Angle: Scarp 96.5%, Contour 37.6%)
 * ✅ TEST 10: Geodetic Reference Frame & IAU Mars 2000 Schema Compliance Verified

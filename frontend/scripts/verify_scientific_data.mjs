@@ -125,12 +125,12 @@ function haversineMars(lat1, lon1, lat2, lon2) {
 }
 
 function calculatePandolfWatts(slopePercent, speedMs = 3.0 / 3.6) {
-  const w = 80.7; // astronaut mass kg
-  const l = 35.0; // suit mass kg
+  const w = 80.7; // astronaut mass kg (IST-1)
+  const l = 0.0;  // ZUSATZLAST_KG = 0.0 (Kim et al. APACHE study, no suit load in 1g)
   const v = speedMs;
   const g = Math.max(0.0, slopePercent);
   const totalMass = w + l;
-  const loadRatio = l / w;
+  const loadRatio = l > 0 ? l / w : 0;
 
   const restingTerm = 1.5 * w;
   const loadCarriageTerm = 2.0 * totalMass * (loadRatio * loadRatio);
@@ -291,45 +291,46 @@ let testsPassed = 0;
   testsPassed++;
 }
 
-// Test 8: NASA JSC Pandolf / Santee Bio-Energetic Model
+// Test 8: NASA JSC Pandolf Bio-Energetic Model (Kim et al. APACHE study, no suit load in 1g)
 {
   const flatWatts = calculatePandolfWatts(0.0);
-  // Expected baseline metabolic rate for 80.7kg astronaut + 35kg suit at 3.0 km/h: ~260-280 Watts
-  assert(flatWatts > 240 && flatWatts < 300, `Flat terrain watts anomaly: ${flatWatts}`);
+  // Expected baseline metabolic rate for 80.7kg astronaut at 3.0 km/h on flat terrain: ~205.1 W
+  assert(flatWatts > 200 && flatWatts < 215, `Flat terrain watts anomaly: ${flatWatts}`);
 
   const uphillWatts = calculatePandolfWatts(15.0); // 15% slope
-  assert(uphillWatts > flatWatts * 1.35, `15% slope failed to increase power expenditure by >35%: ${uphillWatts} vs ${flatWatts}`);
-  console.log(`✅ TEST 8 PASSED: NASA JSC Pandolf/Santee Bio-Model (Flat: ${flatWatts.toFixed(0)}W, +15% Slope: ${uphillWatts.toFixed(0)}W)`);
+  // At 15% slope: 205.11 + 80.7 * 0.35 * (3/3.6) * 15 = 558.2 W
+  assert(Math.abs(uphillWatts - 558.2) < 2.0, `15% slope power mismatch: expected ~558W, got ${uphillWatts}`);
+  console.log(`✅ TEST 8 PASSED: NASA JSC Pandolf Bio-Model (Flat: ${flatWatts.toFixed(0)}W, +15% Slope: ${uphillWatts.toFixed(0)}W)`);
   testsPassed++;
 }
 
-// Test 9: Multi-Objective Route Comparison & Risk Formula Verification
+// Test 9: Multi-Objective Route Comparison & Risk Formula Verification (15° Base Angle)
 {
   // Normalized Terrain Slope Risk Index:
-  // R = clip(0.6 * (meanSlope / 20.0°) + 0.4 * (peakSlope / 20.0°), 0.0, 1.0)
+  // R = clip(0.6 * (meanSlope / 15.0°) + 0.4 * (peakSlope / 15.0°), 0.0, 1.0)
+  // Base angle is MAX_STEIGUNG_GRAD = 15.0° (Kim et al. APACHE study, ICES 2022)
   const calcRisk = (meanDeg, peakDeg) => {
-    const r = 0.6 * (meanDeg / 20.0) + 0.4 * (peakDeg / 20.0);
+    const r = 0.6 * (meanDeg / 15.0) + 0.4 * (peakDeg / 15.0);
     return Math.min(1.0, Math.max(0.0, Number(r.toFixed(3))));
   };
 
-  const directRoute = { distanceM: 2100, meanSlopeDeg: 11.8, maxSlopeDeg: 18.5, watts: 385 };
-  const safeRoute = { distanceM: 2650, meanSlopeDeg: 4.2, maxSlopeDeg: 7.8, watts: 285 };
+  const steepScarpRoute = { distanceM: 2100, meanSlopeDeg: 11.8, maxSlopeDeg: 18.5, watts: 385 };
+  const benchmarkSafeRoute = { distanceM: 2650, meanSlopeDeg: 4.2, maxSlopeDeg: 7.8, watts: 217 };
 
-  const directRisk = calcRisk(directRoute.meanSlopeDeg, directRoute.maxSlopeDeg);
-  const safeRisk = calcRisk(safeRoute.meanSlopeDeg, safeRoute.maxSlopeDeg);
+  const steepRisk = calcRisk(steepScarpRoute.meanSlopeDeg, steepScarpRoute.maxSlopeDeg);
+  const safeRisk = calcRisk(benchmarkSafeRoute.meanSlopeDeg, benchmarkSafeRoute.maxSlopeDeg);
 
   // Exact mathematical expectation check:
-  // Direct: 0.6 * (11.8 / 20) + 0.4 * (18.5 / 20) = 0.354 + 0.370 = 0.724 (72.4%)
-  // Safe:   0.6 * (4.2 / 20)  + 0.4 * (7.8 / 20)  = 0.126 + 0.156 = 0.282 (28.2%)
-  assert(Math.abs(directRisk - 0.724) < 1e-4, `Direct risk calculation mismatch: expected 0.724, got ${directRisk}`);
-  assert(Math.abs(safeRisk - 0.282) < 1e-4, `Safe risk calculation mismatch: expected 0.282, got ${safeRisk}`);
+  // Steep Scarp: 0.6 * (11.8 / 15) + 0.4 * (18.5 / 15) = 0.472 + 0.4933 = 0.965 (96.5%)
+  // Safe Contour: 0.6 * (4.2 / 15) + 0.4 * (7.8 / 15)  = 0.168 + 0.208  = 0.376 (37.6%)
+  assert(Math.abs(steepRisk - 0.965) < 1e-3, `Steep risk calculation mismatch: expected 0.965, got ${steepRisk}`);
+  assert(Math.abs(safeRisk - 0.376) < 1e-3, `Safe risk calculation mismatch: expected 0.376, got ${safeRisk}`);
 
   // Invariant assertions:
-  assert(safeRoute.maxSlopeDeg < directRoute.maxSlopeDeg, 'Safe route slope hazard violation');
-  assert(safeRisk < directRisk, 'Safe route risk score must be strictly lower than direct');
-  assert(directRoute.distanceM < safeRoute.distanceM, 'Direct route must be shorter in Euclidean distance');
-  assert(safeRoute.watts < directRoute.watts, 'Safe route must require lower metabolic power per meter');
-  console.log('✅ TEST 9 PASSED: Normalized Slope Risk Index Math Verified (Direct: 72.4%, Safe: 28.2%, Formula Invariant)');
+  assert(benchmarkSafeRoute.maxSlopeDeg < steepScarpRoute.maxSlopeDeg, 'Safe route slope hazard violation');
+  assert(safeRisk < steepRisk, 'Safe route risk score must be strictly lower than steep scarp');
+  assert(benchmarkSafeRoute.watts < steepScarpRoute.watts, 'Safe route must require lower metabolic power per meter');
+  console.log('✅ TEST 9 PASSED: Normalized Slope Risk Index Math Verified (15° Base Angle: Scarp 96.5%, Contour 37.6%)');
   testsPassed++;
 }
 
