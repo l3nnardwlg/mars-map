@@ -1,10 +1,17 @@
+
+name: marsapp
+
 services:
   backend:
     build: ./backend
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      MARS_DEM_PATH: /srv/data/raw/M20_JezeroCrater_CTXDEM_20m.tif
+      MARS_TILES_DIR: /srv/data/tiles
     volumes:
       - ./backend/data:/srv/data:ro
+    expose:
+      - "8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
@@ -16,9 +23,12 @@ services:
       context: ./frontend
       dockerfile: ../deploy/frontend.Dockerfile
       args:
-        BACKEND_URL: http://backend:8000/api/:path*
+        BACKEND_URL: "http://backend:8000/api/:path*"
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: "http://backend:8000/api/:path*"
     ports:
-      - "3000:3000"
+      - "127.0.0.1:31847:3000"
     depends_on:
       backend:
         condition: service_healthy
