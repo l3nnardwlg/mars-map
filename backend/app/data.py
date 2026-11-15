@@ -16,7 +16,15 @@ def lade_kachelinfos(ordner: Path) -> list[dict]:
         return []
     infos = []
     for datei in sorted(ordner.glob("*/metadata.json")):
-        infos.append(json.loads(datei.read_text(encoding="utf-8")))
+        try:
+            info = json.loads(datei.read_text(encoding="utf-8"))
+            layer_dir = datei.parent
+            # B4 / B2-P0-04: Validate whether actual tiles (*.png) exist in the tile set
+            has_tiles = any(layer_dir.glob("*/*/*.png")) or any(layer_dir.glob("*.png"))
+            info["has_tiles"] = has_tiles
+            infos.append(info)
+        except Exception:
+            continue
     return infos
 
 
@@ -117,7 +125,18 @@ def layer_liste(ordner: Path) -> list[Layer]:
                 LegendEntry(class_id=e["klasse"], name=e["name"], symbol=e["symbol"], color=e["farbe"])
                 for e in info["legende"]
             ]
-        zusatz: dict = {"available": info is not None, "legend": legende, "status": "ready" if info is not None else "not-built"}
+        has_tiles = bool(info and info.get("has_tiles"))
+        if info is not None and has_tiles:
+            status = "ready"
+            available = True
+        elif info is not None and not has_tiles:
+            status = "partial"
+            available = False
+        else:
+            status = "not-built"
+            available = False
+
+        zusatz: dict = {"available": available, "legend": legende, "status": status}
         if info is not None:
             grenzen = info["bounds"]
             zusatz.update(

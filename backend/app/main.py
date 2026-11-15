@@ -98,7 +98,7 @@ def plan_objective_routes(request: PlanRequest) -> list[MarsRoute]:
 @api.post("/mission/simulate", response_model=MissionEstimate, response_model_by_alias=True)
 def simulate_mission(request: MissionRequest) -> MissionEstimate:
     try:
-        return simulate(request.route.waypoints, request.crew_size)
+        return simulate(request.route, request.crew_size)
     except MissingElevationError as fehler:
         raise HTTPException(status_code=422, detail=str(fehler)) from fehler
 
@@ -138,8 +138,11 @@ def ready() -> dict[str, str]:
     probleme = []
     if not dem_pfad().is_file():
         probleme.append("Geländemodell fehlt")
-    if not (kachelordner() / "ctx_dem" / "metadata.json").is_file():
+    ctx_meta = kachelordner() / "ctx_dem" / "metadata.json"
+    if not ctx_meta.is_file():
         probleme.append("Kacheln ctx_dem fehlen")
+    elif not (any((kachelordner() / "ctx_dem").glob("*/*/*.png")) or any((kachelordner() / "ctx_dem").glob("*.png"))):
+        probleme.append("Kacheln ctx_dem (PNG) fehlen")
     if probleme:
         raise HTTPException(status_code=503, detail=probleme)
     return {"status": "ready"}

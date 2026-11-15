@@ -51,7 +51,14 @@ export interface Layer {
   nativeResolutionMeters?: number | null;
 }
 
-export type RouteProfile = 'direct' | 'safe' | 'science';
+export type RouteProfile =
+  | 'distance_min'
+  | 'energy_min'
+  | 'slope_hazard_min'
+  | 'science_detour'
+  | 'direct'
+  | 'safe'
+  | 'science';
 
 export type PlanObjective = 'energy_min' | 'distance_min' | 'slope_hazard_min';
 
@@ -89,6 +96,9 @@ export interface MarsRoute {
   maxSlopeDeg?: number;
   averageSlopeDeg?: number;
   meanSlopeDeg?: number;
+  maxEdgeSlopeDeg?: number;
+  meanEdgeSlopeDeg?: number;
+  peakPowerWatts?: number | null;
   dataSource?: string;
   sourceMode?: string | null;
   routingGridResolutionMeters?: number | null;

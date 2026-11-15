@@ -1,6 +1,6 @@
 import math
 
-from app.models import MarsCoordinate, MissionAssumptions, MissionEstimate
+from app.models import MarsCoordinate, MarsRoute, MissionAssumptions, MissionEstimate
 from app.nasa_werte import (
     GELAENDEFAKTOR,
     GEHTEMPO_METER_PRO_SEKUNDE,
@@ -39,7 +39,7 @@ def annahmen() -> MissionAssumptions:
         suit_load_kg=ZUSATZLAST_KG,
         walking_speed_meters_per_second=GEHTEMPO_METER_PRO_SEKUNDE,
         terrain_factor=GELAENDEFAKTOR,
-        gravity_treatment="keine Anpassung an die Mars-Schwerkraft (Pandolf-Gleichung gilt bei 1 g, Energie daher eher zu niedrig)",
+        gravity_treatment="1-g-Modell nach Pandolf et al. ohne Mars-Schwerkraft-Kalibrierung (0,38 g); Richtung einer Verzerrung durch Anzugmasse und reduzierte Schwerkraft unbestimmt",
         downhill_treatment="Gefälle wird wie ebener Boden gerechnet",
         max_slope_degrees=MAX_STEIGUNG_GRAD,
         eva_time_limit_seconds=MAX_EVA_SEKUNDEN,
@@ -49,21 +49,48 @@ def annahmen() -> MissionAssumptions:
     )
 
 
-def simulate(waypoints: list[MarsCoordinate], crew_size: int) -> MissionEstimate:
-    if any(point.elevation_meters is None for point in waypoints):
-        raise MissingElevationError("Alle Wegpunkte brauchen eine Hoehe")
-    distance = 0.0
-    energy_per_person = 0.0
-    peak_power = 0.0
-    for a, b in zip(waypoints, waypoints[1:]):
-        flat = horizontal_meters(a, b)
-        if flat == 0.0:
-            continue
-        rise = b.elevation_meters - a.elevation_meters
-        distance += math.hypot(flat, rise)
-        energy_per_person += step_energy_joule(flat, rise)
-        peak_power = max(peak_power, float(pandolf_watt(rise / flat * 100.0)))
-    duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
+def simulate(route_or_waypoints: MarsRoute | list[MarsCoordinate], crew_size: int) -> MissionEstimate:
+    if isinstance(route_or_waypoints, MarsRoute):
+        route = route_or_waypoints
+        if any(point.elevation_meters is None for point in route.waypoints):
+            raise MissingElevationError("Alle Wegpunkte brauchen eine Hoehe")
+        if route.energy_joules is not None and route.energy_joules > 0:
+            distance = route.distance_meters
+            duration = route.estimated_duration_seconds
+            energy_per_person = route.energy_joules
+            peak_power = route.peak_power_watts if route.peak_power_watts is not None else (
+                route.average_power_watts or 0.0
+            )
+        else:
+            waypoints = route.waypoints
+            distance = 0.0
+            energy_per_person = 0.0
+            peak_power = 0.0
+            for a, b in zip(waypoints, waypoints[1:]):
+                flat = horizontal_meters(a, b)
+                if flat == 0.0:
+                    continue
+                rise = b.elevation_meters - a.elevation_meters
+                distance += math.hypot(flat, rise)
+                energy_per_person += step_energy_joule(flat, rise)
+                peak_power = max(peak_power, float(pandolf_watt(rise / flat * 100.0)))
+            duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
+    else:
+        waypoints = route_or_waypoints
+        if any(point.elevation_meters is None for point in waypoints):
+            raise MissingElevationError("Alle Wegpunkte brauchen eine Hoehe")
+        distance = 0.0
+        energy_per_person = 0.0
+        peak_power = 0.0
+        for a, b in zip(waypoints, waypoints[1:]):
+            flat = horizontal_meters(a, b)
+            if flat == 0.0:
+                continue
+            rise = b.elevation_meters - a.elevation_meters
+            distance += math.hypot(flat, rise)
+            energy_per_person += step_energy_joule(flat, rise)
+            peak_power = max(peak_power, float(pandolf_watt(rise / flat * 100.0)))
+        duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
     oxygen_kg = energy_per_person / JOULE_PRO_KG_SAUERSTOFF
     average_power = energy_per_person / duration if duration > 0 else 0.0
     within_time = duration <= MAX_EVA_SEKUNDEN

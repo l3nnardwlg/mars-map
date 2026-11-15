@@ -75,3 +75,29 @@ def test_mission_states_assumptions_scope_and_peak_power():
     assert antwort_flach["withinPeakMetabolicRate"] is True
     assert antwort_steil["withinPeakMetabolicRate"] is False
     assert any("530 W" in w for w in antwort_steil["warnings"])
+
+
+def test_mission_simulation_preserves_solver_full_path():
+    # B3 / B2-P0-03: When route has solver full-path energy and duration,
+    # simulate_mission must use them directly rather than recalculating from simplified waypoints
+    full_route = {
+        "id": "full-path-route-1",
+        "waypoints": [
+            {"latitude": 18.40, "longitude": 77.45, "elevationMeters": -2500.0},
+            {"latitude": 18.42, "longitude": 77.50, "elevationMeters": -2450.0},
+            {"latitude": 18.44, "longitude": 77.55, "elevationMeters": -2400.0},
+        ],
+        "distanceMeters": 8776.47,
+        "estimatedDurationSeconds": 10531.76,
+        "energyJoules": 2432895.14,
+        "averagePowerWatts": 230.95,
+        "peakPowerWatts": 412.50,
+        "riskScore": 0.329,
+    }
+    sim = client.post("/api/mission/simulate", json={"route": full_route, "crewSize": 1}).json()
+    assert sim["durationSeconds"] == pytest.approx(10531.76)
+    assert sim["energyWattHours"] == pytest.approx(2432895.14 / 3600.0)
+    assert sim["oxygenKilograms"] == pytest.approx(2432895.14 / JOULE_PRO_KG_SAUERSTOFF)
+    assert sim["peakPowerWatts"] == pytest.approx(412.50)
+    assert sim["averagePowerWatts"] == pytest.approx(2432895.14 / 10531.76, rel=1e-3)
+    assert "unbestimmt" in sim["assumptions"]["gravityTreatment"]

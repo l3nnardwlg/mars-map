@@ -674,6 +674,39 @@
             ],
             "title": "Meanslopedeg"
           },
+          "maxEdgeSlopeDeg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxedgeslopedeg"
+          },
+          "meanEdgeSlopeDeg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meanedgeslopedeg"
+          },
+          "peakPowerWatts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakpowerwatts"
+          },
           "datasetId": {
             "anyOf": [
               {

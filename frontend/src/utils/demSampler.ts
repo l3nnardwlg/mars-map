@@ -86,7 +86,17 @@ export const NASA_DEM_METADATA: DemMetadata = {
 };
 
 let demData: Uint8Array | null = null;
+let demLoaded = false;
+let demLoadError = false;
 const DEM_SIZE = 256;
+
+export function isDemLoaded(): boolean {
+  return demLoaded;
+}
+
+export function isDemError(): boolean {
+  return demLoadError;
+}
 
 export function initDemSampler(): Promise<void> {
   if (demData) return Promise.resolve();
@@ -112,10 +122,16 @@ export function initDemSampler(): Promise<void> {
         for (let i = 0; i < demData.length; i++) {
           demData[i] = imgData.data[i * 4]; // Grayscale R channel
         }
+        demLoaded = true;
+        demLoadError = false;
       }
       resolve();
     };
-    img.onerror = () => resolve();
+    img.onerror = () => {
+      demLoaded = false;
+      demLoadError = true;
+      resolve();
+    };
   });
 }
 
@@ -124,10 +140,8 @@ export function initDemSampler(): Promise<void> {
  */
 export function sampleHeightAtUV(u: number, v: number): number {
   if (!demData) {
-    // Deterministic mathematical synthetic fall-back prior to image decode
-    const dx = u - 0.5;
-    const dy = v - 0.5;
-    return Math.min(1.0, Math.sqrt(dx * dx + dy * dy) * 1.2);
+    // A2: No synthetic hills as real Mars elevation data when DEM is not loaded
+    return 0.0;
   }
 
   const clampedU = Math.max(0, Math.min(1, u));

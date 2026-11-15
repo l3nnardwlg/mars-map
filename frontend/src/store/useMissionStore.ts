@@ -11,6 +11,9 @@ import {
   AstronautPose
 } from '@/types/mars';
 import {
+  AlternativeRoutesMap,
+  requestBaselineRouteAlternatives,
+  requestScienceDetour,
   requestRouteAlternatives,
   fetchSciencePoints,
   simulateMission,
@@ -106,7 +109,7 @@ interface MissionStore {
   routeEnd: MarsCoordinate | null;
   selectedRouteProfile: RouteProfile;
   currentRoute: MarsRoute | null;
-  alternativeRoutes: { direct?: MarsRoute; safe?: MarsRoute; science?: MarsRoute };
+  alternativeRoutes: AlternativeRoutesMap;
   isCalculatingRoute: boolean;
   routeError: string | null;
   hoveredRoutePoint: MarsCoordinate | null;
@@ -170,7 +173,7 @@ interface MissionStore {
   // Route Planning Actions
   setRoutePoint: (coord: MarsCoordinate) => void;
   clearRoute: () => void;
-  calculateRoute: () => Promise<void>;
+  calculateRoute: (explicitSciencePoint?: SciencePoint | null) => Promise<void>;
   selectRouteProfile: (profile: RouteProfile) => Promise<void>;
   setHoveredRoutePoint: (point: MarsCoordinate | null) => void;
   toggleComparingRoutes: () => void;
@@ -182,6 +185,7 @@ interface MissionStore {
 }
 
 let letzteRouteAnfrage = 0;
+let letzteSimulateAnfrage = 0;
 
 export const useMissionStore = create<MissionStore>((set, get) => ({
   activeView: 'globe',
@@ -219,7 +223,7 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
 
   routeStart: { latitude: 18.4276, longitude: 77.4516, elevationMeters: -2583 },
   routeEnd: { latitude: 18.4438, longitude: 77.4542, elevationMeters: -2560 },
-  selectedRouteProfile: 'direct',
+  selectedRouteProfile: 'energy_min',
   currentRoute: null,
   alternativeRoutes: {},
   isCalculatingRoute: false,
@@ -302,36 +306,61 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     });
   },
 
-  calculateRoute: async () => {
-    const { routeStart, routeEnd, selectedSciencePoint, sciencePoints, selectedRouteProfile } = get();
+  calculateRoute: async (explicitSciencePoint?: SciencePoint | null) => {
+    const { routeStart, routeEnd, selectedSciencePoint, selectedRouteProfile } = get();
     if (!routeStart || !routeEnd) return;
 
     const anfrage = ++letzteRouteAnfrage;
     set({ isCalculatingRoute: true, routeError: null });
+
+    const scienceTarget = explicitSciencePoint !== undefined ? explicitSciencePoint : selectedSciencePoint;
+
     try {
-      const targetScience = selectedSciencePoint?.location || sciencePoints[0]?.location;
-      const targetScienceId = selectedSciencePoint?.id;
-      const alternatives = await requestRouteAlternatives(
-        routeStart,
-        routeEnd,
-        targetScience,
-        targetScienceId
+      // A1: Pure baseline routes calculated WITHOUT science stops
+      const baselinePromise = requestBaselineRouteAlternatives(routeStart, routeEnd);
+
+      // A1: Separate science detour request only if an explicit science point is selected and not identical to end
+      const isSameAsEnd = Boolean(
+        scienceTarget &&
+          Math.abs(scienceTarget.location.latitude - routeEnd.latitude) < 1e-4 &&
+          Math.abs(scienceTarget.location.longitude - routeEnd.longitude) < 1e-4
       );
+
+      const sciencePromise = scienceTarget && !isSameAsEnd
+        ? requestScienceDetour(routeStart, routeEnd, scienceTarget)
+        : Promise.resolve(null);
+
+      const [baseline, scienceRoute] = await Promise.all([baselinePromise, sciencePromise]);
+
+      if (anfrage !== letzteRouteAnfrage) return;
+
+      const alternatives: AlternativeRoutesMap = {
+        distance_min: baseline.distance_min,
+        energy_min: baseline.energy_min,
+        slope_hazard_min: baseline.slope_hazard_min,
+        science_detour: scienceRoute || undefined,
+        // Backward compatibility aliases
+        direct: baseline.distance_min,
+        safe: baseline.energy_min,
+        science: scienceRoute || baseline.slope_hazard_min,
+      };
 
       const active =
         alternatives[selectedRouteProfile] ||
-        alternatives.safe ||
-        alternatives.direct ||
-        alternatives.science ||
+        alternatives.energy_min ||
+        alternatives.distance_min ||
+        alternatives.slope_hazard_min ||
+        alternatives.science_detour ||
         null;
 
+      const simId = ++letzteSimulateAnfrage;
       const estimate = active ? await simulateMission(active, 2) : null;
       if (anfrage !== letzteRouteAnfrage) return;
 
       set({
         alternativeRoutes: alternatives,
         currentRoute: active,
-        missionEstimate: estimate,
+        missionEstimate: simId === letzteSimulateAnfrage ? estimate : get().missionEstimate,
         isCalculatingRoute: false,
       });
     } catch (error) {
@@ -349,10 +378,13 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
     const targetRoute = alternativeRoutes[profile];
     if (!targetRoute) return;
 
+    const simId = ++letzteSimulateAnfrage;
     set({ selectedRouteProfile: profile, currentRoute: targetRoute });
     try {
       const estimate = await simulateMission(targetRoute, 2);
-      set({ missionEstimate: estimate });
+      if (simId === letzteSimulateAnfrage) {
+        set({ missionEstimate: estimate });
+      }
     } catch {
       // ignore
     }

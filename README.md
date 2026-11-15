@@ -2,12 +2,12 @@
 
 [![Frontend CI](https://github.com/l3nnardwlg/mars-map/actions/workflows/frontend.yml/badge.svg)](https://github.com/l3nnardwlg/mars-map/actions/workflows/frontend.yml)
 [![Backend CI](https://github.com/l3nnardwlg/mars-map/actions/workflows/backend.yml/badge.svg)](https://github.com/l3nnardwlg/mars-map/actions/workflows/backend.yml)
-[![NASA Space Apps Challenge](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Award%20Candidate-orange.svg)](https://www.spaceappschallenge.org/)
+[![NASA Space Apps Challenge](https://img.shields.io/badge/NASA%20Space%20Apps-Challenge%202026-orange.svg)](https://www.spaceappschallenge.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **MARS Pathfinder** is a high-fidelity, scientifically defensible planetary exploration and traverse optimization platform designed for NASA astronaut extravehicular activity (EVA) planning in Jezero Crater, Mars.
 
-Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine NASA orbital elevation models (MOLA, HRSC, CTX, HiRISE) with real-time bio-energetic metabolic simulations and multi-objective pathfinding to prove a critical planetary truth: **the shortest Euclidean path on Mars is often hazardous or fatal.**
+Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine NASA orbital elevation models (MGS MOLA, MRO CTX, HiRISE) with real-time bio-energetic metabolic simulations and multi-objective pathfinding to prove a critical planetary truth: **the shortest Euclidean path on Mars is often hazardous or fatal.**
 
 ---
 
@@ -17,12 +17,13 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 - **8K Ultra-HD Planetary Mars:** 8192×4096 albedo and 8K topographic bump displacement rendered with 16× anisotropic texture filtering and 128-subdivision geometry.
 - **Micro-Scale Jezero Crater:** Seamless cinematic transition from space orbit to real 3D terrain displacement sampled directly from the NASA Jezero elevation model.
 - **Relief Exaggeration Invariance:** Mathematical separation of visual rendering exaggeration from physical elevation sampling ensures MOLA datum accuracy is never distorted by rendering parameters.
-- **Scientific Quantization Transparency:** Discloses elevation uncertainty ($\pm 2.56\text{ m}$ discrete heightmap half-step, $\pm 0.02\text{ m}$ backend tile resolution) across all UI telemetry.
+- **Scientific Quantization Transparency:** Discloses elevation uncertainty ($\pm 2.56\text{ m}$ discrete client heightmap half-step, $\pm 0.02\text{ m}$ backend tile resolution) across all UI telemetry.
 
-### 2. Multi-Objective Traverse Comparison
-- **Direct Path (Euclidean):** Demonstrates naive shortest paths encountering dangerous $18.5^\circ$ scarp grades and steep metabolic costs ($405\text{ kJ}$).
-- **Safe Path (Ridge Traversal):** Traverses stable delta alluvial contours ($<8^\circ$ slopes), avoiding hazardous escarpments and reducing the Normalized Terrain Slope Risk Index from $72.4\%$ down to $28.2\%$.
-- **Science Path (Outcrop Sampling):** Strategic waypoint routing targeting Jezero Western Fan outcrop mudstones and delta deposits while staying well within human EVA physiological limits.
+### 2. Multi-Objective Traverse Optimization (4 Distinct Mission Profiles)
+- **`distance_min` (Geometrically Shortest Path):** Direct allowable route adhering strictly to the physical $15^\circ$ edge-grade slope barrier ($8,776\text{ m}$, peak edge slope $9.05^\circ$, hazard index $0.329$).
+- **`energy_min` (Metabolically Optimal Path):** Minimizes integrated metabolic expenditure based on terrain slope ($8,777\text{ m}$, $2.502\text{ MJ}$, peak edge slope $9.05^\circ$, hazard index $0.327$).
+- **`slope_hazard_min` (Integrated Hazard-Minimized Path):** Contours along lower alluvial terraces to minimize cumulative terrain hazard exposure ($8,891\text{ m}$, peak edge slope $6.83^\circ$, hazard index $0.238$ — a $27.7\%$ hazard reduction for only $+115\text{ m}$ distance).
+- **`science_detour` (Science-Aware Exploration Traverse):** Autonomous multi-leg detour targeting explicit NASA Perseverance exploration targets (e.g. `probe-14-15`: $14,788\text{ m}$, $4.069\text{ MJ}$, well within nominal 8-hour EVA limits). Baseline profiles remain strictly invariant when planning science detours.
 
 ### 3. Synchronized Topographic & EVA Telemetry
 - **Interactive Elevation Cross-Section:** Live bidirectional hover linking elevation chart profile to a 3D laser cursor on the Martian terrain.
@@ -31,7 +32,8 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 
 ### 4. NASA Space Apps Global Jury Mode
 - **15-Second Visitor Onboarding:** Immediate mission primer explaining the challenge, NASA datasets, and guidance.
-- **Guided 2.5-Minute Interactive Jury Tour:** 6-step rehearsable narrative demonstrating orbit-to-surface transition, route trade-offs, interactive inspector, astronaut locomotion, and verified data provenance.
+- **Guided 2.5-Minute Interactive Jury Tour:** Step-by-step rehearsable narrative demonstrating orbit-to-surface transition, route trade-offs, interactive inspector, astronaut locomotion, and verified data provenance.
+- **Full End-to-End Real Browser Automation:** Validated with Playwright Chromium E2E testing against live Next.js and FastAPI services.
 
 ---
 
@@ -39,14 +41,13 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 
 | Document | Description |
 | :--- | :--- |
-| **[PART_B_TONIGHT_HANDOFF.md](docs/PART_B_TONIGHT_HANDOFF.md)** | Tonight's actionable, prioritized engineering handoff for Part B (FastAPI backend). |
-| **[PART_B_TASK_BOARD.md](docs/PART_B_TASK_BOARD.md)** | Compact operational sprint board tracking P0/P1 backend deliverables and blockers. |
+| **[FINAL_95_SPRINT_REPORT.md](docs/master%20review%20tag%202/FINAL_95_SPRINT_REPORT.md)** | Comprehensive final sprint report documenting all P0/P1 fixes, real test outputs, benchmarks, and 95/100 scorecard. |
+| **[BENCHMARK_REPORT.md](backend/BENCHMARK_REPORT.md)** | Scientific solver benchmarks with DEM SHA-256 hash, execution runtimes, and energy/hazard metrics. |
 | **[SCIENTIFIC_CLAIMS_AUDIT.md](docs/SCIENTIFIC_CLAIMS_AUDIT.md)** | Master scientific claims registry mapping every numerical claim to equations, datasets, and tests. |
-| **[FINAL_INTEGRATION_CHECKLIST.md](docs/FINAL_INTEGRATION_CHECKLIST.md)** | Joint operational sign-off checklist and contingency assurances for Part A and Part B. |
+| **[FINAL_INTEGRATION_CHECKLIST.md](docs/FINAL_INTEGRATION_CHECKLIST.md)** | Joint operational sign-off checklist and contingency assurances for Frontend and Backend. |
 | **[FRONTEND_SCIENTIFIC_VALIDATION.md](docs/FRONTEND_SCIENTIFIC_VALIDATION.md)** | Geodetic coordinate transforms, MOLA datum proofs, central-difference slope math, and error budgets. |
 | **[FRONTEND_PERFORMANCE_REPORT.md](docs/FRONTEND_PERFORMANCE_REPORT.md)** | VRAM profiling, in-engine live rAF frame rate tracker, 8K texture anisotropy, and WebGL lifecycle. |
 | **[JURY_DEMO_SCRIPT.md](docs/JURY_DEMO_SCRIPT.md)** | Rehearsable step-by-step 2.5-minute presentation script for NASA Space Apps evaluation. |
-| **[FRONTEND_BACKEND_INTEGRATION.md](docs/FRONTEND_BACKEND_INTEGRATION.md)** | Complete API contract, tile serving protocols, error resilience (503/422/timeout), and fallback modes. |
 | **[AI_USAGE.md](docs/AI_USAGE.md)** | Transparent disclosure of AI assistance, automated verification pipelines, and technical limitations. |
 
 ---
@@ -55,7 +56,7 @@ Developed for the **NASA Space Apps Challenge**, MARS Pathfinder pairs genuine N
 
 ```mermaid
 flowchart TD
-    subgraph Frontend ["Part A: Frontend & 3D Visualization (Next.js / Three.js)"]
+    subgraph Frontend ["Frontend & 3D Visualization (Next.js 15 / Three.js)"]
         UI["Mission Control HUD / UI (React 19 / Tailwind)"]
         Canvas["React Three Fiber Canvas"]
         Globe["8K Planetary Mars Sphere"]
@@ -65,18 +66,18 @@ flowchart TD
         Chart["Elevation Profile Chart"]
     end
 
-    subgraph Backend ["Part B: Routing & Geodata Engine (FastAPI / GDAL)"]
+    subgraph Backend ["Routing & Geodata Engine (FastAPI / SciPy / Rasterio)"]
         API["FastAPI REST Endpoints"]
-        AStar["3D Slope-Constrained A* Pathfinder"]
-        BioModel["Pandolf / Santee Metabolic Engine"]
+        AStar["3D Slope-Constrained A* Pathfinder (15° Edge Barrier)"]
+        BioModel["Pandolf / Santee Metabolic Engine (Full-Path Metrics)"]
         TileServer["DEM & Imagery Tile Server"]
     end
 
-    subgraph Data ["NASA Planetary Data System (PDS)"]
+    subgraph Data ["NASA Planetary Data System (PDS) & USGS"]
         MOLA["MGS MOLA MEGDR Topography"]
-        CTX["MRO CTX Jezero DEM (12.37 m/px)"]
-        HiRISE["MRO HiRISE Micro-DEM (1.64 m/px)"]
-        Perseverance["NASA PDS Perseverance Rover Waypoints"]
+        CTX["MRO CTX Jezero DEM (20 m/px)"]
+        HiRISE["MRO HiRISE Micro-DEM"]
+        Perseverance["NASA PDS Perseverance Rover Waypoints & Samples"]
     end
 
     Data --> Backend
@@ -91,7 +92,7 @@ flowchart TD
 
 ### Prerequisites
 - **Node.js**: v20 or higher
-- **Python**: v3.12 or higher (optional, for backend server)
+- **Python**: v3.12 or higher
 - **Git**
 
 ### Frontend Setup
@@ -101,6 +102,9 @@ cd frontend
 npm install
 npm run lint          # 0 errors, 0 warnings
 npm run test:science  # 10/10 automated mathematical verification tests
+npm run test:contract # 4/4 FastAPI wire contract tests
+npm run test:mock     # 13/13 offline and UI mock tests
+npm run test:e2e      # Full Playwright Chromium browser E2E test suite
 npm run dev           # Start Next.js development server on http://localhost:3000
 ```
 
@@ -112,14 +116,14 @@ npm run build         # Next.js Turbopack production compilation
 npm run start         # Launch production server
 ```
 
-### Backend Setup (Optional)
+### Backend Setup
 
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python -m pytest tests     # 25 passed
+pip install -e ".[dev]"
+python -m pytest tests     # 77 passed, 0 skipped, 0 failed
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
