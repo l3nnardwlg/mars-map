@@ -47,9 +47,9 @@ export default function GuidedJuryTour() {
     {
       step: 3,
       badge: 'THE CORE DISCOVERY',
-      title: 'The Shortest Path is Fatal: Direct vs. Safe Traverses',
-      narrative: 'CRITICAL FINDING (Western Delta Benchmark): On Mars, the shortest Euclidean path is hazardous. In this benchmark traverse, the "Direct" path ascends an 18.5° scarp, causing severe regolith slip and a steep metabolic power spike. The "Safe" path contours along a <8° alluvial terrace, cutting metabolic power and reducing the Normalized Slope Risk Index from 72.4% to 28.2%.',
-      evidence: 'Benchmark Case Study (18.38°N, 77.58°E → 18.44°N, 77.45°E) • Pandolf Bio-Model • Normalized Risk Index = 0.6·(mean/20°) + 0.4·(max/20°)',
+      title: 'Multi-Objective Solvers: Direct vs. Safe Traverses',
+      narrative: 'CRITICAL FINDING (Western Delta Benchmark): The shortest Euclidean traverse (8,776 m) encounters steeper terrain (max 9.05°, risk 0.329). The Slope Hazard-Minimal traverse contours along low-gradient alluvial terraces, reducing peak incline to 6.83° and lowering the Slope Hazard Index to 0.238 (a ~28% risk reduction) with only 115 m of added distance.',
+      evidence: 'Benchmark (18.38°N, 77.58°E → 18.44°N, 77.45°E) • NASA JSC Rock Yard 15.0° Gate • BENCHMARK_REPORT.md',
       action: () => {
         setTerrainColorMode('slope');
         selectRouteProfile('safe');
@@ -59,8 +59,8 @@ export default function GuidedJuryTour() {
       step: 4,
       badge: 'SAMPLE RETURN CACHE',
       title: 'NASA Perseverance Ground-Truth Samples',
-      narrative: 'Mars 2020 Perseverance science sample return cores (Roubion, Montdenier, Salette, Skinner Ridge) are accurately anchored to the DEM. The "Science" profile plans an intelligent detour to collect sample tubes within the 8-hour EVA limit.',
-      evidence: 'NASA MMGIS Sample Registry • M20_SAMPLE_v3.json • Verified Topographic Anchoring',
+      narrative: 'Mars 2020 Perseverance science sample return cores (e.g. probe-14-15) are accurately anchored to the CTX DEM. The multi-objective solver calculates exact waypoint stops with segmented legs (11,782 m + 3,006 m = 14,788 m, 4.069 MJ) within the 8-hour EVA limit.',
+      evidence: 'NASA MMGIS Sample Registry • M20_SAMPLE_v3.json (36 Cores) • Multi-Leg Routing (POST /api/routes/plan)',
       action: () => {
         setTerrainColorMode('satellite');
         selectRouteProfile('science');
@@ -70,8 +70,8 @@ export default function GuidedJuryTour() {
       step: 5,
       badge: 'BOOTS ON THE GROUND',
       title: 'First-Person Astronaut EVA Simulation',
-      narrative: 'Entering boots-on-the-ground EVA perspective. Real-time surface gradient sensing, digital compass tape, frame-rate independent physics, and physical slope constraints that prevent unrealistic cliff sprinting.',
-      evidence: 'Physical Eye Height 1.7m • Frame-Rate Independent Delta • Pandolf Metabolic Bio-Telemetry',
+      narrative: 'Entering first-person astronaut perspective. Real-time surface gradient sensing, digital compass tape, frame-rate independent physics, and hard 15.0° slope constraints preventing traversal of impassable cliffs.',
+      evidence: 'Stylized 1st-Person Perspective • 15.0° Passability Gate • Pandolf Metabolic Bio-Telemetry',
       action: () => {
         if (!isAstronautMode) toggleAstronautMode();
       },

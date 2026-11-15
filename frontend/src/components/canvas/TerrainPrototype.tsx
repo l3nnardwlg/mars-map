@@ -15,6 +15,7 @@ import {
   sampleSlopeAtUV, 
   sampleAspectAtUV, 
   classifySlopeRisk, 
+  generateHypsometricCanvas,
   NASA_DEM_METADATA 
 } from '@/utils/demSampler';
 import { useEffect } from 'react';
@@ -66,30 +67,26 @@ export default function TerrainPrototype() {
     /* eslint-enable react-hooks/immutability */
   }, [demMap, orthoMap, slopeMap]);
 
-  // Hypsometric Colormap texture
+  // Georeferenced 2D Hypsometric Elevation Colormap (derived from actual DEM pixel elevations)
   const hypsometricMap = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 1;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const gradient = ctx.createLinearGradient(0, 0, 256, 0);
-      gradient.addColorStop(0.0, '#1e1b4b'); // Deep crater floor (-2500m)
-      gradient.addColorStop(0.2, '#0284c7'); // Lower basin
-      gradient.addColorStop(0.4, '#10b981'); // Alluvial plains
-      gradient.addColorStop(0.65, '#f59e0b'); // Delta deposits
-      gradient.addColorStop(0.85, '#ef4444'); // Crater rim slope
-      gradient.addColorStop(1.0, '#ffffff'); // Highest ridge (-1200m)
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 256, 1);
+    if (typeof window === 'undefined') return null;
+    if (demMap && demMap.image) {
+      try {
+        const canvas = generateHypsometricCanvas(demMap.image as HTMLImageElement);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        return texture;
+      } catch {
+        return null;
+      }
     }
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
+    return null;
+  }, [demMap]);
 
   const activeTexture = useMemo(() => {
-    if (terrainColorMode === 'hypsometric') return hypsometricMap;
+    if (terrainColorMode === 'hypsometric' && hypsometricMap) return hypsometricMap;
     if (terrainColorMode === 'slope') return slopeMap;
     return orthoMap;
   }, [terrainColorMode, hypsometricMap, slopeMap, orthoMap]);

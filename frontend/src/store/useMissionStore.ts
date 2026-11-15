@@ -303,29 +303,42 @@ export const useMissionStore = create<MissionStore>((set, get) => ({
   },
 
   calculateRoute: async () => {
-    const { routeStart, routeEnd, sciencePoints, selectedRouteProfile } = get();
+    const { routeStart, routeEnd, selectedSciencePoint, sciencePoints, selectedRouteProfile } = get();
     if (!routeStart || !routeEnd) return;
 
     const anfrage = ++letzteRouteAnfrage;
     set({ isCalculatingRoute: true, routeError: null });
     try {
-      const nearestScience = sciencePoints[0]?.location;
-      const alternatives = await requestRouteAlternatives(routeStart, routeEnd, nearestScience);
-      const active = alternatives[selectedRouteProfile] || alternatives.direct;
-      const estimate = await simulateMission(active, 2);
+      const targetScience = selectedSciencePoint?.location || sciencePoints[0]?.location;
+      const targetScienceId = selectedSciencePoint?.id;
+      const alternatives = await requestRouteAlternatives(
+        routeStart,
+        routeEnd,
+        targetScience,
+        targetScienceId
+      );
+
+      const active =
+        alternatives[selectedRouteProfile] ||
+        alternatives.safe ||
+        alternatives.direct ||
+        alternatives.science ||
+        null;
+
+      const estimate = active ? await simulateMission(active, 2) : null;
       if (anfrage !== letzteRouteAnfrage) return;
 
       set({
         alternativeRoutes: alternatives,
         currentRoute: active,
         missionEstimate: estimate,
-        isCalculatingRoute: false
+        isCalculatingRoute: false,
       });
     } catch (error) {
       if (anfrage === letzteRouteAnfrage) {
         set({
           isCalculatingRoute: false,
-          routeError: error instanceof RouteRejectedError ? error.message : null,
+          routeError: error instanceof RouteRejectedError ? error.message : 'Fehler bei der Routenberechnung',
         });
       }
     }

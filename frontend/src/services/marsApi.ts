@@ -307,6 +307,11 @@ export async function requestRoute(
         body: JSON.stringify({ start, end }),
       });
 
+      if (res.status === 422) {
+        const info = await res.json().catch(() => null);
+        throw new RouteRejectedError(info?.detail || 'Route rejected by terrain solver: point outside bounds or slope exceeds 15.0°');
+      }
+
       if (res.ok) {
         const data = await res.json();
         const enriched = enrichWaypointsWithTopography(
@@ -321,13 +326,15 @@ export async function requestRoute(
           elevationProfile: enriched.elevationProfile,
           elevationGainMeters: enriched.elevationGainMeters,
           elevationLossMeters: enriched.elevationLossMeters,
-          maxSlopeDeg: enriched.maxSlopeDeg,
-          averageSlopeDeg: enriched.averageSlopeDeg,
+          maxSlopeDeg: data.maxSlopeDeg ?? enriched.maxSlopeDeg,
+          averageSlopeDeg: data.meanSlopeDeg ?? enriched.averageSlopeDeg,
           dataSource: 'NASA FastAPI Backend [Local Tiles / A* CTX-DEM]',
+          sourceMode: data.sourceMode || 'backend_live_ctx',
         };
       }
-    } catch {
-      // Backend offline
+    } catch (err) {
+      if (err instanceof RouteRejectedError) throw err;
+      // Backend offline -> continue to offline model
     }
   }
 
@@ -379,64 +386,115 @@ export async function requestRoute(
     maxSlopeDeg: enriched.maxSlopeDeg,
     averageSlopeDeg: enriched.averageSlopeDeg,
     dataSource: 'NASA PDS M20 Jezero CTX Model [Offline Reference]',
+    sourceMode: 'offline_reference_model',
+    warnings: ['OFFLINE REFERENCE MODEL — Start backend for live NASA A* CTX-DEM solver'],
     elevationProfile: enriched.elevationProfile,
   };
 }
 
 export class RouteRejectedError extends Error {}
 
+export interface AlternativeRoutesMap {
+  direct?: MarsRoute;
+  safe?: MarsRoute;
+  science?: MarsRoute;
+}
+
 /**
  * Requests or computes alternative multi-objective routes for scientific comparison.
+ * Uses Dev B's POST /api/routes/plan endpoint with objective-based routing.
  */
 export async function requestRouteAlternatives(
   start: MarsCoordinate,
   end: MarsCoordinate,
-  scienceDetour?: MarsCoordinate
-): Promise<{ direct: MarsRoute; safe: MarsRoute; science: MarsRoute }> {
-  // 1. Try FastAPI backend alternatives endpoint
+  scienceDetour?: MarsCoordinate,
+  sciencePointId?: string
+): Promise<AlternativeRoutesMap> {
+  // 1. First, attempt FastAPI backend /api/routes/plan with explicit objectives
   try {
-    const res = await fetch('/api/routes/alternatives', {
+    const planBody: {
+      start: MarsCoordinate;
+      end: MarsCoordinate;
+      objectives: ('energy_min' | 'distance_min' | 'slope_hazard_min')[];
+      sciencePointIds?: string[];
+      via?: MarsCoordinate[];
+    } = {
+      start,
+      end,
+      objectives: ['energy_min', 'distance_min', 'slope_hazard_min'],
+    };
+
+    if (sciencePointId) {
+      planBody.sciencePointIds = [sciencePointId];
+    } else if (scienceDetour) {
+      planBody.via = [scienceDetour];
+    }
+
+    const res = await fetch('/api/routes/plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start, end, count: 3 }),
+      body: JSON.stringify(planBody),
     });
 
     if (res.status === 422) {
       const info = await res.json().catch(() => null);
-      throw new RouteRejectedError(info?.detail || 'Für diese Punkte ist keine Route möglich');
+      throw new RouteRejectedError(
+        info?.detail || 'Route rejected by terrain solver: start/end impassable (>15°) or out of bounds'
+      );
     }
 
     if (res.ok) {
       const routes: MarsRoute[] = await res.json();
-      if (routes && routes.length >= 1) {
-        const enrich = (r: MarsRoute, prof: RouteProfile, defaultTag: string): MarsRoute => {
+      if (routes && routes.length > 0) {
+        const enrich = (r: MarsRoute, prof: RouteProfile): MarsRoute => {
           const topo = enrichWaypointsWithTopography(
             r.waypoints,
-            'NASA FastAPI Backend [A* CTX-DEM]'
+            `NASA FastAPI Solver [A* CTX-DEM / ${r.objective || prof}]`
           );
           return {
             ...r,
             profile: prof,
-            tags: r.tags && r.tags.length > 0 ? r.tags : [defaultTag],
             waypoints: topo.enrichedWaypoints,
             elevationProfile: topo.elevationProfile,
-            elevationGainMeters: topo.elevationGainMeters,
-            elevationLossMeters: topo.elevationLossMeters,
-            maxSlopeDeg: topo.maxSlopeDeg,
-            averageSlopeDeg: topo.averageSlopeDeg,
-            dataSource: 'NASA FastAPI Backend [Local Tiles / A* CTX-DEM]',
+            distanceMeters: r.distanceMeters ?? topo.totalDistanceMeters,
+            estimatedDurationSeconds:
+              r.estimatedDurationSeconds ??
+              Math.round(topo.totalDistanceMeters / NASA_EVA_CONSTANTS.walkingSpeedMs),
+            energyJoules: r.energyJoules ?? topo.totalEnergyJoules,
+            averagePowerWatts: r.averagePowerWatts ?? topo.averagePowerWatts,
+            riskScore: r.riskScore ?? topo.riskScore,
+            maxSlopeDeg: r.maxSlopeDeg ?? topo.maxSlopeDeg,
+            meanSlopeDeg: r.meanSlopeDeg ?? topo.averageSlopeDeg,
+            dataSource: `NASA FastAPI Solver [A* CTX-DEM / ${r.objective || prof}]`,
           };
         };
 
-        const direct = enrich(routes[0], 'direct', 'energy_optimal');
-        const safe = routes[1] ? enrich(routes[1], 'safe', 'lowest_risk') : direct;
-        const science = routes[2]
-          ? enrich(routes[2], 'science', 'shortest')
-          : routes[1]
-            ? await requestRoute(start, end, 'science', scienceDetour)
-            : direct;
+        const result: AlternativeRoutesMap = {};
 
-        return { direct, safe, science };
+        for (const r of routes) {
+          if (r.objective === 'distance_min') {
+            result.direct = enrich(r, 'direct');
+          } else if (r.objective === 'energy_min') {
+            result.safe = enrich(r, 'safe');
+          } else if (r.objective === 'slope_hazard_min') {
+            result.science = enrich(r, 'science');
+          } else if (r.tags?.includes('alternative_corridor')) {
+            if (!result.safe) result.safe = enrich(r, 'safe');
+            else if (!result.science) result.science = enrich(r, 'science');
+          }
+        }
+
+        // If a science point was visited, assign or override science profile
+        const scienceVisited = routes.find(
+          (r) => r.visitedSciencePointIds && r.visitedSciencePointIds.length > 0
+        );
+        if (scienceVisited) {
+          result.science = enrich(scienceVisited, 'science');
+        }
+
+        if (Object.keys(result).length > 0) {
+          return result;
+        }
       }
     }
   } catch (error) {
@@ -444,16 +502,24 @@ export async function requestRouteAlternatives(
     // Backend offline -> fallback to offline model with explicit provenance
   }
 
-  // 2. High-precision offline model
+  // 2. High-precision offline model (explicitly marked as offline illustrative reference)
   const [direct, safe, science] = await Promise.all([
     requestRoute(start, end, 'direct'),
     requestRoute(start, end, 'safe'),
     requestRoute(start, end, 'science', scienceDetour),
   ]);
 
-  direct.tags = ['shortest'];
-  safe.tags = ['energy_optimal', 'lowest_risk'];
-  science.tags = ['science_detour'];
+  direct.tags = ['shortest', 'offline_reference'];
+  direct.sourceMode = 'offline_reference_model';
+  direct.warnings = ['OFFLINE REFERENCE MODEL — Start backend for live NASA A* CTX-DEM solver'];
+
+  safe.tags = ['energy_optimal', 'lowest_risk', 'offline_reference'];
+  safe.sourceMode = 'offline_reference_model';
+  safe.warnings = ['OFFLINE REFERENCE MODEL — Start backend for live NASA A* CTX-DEM solver'];
+
+  science.tags = ['science_detour', 'offline_reference'];
+  science.sourceMode = 'offline_reference_model';
+  science.warnings = ['OFFLINE REFERENCE MODEL — Start backend for live NASA A* CTX-DEM solver'];
 
   return { direct, safe, science };
 }

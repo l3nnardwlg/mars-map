@@ -245,3 +245,68 @@ export function classifySlopeRisk(
   if (slopeDeg <= thresholdDeg) return 'caution';
   return 'hazard';
 }
+
+/**
+ * Scientific Hypsometric Color Ramp Interpolator
+ * Maps height fraction t in [0, 1] relative to MOLA Areoid (-2,583m to -1,280m)
+ * to exact RGB color values.
+ */
+export function getHypsometricRgb(t: number): [number, number, number] {
+  const stops = [
+    { t: 0.0, r: 30, g: 27, b: 75 },    // -2583m (#1e1b4b) Deep basin floor
+    { t: 0.2, r: 2, g: 132, b: 199 },   // -2322m (#0284c7) Lower crater floor
+    { t: 0.4, r: 16, g: 185, b: 129 },  // -2062m (#10b981) Alluvial plains
+    { t: 0.65, r: 245, g: 158, b: 11 }, // -1736m (#f59e0b) Western delta fan
+    { t: 0.85, r: 239, g: 68, b: 68 },  // -1475m (#ef4444) Crater rim scarp
+    { t: 1.0, r: 255, g: 255, b: 255 }, // -1280m (#ffffff) Rim crest
+  ];
+
+  if (t <= 0) return [stops[0].r, stops[0].g, stops[0].b];
+  if (t >= 1) return [stops[stops.length - 1].r, stops[stops.length - 1].g, stops[stops.length - 1].b];
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    const s0 = stops[i];
+    const s1 = stops[i + 1];
+    if (t >= s0.t && t <= s1.t) {
+      const frac = (t - s0.t) / (s1.t - s0.t);
+      const r = Math.round(s0.r + frac * (s1.r - s0.r));
+      const g = Math.round(s0.g + frac * (s1.g - s0.g));
+      const b = Math.round(s0.b + frac * (s1.b - s0.b));
+      return [r, g, b];
+    }
+  }
+  return [255, 255, 255];
+}
+
+/**
+ * Generates an exact 2D hypsometric elevation raster canvas from a DEM image or canvas.
+ * Every pixel is georeferenced and colored according to its actual elevation fraction.
+ */
+export function generateHypsometricCanvas(
+  sourceImage: HTMLImageElement | HTMLCanvasElement
+): HTMLCanvasElement {
+  const width = sourceImage.width || 256;
+  const height = sourceImage.height || 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  ctx.drawImage(sourceImage, 0, 0, width, height);
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const elevByte = data[i]; // Grayscale red channel [0..255]
+    const t = elevByte / 255.0;
+    const [r, g, b] = getHypsometricRgb(t);
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+    data[i + 3] = 255;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}

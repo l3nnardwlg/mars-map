@@ -22,11 +22,25 @@ export default function ElevationProfileChart() {
   }
 
   const profile = currentRoute.elevationProfile;
-  const elevations = profile.map((p) => p.elevationM);
-  const minElev = Math.min(...elevations);
-  const maxElev = Math.max(...elevations);
-  const totalDistKm = profile[profile.length - 1].distanceKm;
-  const elevDelta = maxElev - minElev;
+  const totalDistKm = profile[profile.length - 1].distanceKm || 0.1;
+
+  // Global scale across compared routes for common metric scale
+  const allComparedRoutes = [
+    currentRoute,
+    alternativeRoutes.direct,
+    alternativeRoutes.safe,
+    alternativeRoutes.science,
+  ].filter((r): r is NonNullable<typeof r> => Boolean(r && r.elevationProfile && r.elevationProfile.length > 0));
+
+  const allElevations = allComparedRoutes.flatMap((r) => r.elevationProfile!.map((p) => p.elevationM));
+  const minElev = Math.min(...allElevations);
+  const maxElev = Math.max(...allElevations);
+  const elevDelta = Math.max(1, maxElev - minElev);
+
+  const globalMaxDistKm = Math.max(
+    ...allComparedRoutes.map((r) => r.elevationProfile![r.elevationProfile!.length - 1].distanceKm),
+    totalDistKm
+  );
 
   // SVG Chart Dimensions
   const svgWidth = 340;
@@ -35,19 +49,19 @@ export default function ElevationProfileChart() {
   const padBottom = 18;
   const chartHeight = svgHeight - padTop - padBottom;
 
-  // Map elevation point to SVG coordinates
-  const getSvgCoords = (pts: typeof profile) => {
-    return pts.map((pt, idx) => {
-      const x = (idx / (pts.length - 1)) * svgWidth;
+  // Map elevation point to SVG coordinates proportionally based on cumulative distance
+  const getSvgCoords = (pts: typeof profile, maxDistKm: number = globalMaxDistKm) => {
+    return pts.map((pt) => {
+      const x = maxDistKm > 0 ? (pt.distanceKm / maxDistKm) * svgWidth : 0;
       const normY = elevDelta > 0 ? (pt.elevationM - minElev) / elevDelta : 0.5;
       const y = svgHeight - padBottom - normY * chartHeight;
       return { x, y, pt };
     });
   };
 
-  const currentCoords = getSvgCoords(profile);
+  const currentCoords = getSvgCoords(profile, isComparingRoutes ? globalMaxDistKm : totalDistKm);
   const pathD = `M ${currentCoords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
-  const areaD = `M 0,${svgHeight - padBottom} L ${currentCoords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')} L ${svgWidth},${svgHeight - padBottom} Z`;
+  const areaD = `M 0,${svgHeight - padBottom} L ${currentCoords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')} L ${currentCoords[currentCoords.length - 1]?.x.toFixed(1) || svgWidth},${svgHeight - padBottom} Z`;
 
   // Secondary alternative route lines for multi-comparison
   const altLines = (['direct', 'safe', 'science'] as const).map((prof) => {
@@ -55,7 +69,7 @@ export default function ElevationProfileChart() {
     if (!alt || !alt.elevationProfile || alt.elevationProfile.length < 2 || prof === selectedRouteProfile) {
       return null;
     }
-    const coords = getSvgCoords(alt.elevationProfile);
+    const coords = getSvgCoords(alt.elevationProfile, globalMaxDistKm);
     const d = `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
     const stroke = prof === 'safe' ? '#10b981' : prof === 'science' ? '#f59e0b' : '#38bdf8';
     return { prof, d, stroke, route: alt };
@@ -66,12 +80,22 @@ export default function ElevationProfileChart() {
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const fraction = Math.max(0, Math.min(1, mouseX / rect.width));
-    const nearestIdx = Math.round(fraction * (currentRoute.waypoints.length - 1));
+    const mouseX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const activeMaxDist = isComparingRoutes ? globalMaxDistKm : totalDistKm;
+    const targetDistKm = (mouseX / rect.width) * activeMaxDist;
 
-    setHoverIndex(nearestIdx);
-    const wp = currentRoute.waypoints[nearestIdx];
+    let bestIdx = 0;
+    let minDiff = Infinity;
+    profile.forEach((pt, idx) => {
+      const diff = Math.abs(pt.distanceKm - targetDistKm);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestIdx = idx;
+      }
+    });
+
+    setHoverIndex(bestIdx);
+    const wp = currentRoute.waypoints[bestIdx];
     if (wp) {
       setHoveredRoutePoint(wp);
     }

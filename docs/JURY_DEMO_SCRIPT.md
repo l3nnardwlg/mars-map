@@ -34,22 +34,22 @@
 
 ---
 
-### Step 3: The Fatal Direct Path vs. Safe Traverse (0:50 – 1:25)
-* **Visual:** Multi-route comparison overlay with SVG elevation cross-section. The Direct line climbs a steep red scarp; the Safe line contours along the delta floor.
+### Step 3: The Multi-Objective Solver: Distance vs. Energy & Hazard (0:50 – 1:25)
+* **Visual:** Multi-route comparison overlay with SVG elevation cross-section. The Distance-minimal traverse encounters steeper sections; the Hazard-minimal traverse contours along the delta floor.
 * **Spoken Script:**
-  > "Here is our core discovery: **The shortest path is not the most suitable path on Mars.**  
-  > If an astronaut takes the direct Euclidean line to the delta rim, they encounter an $18.5^\circ$ scarp. In Martian regolith, that causes severe wheel slip and a $+35\%$ metabolic power spike.  
-  > Watch our multi-objective routing: By selecting the **Safe** traverse, our algorithm contours along the lower alluvial terrace at under $8^\circ$ slope. It adds $550\text{ meters}$ of distance, but cuts metabolic power demand substantially and drops our Normalized Terrain Slope Risk Index from $72.4\%$ down to a safe $28.2\%$, keeping our crew well within nominal oxygen reserves."
-* **Action:** Switch between **"Direct"** and **"Safe"** buttons. Hover over the Elevation Cross-Section to highlight the synchronized yellow cursor on the 3D route.
+  > "Here is our core finding: **The shortest path is not the most suitable path on Mars.**  
+  > In our Western Delta benchmark traverse ($18.38^\circ\text{N}, 77.58^\circ\text{E} \rightarrow 18.44^\circ\text{N}, 77.45^\circ\text{E}$), the distance-optimal route is $8,776\text{ meters}$, but encounters a peak incline of $9.05^\circ$ with a Normalized Terrain Slope Hazard Index of $0.329$.  
+  > Watch our multi-objective solver: By selecting the **Hazard-Minimal** traverse, our algorithm contours along the lower alluvial terrace, lowering peak incline to $6.83^\circ$ and dropping the hazard index to $0.238$—a $\sim 28\%$ risk reduction—with only $115\text{ meters}$ of additional distance, all governed by the NASA JSC $15.0^\circ$ passability constraint."
+* **Action:** Switch between **"Distance-Min"**, **"Energy-Min"**, and **"Hazard-Min"** buttons. Hover over the Elevation Cross-Section to highlight the synchronized yellow cursor on the 3D route.
 
 ---
 
 ### Step 4: NASA Perseverance Sample Return Objectives (1:25 – 1:45)
-* **Visual:** Orange "Science" route pulls a trajectory detour towards Perseverance sample core locations.
+* **Visual:** Science route pulls a trajectory detour towards Perseverance sample core locations (e.g. `probe-14-15`).
 * **Spoken Script:**
-  > "Science return is the primary purpose of exploration. We've integrated verified Perseverance sample cache locations—including the Roubion, Montdenier, and Salette cores.  
-  > The **Science** profile automatically computes an intelligent detour to inspect and collect cached sample tubes, while our NASA Pandolf model validates that total EVA duration remains well under the 8-hour safety ceiling."
-* **Action:** Click **"Science"** profile button.
+  > "Science return is the primary purpose of exploration. We've integrated all 36 verified Perseverance sample cache locations.  
+  > The solver automatically computes an exact multi-leg detour ($11,782\text{ meters} + 3,006\text{ meters} = 14,788\text{ meters}$, $4.069\text{ MJ}$) to inspect and collect cached sample cores, while our NASA Pandolf model validates that total EVA duration remains well under the 8-hour safety ceiling."
+* **Action:** Click a science sample point on the map and click **"Plan Route Here"**.
 
 ---
 

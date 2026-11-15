@@ -28,8 +28,13 @@ function buildPathGeometry(
     return new THREE.Vector3(localX, localY, surfaceZ + 0.014);
   });
 
-  const curve = new THREE.CatmullRomCurve3(points);
-  return new THREE.TubeGeometry(curve, 140, radius, 8, false);
+  // Strict linear polyline path adhering faithfully to solver waypoints without spline overshoot
+  const curvePath = new THREE.CurvePath<THREE.Vector3>();
+  for (let i = 0; i < points.length - 1; i++) {
+    curvePath.add(new THREE.LineCurve3(points[i], points[i + 1]));
+  }
+  const tubularSegments = Math.max(points.length * 2, 80);
+  return new THREE.TubeGeometry(curvePath, tubularSegments, radius, 8, false);
 }
 
 export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {

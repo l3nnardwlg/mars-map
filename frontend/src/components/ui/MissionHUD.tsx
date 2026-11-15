@@ -70,6 +70,9 @@ export default function MissionHUD() {
   const selectedRouteProfile = useMissionStore((state) => state.selectedRouteProfile);
   const selectRouteProfile = useMissionStore((state) => state.selectRouteProfile);
   const currentRoute = useMissionStore((state) => state.currentRoute);
+  const alternativeRoutes = useMissionStore((state) => state.alternativeRoutes);
+  const inspectedPoint = useMissionStore((state) => state.inspectedPoint);
+  const hoveredRoutePoint = useMissionStore((state) => state.hoveredRoutePoint);
   const missionEstimate = useMissionStore((state) => state.missionEstimate);
   const isCalculatingRoute = useMissionStore((state) => state.isCalculatingRoute);
   const routeError = useMissionStore((state) => state.routeError);
@@ -241,7 +244,15 @@ Datum: IAU Mars 2000 / MOLA Areoid
                 {activeView === 'globe' ? 'ALTITUDE' : 'SURFACE ELEVATION'}
               </span>
               <span className="font-semibold text-sky-300 font-mono">
-                {activeView === 'globe' ? `${altitudeKm.toLocaleString()} KM` : '-2,400 M (DATUM)'}
+                {activeView === 'globe'
+                  ? `${altitudeKm.toLocaleString()} KM`
+                  : inspectedPoint
+                  ? `${inspectedPoint.elevationMeters} M (INSPECTOR)`
+                  : hoveredRoutePoint?.elevationMeters
+                  ? `${hoveredRoutePoint.elevationMeters} M (WAYPOINT)`
+                  : currentRoute?.waypoints?.[0]?.elevationMeters
+                  ? `${currentRoute.waypoints[0].elevationMeters} M (START)`
+                  : '-2,583 to -1,280 M (MOLA)'}
               </span>
             </div>
           </div>
@@ -602,45 +613,60 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   </span>
                   <div className="grid grid-cols-3 gap-1.5 text-[11px]">
                     <button
-                      onClick={() => selectRouteProfile('direct')}
-                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
-                        selectedRouteProfile === 'direct'
-                          ? 'border-sky-400 bg-sky-950/80 text-sky-200'
-                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      onClick={() => alternativeRoutes.direct && selectRouteProfile('direct')}
+                      disabled={!alternativeRoutes.direct}
+                      className={`p-1.5 rounded border text-left transition ${
+                        !alternativeRoutes.direct
+                          ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
+                          : selectedRouteProfile === 'direct'
+                          ? 'border-sky-400 bg-sky-950/80 text-sky-200 cursor-pointer'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
                       <div className="font-semibold flex items-center gap-1">
-                        <Navigation className="w-3 h-3 text-sky-400" /> Direct
+                        <Navigation className="w-3 h-3 text-sky-400" /> Distance-Min
                       </div>
-                      <div className="text-[9px] text-zinc-500">Shortest path</div>
+                      <div className="text-[9px] text-zinc-500">
+                        {alternativeRoutes.direct ? `${(alternativeRoutes.direct.distanceMeters / 1000).toFixed(1)} km` : 'N/A'}
+                      </div>
                     </button>
 
                     <button
-                      onClick={() => selectRouteProfile('safe')}
-                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
-                        selectedRouteProfile === 'safe'
-                          ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200'
-                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      onClick={() => alternativeRoutes.safe && selectRouteProfile('safe')}
+                      disabled={!alternativeRoutes.safe}
+                      className={`p-1.5 rounded border text-left transition ${
+                        !alternativeRoutes.safe
+                          ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
+                          : selectedRouteProfile === 'safe'
+                          ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200 cursor-pointer'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
                       <div className="font-semibold flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3 text-emerald-400" /> Safe
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" /> Energy-Min
                       </div>
-                      <div className="text-[9px] text-zinc-500">&lt;8° Slope</div>
+                      <div className="text-[9px] text-zinc-500">
+                        {alternativeRoutes.safe?.energyJoules ? `${((alternativeRoutes.safe.energyJoules || 0) / 1e6).toFixed(2)} MJ` : alternativeRoutes.safe ? 'Optimal' : 'N/A'}
+                      </div>
                     </button>
 
                     <button
-                      onClick={() => selectRouteProfile('science')}
-                      className={`p-1.5 rounded border text-left transition cursor-pointer ${
-                        selectedRouteProfile === 'science'
-                          ? 'border-amber-400 bg-amber-950/80 text-amber-200'
-                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white'
+                      onClick={() => alternativeRoutes.science && selectRouteProfile('science')}
+                      disabled={!alternativeRoutes.science}
+                      className={`p-1.5 rounded border text-left transition ${
+                        !alternativeRoutes.science
+                          ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
+                          : selectedRouteProfile === 'science'
+                          ? 'border-amber-400 bg-amber-950/80 text-amber-200 cursor-pointer'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
                       <div className="font-semibold flex items-center gap-1">
-                        <FlaskConical className="w-3 h-3 text-amber-400" /> Science
+                        <FlaskConical className="w-3 h-3 text-amber-400" /> Hazard-Min
                       </div>
-                      <div className="text-[9px] text-zinc-500">Sample detour</div>
+                      <div className="text-[9px] text-zinc-500">
+                        {alternativeRoutes.science ? `Risk ${(alternativeRoutes.science.riskScore * 100).toFixed(0)}%` : 'N/A'}
+                      </div>
                     </button>
                   </div>
 
@@ -648,15 +674,28 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   <div className="mt-2 rounded-lg bg-zinc-900/90 p-2 border border-zinc-800 text-[10px] space-y-1">
                     <div className="flex items-center justify-between text-zinc-400 font-semibold text-[9px]">
                       <span>OBJECTIVE RATIONALE:</span>
-                      <span className="text-sky-300 uppercase font-mono">{selectedRouteProfile}</span>
+                      <span className="text-sky-300 uppercase font-mono">
+                        {currentRoute?.objective || selectedRouteProfile}
+                      </span>
                     </div>
                     <p className="text-zinc-300 leading-relaxed font-sans text-[10px]">
-                      {selectedRouteProfile === 'safe'
-                        ? '🛡️ SAFE TRAVERSE (Energy Optimal / Lowest Risk): Contours along low-gradient alluvial terrace (max slope <8°). Eliminates scarp rollover danger and lowers Normalized Terrain Slope Risk Index from 72.4% to 28.2%.'
-                        : selectedRouteProfile === 'science'
-                        ? '🔬 SCIENCE EXPLORATION: Intelligent multi-objective detour to verified Perseverance Sample Return cores. Adds ~650m while maintaining safe EVA duration (<8 hrs).'
-                        : '⚡ DIRECT LINE (Shortest): Shortest Euclidean path. Ascends steep delta rim scarp (max slope >18°), creating a steep metabolic power spike and regolith slip risk.'}
+                      {currentRoute?.objective === 'energy_min'
+                        ? `🛡️ ENERGY-OPTIMAL TRAVERSE (energy_min): Minimizes total metabolic energy expenditure (${((currentRoute.energyJoules || 0) / 1e6).toFixed(3)} MJ). Max slope: ${currentRoute.maxSlopeDeg?.toFixed(1)}°, Mean slope: ${(currentRoute.meanSlopeDeg ?? currentRoute.averageSlopeDeg ?? 0).toFixed(1)}°, Slope hazard index: ${(currentRoute.riskScore * 100).toFixed(1)}%.`
+                        : currentRoute?.objective === 'distance_min'
+                        ? `⚡ DISTANCE-OPTIMAL TRAVERSE (distance_min): Minimizes spatial travel distance (${(currentRoute.distanceMeters / 1000).toFixed(2)} km). Max slope: ${currentRoute.maxSlopeDeg?.toFixed(1)}°, Mean slope: ${(currentRoute.meanSlopeDeg ?? currentRoute.averageSlopeDeg ?? 0).toFixed(1)}°, Energy: ${((currentRoute.energyJoules || 0) / 1e6).toFixed(3)} MJ.`
+                        : currentRoute?.objective === 'slope_hazard_min'
+                        ? `🔬 SLOPE HAZARD-MINIMAL TRAVERSE (slope_hazard_min): Minimizes cumulative steepness penalty across terrain. Max slope: ${currentRoute.maxSlopeDeg?.toFixed(1)}°, Slope hazard index: ${(currentRoute.riskScore * 100).toFixed(1)}%, Distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km.`
+                        : currentRoute?.visitedSciencePointIds && currentRoute.visitedSciencePointIds.length > 0
+                        ? `🔬 SCIENCE TARGET DETOUR: Visits verified sample return core (${currentRoute.visitedSciencePointIds.join(', ')}). Total distance: ${(currentRoute.distanceMeters / 1000).toFixed(2)} km, Energy: ${((currentRoute.energyJoules || 0) / 1e6).toFixed(2)} MJ.`
+                        : currentRoute
+                        ? `⚡ ${currentRoute.tags?.join(' • ') || 'PLANETARY TRAVERSE'}: Distance ${(currentRoute.distanceMeters / 1000).toFixed(2)} km, Max incline ${currentRoute.maxSlopeDeg?.toFixed(1)}°, Risk index ${(currentRoute.riskScore * 100).toFixed(1)}%.`
+                        : 'Select start and destination points on the terrain map to calculate optimal traverses.'}
                     </p>
+                    {currentRoute?.warnings && currentRoute.warnings.length > 0 && (
+                      <div className="mt-1 pt-1 border-t border-zinc-800 text-[9px] text-amber-400 font-mono">
+                        ⚠️ {currentRoute.warnings.join(' • ')}
+                      </div>
+                    )}
                   </div>
                 </div>
 
