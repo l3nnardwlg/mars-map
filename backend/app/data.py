@@ -117,7 +117,22 @@ def layer_liste(ordner: Path) -> list[Layer]:
                 LegendEntry(class_id=e["klasse"], name=e["name"], symbol=e["symbol"], color=e["farbe"])
                 for e in info["legende"]
             ]
-        ergebnis.append(layer.model_copy(update={"available": info is not None, "legend": legende}))
+        zusatz: dict = {"available": info is not None, "legend": legende, "status": "ready" if info is not None else "not-built"}
+        if info is not None:
+            grenzen = info["bounds"]
+            zusatz.update(
+                coverage=BoundingBox(
+                    min_latitude=grenzen["south"],
+                    max_latitude=grenzen["north"],
+                    min_longitude=grenzen["west"],
+                    max_longitude=grenzen["east"],
+                ),
+                zoom_min=info.get("minZoom"),
+                zoom_max=info.get("maxZoom"),
+                codec=info.get("kodierung"),
+                native_resolution_meters=info.get("meterProPixelFeinsteStufe"),
+            )
+        ergebnis.append(layer.model_copy(update=zusatz))
     return ergebnis
 
 

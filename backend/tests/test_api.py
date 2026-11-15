@@ -158,3 +158,47 @@ def test_alternatives_carry_tags():
     assert "energy_optimal" in routen[0]["tags"]
     alle = [tag for route in routen for tag in route["tags"]]
     assert "lowest_risk" in alle and "shortest" in alle
+
+
+def test_layer_carries_coverage_zoom_range_and_codec(monkeypatch, tmp_path):
+    ordner = tmp_path / "ctx_dem"
+    ordner.mkdir()
+    (ordner / "metadata.json").write_text(
+        '{"name": "ctx_dem", "bounds": {"west": 77.0, "south": 17.6, "east": 78.6, "north": 19.3},'
+        ' "minZoom": 0, "maxZoom": 5, "kodierung": "uint16 PNG", "meterProPixelFeinsteStufe": 12.4}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
+    layer = next(l for l in client.get("/api/layers").json() if l["id"] == "ctx_dem")
+    assert layer["status"] == "ready" and layer["available"] is True
+    assert layer["coverage"]["minLatitude"] == 17.6 and layer["coverage"]["maxLongitude"] == 78.6
+    assert (layer["zoomMin"], layer["zoomMax"]) == (0, 5)
+    assert layer["codec"] == "uint16 PNG" and layer["nativeResolutionMeters"] == 12.4
+    fehlend = next(l for l in client.get("/api/layers").json() if l["id"] == "geology")
+    assert fehlend["status"] == "not-built" and fehlend["coverage"] is None
+
+
+@pytest.mark.skipif(not (KACHELN_STANDARD / "ctx_dem" / "metadata.json").is_file(), reason="Kacheln nicht lokal vorhanden")
+def test_every_built_tile_set_decodes_to_the_documented_encoding():
+    import json
+
+    import rasterio
+
+    for ordner in sorted(KACHELN_STANDARD.iterdir()):
+        meta_pfad = ordner / "metadata.json"
+        if not meta_pfad.is_file():
+            continue
+        meta = json.loads(meta_pfad.read_text(encoding="utf-8"))
+        stufe = ordner / str(meta["maxZoom"])
+        kachel = next(stufe.glob("*/*.png"))
+        with rasterio.open(kachel) as bild:
+            daten = bild.read(1)
+        assert daten.shape == (256, 256), ordner.name
+        art = meta.get("art", "hoehe")
+        erwartet = "uint8" if art in ("bild", "klasse") else "uint16"
+        assert str(daten.dtype) == erwartet, ordner.name
+        if art == "klasse":
+            klassen = {e["klasse"] for e in meta["legende"]} | {0}
+            assert set(map(int, set(daten.ravel().tolist()))) <= klassen, ordner.name
+        bounds = meta["bounds"]
+        assert 17.0 < bounds["south"] < bounds["north"] < 20.0, ordner.name

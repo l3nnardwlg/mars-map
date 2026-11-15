@@ -3,6 +3,8 @@
 Antwort auf `docs/PART_B_TONIGHT_HANDOFF.md`, Abschnitt H "Required Evidence for Integration Sign-off".
 Stand 14.11.2026, Code-Stand `dev/backend` Commit `f3b8af8` (gepusht nach `origin/dev/backend`).
 
+**Aktualisierung 15.11.2026:** Seit diesem Nachweis kamen Routenziele, Science-Stopps, Herkunftsfelder und weitere Tests dazu (74 Tests mit Daten, 59 bestanden und 15 uebersprungen ohne Daten). Aktueller Stand je Review-Punkt: `REVIEW_ANTWORT_DEV_B.md`, Messwerte mit Commit und Datensatz-Pruefsumme: `BENCHMARK_REPORT.md`.
+
 ## 1. Aufgaben B-001 bis B-005
 
 | ID | Aufgabe | Stand | Nachweis |
