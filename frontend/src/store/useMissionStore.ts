@@ -14,7 +14,6 @@ import {
   AlternativeRoutesMap,
   requestBaselineRouteAlternatives,
   requestScienceDetour,
-  requestRouteAlternatives,
   fetchSciencePoints,
   simulateMission,
   RouteRejectedError
