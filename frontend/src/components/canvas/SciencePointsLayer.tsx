@@ -89,7 +89,7 @@ export default function SciencePointsLayer({ planeSize = 8 }: SciencePointsLayer
 
   return (
     <group>
-      {sciencePoints.slice(0, 15).map((point) => (
+      {sciencePoints.map((point) => (
         <SciencePointMarker
           key={point.id}
           point={point}

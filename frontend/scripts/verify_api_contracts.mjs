@@ -64,6 +64,17 @@ function validateRoute(route, context) {
   assert(typeof route.distanceMeters === 'number' && route.distanceMeters >= 0, `${context}: distanceMeters invalid`);
   assert(typeof route.estimatedDurationSeconds === 'number' && route.estimatedDurationSeconds >= 0, `${context}: estimatedDurationSeconds invalid`);
   assert(typeof route.riskScore === 'number' && route.riskScore >= 0 && route.riskScore <= 1, `${context}: riskScore out of [0, 1]`);
+  if (route.objective !== undefined && route.objective !== null) {
+    assert(typeof route.objective === 'string', 'objective must be string');
+  }
+  if (route.legs) {
+    assert(Array.isArray(route.legs), 'legs must be array');
+    route.legs.forEach((leg, idx) => {
+      assert(typeof leg.distanceMeters === 'number', `legs[${idx}].distanceMeters must be number`);
+      assert(typeof leg.energyJoules === 'number', `legs[${idx}].energyJoules must be number`);
+      assert(typeof leg.estimatedDurationSeconds === 'number', `legs[${idx}].estimatedDurationSeconds must be number`);
+    });
+  }
 }
 
 function validateTerrainMetadata(data) {
@@ -205,7 +216,29 @@ async function runContractTests() {
       testsFailed++;
     }
 
-    // Contract Test 6: HTTP 422 Rejection on Invalid Payload
+    // Contract Test 6: POST /api/routes/plan
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/routes/plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start: VALID_START,
+          end: VALID_END,
+          objectives: ['energy_min', 'distance_min', 'slope_hazard_min'],
+        }),
+      });
+      assert.strictEqual(res.status, 200);
+      const planRoutes = await res.json();
+      assert(Array.isArray(planRoutes) && planRoutes.length >= 1, 'planRoutes must be array');
+      planRoutes.forEach((r, idx) => validateRoute(r, `POST /api/routes/plan[${idx}]`));
+      console.log(`✅ CONTRACT 6 PASSED: POST /api/routes/plan matches schema (${planRoutes.length} objective routes returned)`);
+      testsPassed++;
+    } catch (err) {
+      console.error('❌ CONTRACT 6 FAILED:', err.message);
+      testsFailed++;
+    }
+
+    // Contract Test 7: HTTP 422 Rejection on Invalid Payload
     try {
       const res = await fetch(`${BACKEND_BASE_URL}/api/routes/calculate`, {
         method: 'POST',
@@ -213,10 +246,10 @@ async function runContractTests() {
         body: JSON.stringify({ start: { latitude: 95.0, longitude: 77.45 }, end: VALID_END }),
       });
       assert.strictEqual(res.status, 422, 'Expected HTTP 422 Unprocessable Entity');
-      console.log('✅ CONTRACT 6 PASSED: Invalid latitude properly rejected with HTTP 422');
+      console.log('✅ CONTRACT 7 PASSED: Invalid latitude properly rejected with HTTP 422');
       testsPassed++;
     } catch (err) {
-      console.error('❌ CONTRACT 6 FAILED:', err.message);
+      console.error('❌ CONTRACT 7 FAILED:', err.message);
       testsFailed++;
     }
   } else {
@@ -263,6 +296,33 @@ async function runContractTests() {
     };
     validateMissionEstimate(mockEstimate);
     console.log('✅ STATIC CONTRACT 3 PASSED: MissionEstimate schema validated');
+    testsPassed++;
+
+    // Offline Contract 4: PlanRequest & PlanRoute schema
+    const mockPlanRoute = {
+      id: 'static-plan-route',
+      objective: 'energy_min',
+      objectiveValue: 2432895.14,
+      objectiveUnit: 'J',
+      constraints: ['max_slope_15_deg'],
+      visitedSciencePointIds: ['probe-14-15'],
+      legs: [
+        { toId: 'probe-14-15', distanceMeters: 11782, energyJoules: 3303000, estimatedDurationSeconds: 14138 },
+        { toId: null, distanceMeters: 3006, energyJoules: 766000, estimatedDurationSeconds: 3608 },
+      ],
+      waypoints: [
+        { latitude: 18.38, longitude: 77.58, elevationMeters: -2583 },
+        { latitude: 18.44, longitude: 77.45, elevationMeters: -2560 },
+      ],
+      distanceMeters: 14788,
+      estimatedDurationSeconds: 17746,
+      riskScore: 0.327,
+      maxSlopeDeg: 9.05,
+      meanSlopeDeg: 2.14,
+      sourceMode: 'backend_live_ctx',
+    };
+    validateRoute(mockPlanRoute, 'StaticPlanRoute');
+    console.log('✅ STATIC CONTRACT 4 PASSED: PlanRoute schema with objectives & legs validated');
     testsPassed++;
   }
 

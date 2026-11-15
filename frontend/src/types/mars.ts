@@ -42,10 +42,25 @@ export interface Layer {
   unit?: string | null;
   tileSet?: string | null;
   available?: boolean;
+  status?: 'ready' | 'not-built' | string;
   legend?: LegendEntry[] | null;
+  coverage?: BoundingBox | null;
+  zoomMin?: number | null;
+  zoomMax?: number | null;
+  codec?: string | null;
+  nativeResolutionMeters?: number | null;
 }
 
 export type RouteProfile = 'direct' | 'safe' | 'science';
+
+export type PlanObjective = 'energy_min' | 'distance_min' | 'slope_hazard_min';
+
+export interface RouteLeg {
+  toId?: string | null;
+  distanceMeters: number;
+  energyJoules: number;
+  estimatedDurationSeconds: number;
+}
 
 export interface ElevationPoint {
   distanceKm: number;
@@ -63,11 +78,27 @@ export interface MarsRoute {
   energyJoules?: number | null;
   averagePowerWatts?: number | null;
   tags?: string[];
+  objective?: string | null;
+  objectiveValue?: number | null;
+  objectiveUnit?: string | null;
+  constraints?: string[];
+  visitedSciencePointIds?: string[];
+  legs?: RouteLeg[];
   elevationGainMeters?: number;
   elevationLossMeters?: number;
   maxSlopeDeg?: number;
   averageSlopeDeg?: number;
+  meanSlopeDeg?: number;
   dataSource?: string;
+  sourceMode?: string | null;
+  routingGridResolutionMeters?: number | null;
+  nativeResolutionMeters?: number | null;
+  waypointCount?: number | null;
+  waypointLengthDifferencePercent?: number | null;
+  datasetId?: string | null;
+  heightDatum?: string | null;
+  modelVersion?: string | null;
+  warnings?: string[];
   elevationProfile?: ElevationPoint[];
 }
 
@@ -76,9 +107,31 @@ export interface RouteRequest {
   end: MarsCoordinate;
 }
 
+export interface PlanRequest {
+  start: MarsCoordinate;
+  end: MarsCoordinate;
+  objectives?: PlanObjective[];
+  sciencePointIds?: string[];
+  via?: MarsCoordinate[];
+}
+
 export interface MissionRequest {
   route: MarsRoute;
   crewSize: number;
+}
+
+export interface MissionAssumptions {
+  bodyMassKg: number;
+  suitLoadKg: number;
+  walkingSpeedMetersPerSecond: number;
+  terrainFactor: number;
+  gravityTreatment: string;
+  downhillTreatment: string;
+  maxSlopeDegrees: number;
+  evaTimeLimitSeconds: number;
+  averageMetabolicRateLimitWatts: number;
+  peakMetabolicRateLimitWatts: number;
+  oxygenJoulesPerKilogram: number;
 }
 
 export interface MissionEstimate {
@@ -90,8 +143,13 @@ export interface MissionEstimate {
   evaTimeLimitSeconds: number;
   withinEvaTimeLimit: boolean;
   withinAverageMetabolicRate: boolean;
+  peakPowerWatts?: number | null;
+  withinPeakMetabolicRate?: boolean | null;
   radiationDoseMilligray?: number | null;
   radiationBasis?: string | null;
+  validityScope?: string | null;
+  assumptions?: MissionAssumptions | null;
+  warnings?: string[];
 }
 
 export interface SciencePoint {

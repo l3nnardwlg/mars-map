@@ -161,12 +161,10 @@ export default function AstronautController() {
     const slopeDeg = sampleSlopeAtUV(currentU, currentV);
 
     let slopeSpeedFactor = 1.0;
-    if (slopeDeg > 25) {
-      slopeSpeedFactor = 0.22; // Impassable cliff crawl
-    } else if (slopeDeg > 15) {
-      slopeSpeedFactor = 0.5;  // Scree slope
-    } else if (slopeDeg > 10) {
-      slopeSpeedFactor = 0.75; // Moderate incline
+    if (slopeDeg > 12.0) {
+      slopeSpeedFactor = 0.35; // Steep scree incline
+    } else if (slopeDeg > 8.0) {
+      slopeSpeedFactor = 0.65; // Moderate incline
     }
 
     const baseSpeed = (keys.sprint ? 1.6 : 0.85) * slopeSpeedFactor; // scene units per second
@@ -199,15 +197,23 @@ export default function AstronautController() {
       moveY -= rightY * moveDist;
     }
 
-    // Apply movement with terrain boundary clamping [-3.7, +3.7]
-    posRef.current.x = Math.max(-3.7, Math.min(3.7, posRef.current.x + moveX));
-    posRef.current.y = Math.max(-3.7, Math.min(3.7, posRef.current.y + moveY));
+    // Passability check: Slopes > 15.0° are impassable barriers (matching backend solver)
+    const candidateX = Math.max(-3.7, Math.min(3.7, posRef.current.x + moveX));
+    const candidateY = Math.max(-3.7, Math.min(3.7, posRef.current.y + moveY));
+    const targetU = candidateX / 8.0 + 0.5;
+    const targetV = candidateY / 8.0 + 0.5;
+    const targetSlopeDeg = sampleSlopeAtUV(targetU, targetV);
+
+    if (targetSlopeDeg <= 15.0) {
+      posRef.current.x = candidateX;
+      posRef.current.y = candidateY;
+    }
 
     // Convert local plane coords [-4, 4] to normalized UV [0, 1]
     const u = posRef.current.x / 8.0 + 0.5;
     const v = posRef.current.y / 8.0 + 0.5;
 
-    // Get exact displaced surface Z plus eye height (0.045 units ~ 1.7m astronaut scale)
+    // Stylized first-person perspective: eye height offset 0.045 scene units
     const eyeHeight = 0.045;
     const surfaceZ = getSurfaceZ(u, v, terrainExaggeration) + eyeHeight;
 

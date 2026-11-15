@@ -1,26 +1,31 @@
 {
   "regionId": "jezero_crater",
-  "regionName": "Jezero Crater - Western Delta",
+  "regionName": "Jezero Crater - Western Delta Fan",
+  "productId": "M20_JezeroCrater_CTXDEM_20m",
+  "coordinateSystem": "IAU Mars 2000 Planetocentric (East Longitude)",
   "center": {
-    "latitude": 18.38,
-    "longitude": 77.58
+    "latitude": 18.435,
+    "longitude": 77.785
   },
   "bounds": {
-    "minLat": 18.15,
-    "maxLat": 18.60,
-    "minLon": 77.30,
-    "maxLon": 77.85
+    "minLat": 17.58,
+    "maxLat": 19.29,
+    "minLon": 76.99,
+    "maxLon": 78.58
   },
   "elevation": {
-    "datum": "Mars Areoid (MOLA)",
-    "minElevationMeters": -2560,
-    "maxElevationMeters": -1240,
-    "rangeMeters": 1320
+    "datum": "MOLA Areoid (0 m Datum)",
+    "minElevationMeters": -2583.0,
+    "maxElevationMeters": -1280.0,
+    "rangeMeters": 1303.0
   },
-  "resolutionMetersPerPixel": 25.0,
+  "nativeResolutionMetersPerPixel": 20.0,
+  "clientPreviewResolutionXMeters": 349.26,
+  "clientPreviewResolutionYMeters": 395.93,
   "sources": [
-    "NASA PDS (Planetary Data System)",
-    "MRO CTX & HiRISE DTM",
-    "Mars Global Surveyor MOLA"
+    "NASA Planetary Data System (PDS) Cartography Node",
+    "USGS Astrogeology Science Center (MRO CTX DTM Mosaic)",
+    "Mars Global Surveyor MOLA Areoid Datum",
+    "NASA Mars 2020 Perseverance Science Team Ground Truth"
   ]
 }

@@ -115,14 +115,17 @@ export default function LayerManagerModal() {
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px]">
                 <ShieldAlert className="w-4 h-4" />
-                SLOPE HAZARD THRESHOLD
+                SLOPE INSPECTOR THRESHOLD (VISUAL ANALYSIS ONLY)
               </span>
               <span className="font-bold text-white bg-amber-950 border border-amber-800 px-2 py-0.5 rounded text-[11px]">
                 &gt; {slopeThresholdDeg}° Critical
               </span>
             </div>
             <p className="text-[10px] text-zinc-400 leading-tight">
-              Defines the threshold where inclines are classified as severe slip & rollover hazards for human EVA and robotic rovers.
+              Controls surface slope inspection coloring in the 3D viewer.
+              <strong className="text-amber-300 ml-1">
+                Note: The backend A* solver enforces a separate, fixed 15.0° NASA safety passability gate.
+              </strong>
             </p>
             <input
               type="range"

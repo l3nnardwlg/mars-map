@@ -108,16 +108,21 @@ async function runE2EMissionTest() {
 
   let liveRoutes = null;
   if (isLiveBackend) {
-    logStep('Live Backend Connected', 'Calling POST /api/routes/alternatives');
-    const res = await fetch(`${BACKEND_BASIS}/api/routes/alternatives`, {
+    logStep('Live Backend Connected', 'Calling POST /api/routes/plan with energy_min, distance_min, slope_hazard_min');
+    const res = await fetch(`${BACKEND_BASIS}/api/routes/plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start: missionState.routeStart, end: missionState.routeEnd, count: 3 }),
+      body: JSON.stringify({
+        start: missionState.routeStart,
+        end: missionState.routeEnd,
+        objectives: ['energy_min', 'distance_min', 'slope_hazard_min'],
+      }),
     });
-    assert.strictEqual(res.status, 200, 'Live alternatives endpoint must answer 200');
+    assert.strictEqual(res.status, 200, 'Live plan endpoint must answer 200');
     liveRoutes = await res.json();
     assert(liveRoutes.length >= 1, 'Live backend must return at least one route');
-    missionState.currentRoute = routeMitProfil(liveRoutes[0], 'direct');
+    const distRoute = liveRoutes.find((r) => r.objective === 'distance_min') || liveRoutes[0];
+    missionState.currentRoute = routeMitProfil(distRoute, 'direct');
   } else {
     logStep('Offline Reference Mode', 'Loading verified Western Delta Scarp reference benchmark');
     missionState.currentRoute = {
