@@ -214,7 +214,7 @@ def test_every_built_tile_set_decodes_to_the_documented_encoding():
             daten = bild.read(1)
         assert daten.shape == (256, 256), ordner.name
         art = meta.get("art", "hoehe")
-        erwartet = "uint8" if art in ("bild", "klasse") else "uint16"
+        erwartet = "uint8" if art in ("bild", "klasse", "farbe") else "uint16"
         assert str(daten.dtype) == erwartet, ordner.name
         if art == "klasse":
             klassen = {e["klasse"] for e in meta["legende"]} | {0}

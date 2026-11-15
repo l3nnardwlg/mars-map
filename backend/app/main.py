@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.data import SCIENCE_POINTS, kachelordner, layer_liste, terrain_metadaten
+from app.karte import karte
 from app.mission import MissingElevationError, simulate
 from app.models import (
     AlternativesRequest,
@@ -123,6 +124,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(api)
+app.include_router(karte)
 
 if kachelordner().is_dir():
     app.mount("/api/terrain/tiles", StaticFiles(directory=kachelordner()), name="tiles")

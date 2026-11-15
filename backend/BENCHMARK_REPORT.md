@@ -1,13 +1,13 @@
 # Benchmark-Bericht Backend
 
-Erzeugt mit `python scripts/benchmark_report.py` am 2026-11-15 16:03 UTC, Branch `main`, Commit `1ad7d3b`.
+Erzeugt mit `python scripts/benchmark_report.py` am 2026-11-15 19:39 UTC, Branch `integration/final-map`, Commit `d031f75`.
 
 - Geländemodell: `M20_JezeroCrater_CTXDEM_20m.tif`, 90345300 Byte, SHA-256 `ba7f706ea1b5d63a562f28a7dcf7a7f3c79bce7f048e6974b57e8a33c30d1ba2`
-- Tests: 77 passed, 2 warnings in 6.08s (bestanden 77, uebersprungen 0, fehlgeschlagen 0)
+- Tests: 84 passed, 2 warnings in 9.27s (bestanden 84, uebersprungen 0, fehlgeschlagen 0)
 
 ## Benchmark-Strecke, drei Ziele
 
-HTTP 200, kalt gerechnet in 0.56 s.
+HTTP 200, kalt gerechnet in 0.78 s.
 
 | Ziel | Distanz (m) | Energie (MJ) | Risiko | max. Steigung | mittl. Steigung | Zielwert | Raster (m) | Wegpunkte | Abweichung Wegpunkte |
 |---|---|---|---|---|---|---|---|---|---|
@@ -17,13 +17,13 @@ HTTP 200, kalt gerechnet in 0.56 s.
 
 ## Kurze Strecke (etwa 400 m)
 
-HTTP 200, kalt gerechnet in 0.1 s.
+HTTP 200, kalt gerechnet in 0.14 s.
 
 - energy_min: 416 m, 0.105 MJ, Risiko 0.132
 
 ## Science-Stopp Probe 14 und 15
 
-HTTP 200, kalt gerechnet in 0.53 s.
+HTTP 200, kalt gerechnet in 0.78 s.
 
 Besucht: probe-14-15
 
