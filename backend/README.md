@@ -3,6 +3,10 @@
 FastAPI, Python 3.11 oder neuer. Starten: `uvicorn app.main:app --port 8000`, Tests: `pytest`.
 Das Frontend erreicht die API ueber den Rewrite in `frontend/next.config.ts` (`/api/*` nach `127.0.0.1:8000`).
 
+## Zusaetzliche Antwortfelder (nur Ergaenzungen)
+
+Routen tragen `objective`, `objectiveValue`, `maxSlopeDeg`, `meanSlopeDeg`, `datasetId`, `nativeResolutionMeters`, `routingGridResolutionMeters`, `heightDatum`, `modelVersion`, `sourceMode`, `waypointCount`, `waypointLengthDifferencePercent` und `warnings`. `mission/simulate` nennt `assumptions`, `validityScope`, `peakPowerWatts` und `warnings`. Layer haben `status`, `coverage`, `zoomMin`, `zoomMax`, `codec`. `GET /ready` meldet 503, wenn Geländemodell oder Kacheln fehlen, `MARS_CORS_ORIGINS` erlaubt weitere Herkunftsadressen. Stand der Review-Punkte: `REVIEW_ANTWORT_DEV_B.md`, Messwerte: `BENCHMARK_REPORT.md`.
+
 ## Koordinaten
 
 IAU Mars 2000, planetozentrisch, Laenge nach Osten positiv, Hoehe in Metern relativ zum MOLA-Areoid.
@@ -17,6 +21,7 @@ Alle Endpunkte verwenden `latitude`, `longitude` in Grad und `elevationMeters`.
 | `GET /api/layers` | Datenlayer mit Quelle, Art (`kind`), Einheit, Kachelsatz (`tileSet`) und `available` (Kacheln vorhanden) |
 | `GET /api/science-points` | 36 Punkte: 22 Probenorte der Perseverance-Mission, Landeplatz, Rover-Position, 12 USGS-Merkmale |
 | `POST /api/routes/calculate` | A*-Route auf dem CTX-DEM, Energie nach Pandolf |
+| `POST /api/routes/plan` | Exakte Routen je Ziel (`energy_min`, `distance_min`, `slope_hazard_min`), optional ueber Science Points (`sciencePointIds`) oder Koordinaten (`via`), mit `objective`, `constraints`, `legs`, Herkunft und Warnungen |
 | `POST /api/routes/alternatives` | Beste Route plus bis zu 4 Alternativen (`count`, Standard 3), erste Route ist die energieguenstigste |
 | `POST /api/mission/simulate` | Dauer, Energie, Sauerstoff, Grenzen aus den Wegpunkten einer Route |
 

@@ -234,3 +234,86 @@ def test_point_outside_model_gets_readable_reason():
     antwort = client.post("/api/routes/calculate", json=payload)
     assert antwort.status_code == 422
     assert "außerhalb" in antwort.json()["detail"]
+
+
+def test_diagonal_does_not_cut_a_blocked_corner():
+    flach = np.zeros((3, 3))
+    maske = np.ones((3, 3), dtype=bool)
+    maske[0, 1] = False
+    maske[1, 0] = False
+    with pytest.raises(NoRouteError):
+        find_path(flach, 10.0, (0, 0), (1, 1), passable=maske)
+    with pytest.raises(NoRouteError):
+        find_path_astar(flach, 10.0, (0, 0), (1, 1), passable=maske)
+
+
+def test_diagonal_is_allowed_when_both_neighbours_are_free_and_one_blocked_goes_around():
+    flach = np.zeros((3, 3))
+    frei = np.ones((3, 3), dtype=bool)
+    weg, _ = find_path(flach, 10.0, (0, 0), (1, 1), passable=frei)
+    assert weg == [(0, 0), (1, 1)]
+    eine_gesperrt = frei.copy()
+    eine_gesperrt[0, 1] = False
+    weg, _ = find_path(flach, 10.0, (0, 0), (1, 1), passable=eine_gesperrt)
+    assert (0, 1) not in weg and len(weg) == 3
+
+
+def _grat_gelaende():
+    hoehe = np.zeros((41, 41))
+    for spalte in range(41):
+        if abs(spalte - 20) < 10:
+            hoehe[6:, spalte] = 25.0 * (1 - abs(spalte - 20) / 10)
+    return hoehe
+
+
+def test_objectives_have_different_optima_and_each_wins_its_own_metric():
+    from app.routing import _Graph, objective_value
+
+    hoehe = _grat_gelaende()
+    graph = _Graph(hoehe, 10.0)
+    start, ziel = (20, 2), (20, 38)
+    wege = {ziel_name: graph.kuerzester_weg(start, ziel, objective=ziel_name)[0] for ziel_name in ("energy_min", "distance_min", "slope_hazard_min")}
+    werte = {
+        pfad_ziel: {
+            messziel: objective_value(messziel, pfad, hoehe, graph.slope, 10.0)[0]
+            for messziel in wege
+        }
+        for pfad_ziel, pfad in wege.items()
+    }
+    for messziel in wege:
+        eigener_wert = werte[messziel][messziel]
+        assert all(eigener_wert <= werte[anderes][messziel] + 1e-6 for anderes in wege)
+    assert wege["distance_min"] != wege["energy_min"]
+    assert werte["distance_min"]["distance_min"] < werte["energy_min"]["distance_min"]
+    assert werte["energy_min"]["energy_min"] < werte["distance_min"]["energy_min"]
+
+
+def test_route_via_stop_visits_the_stop_and_sums_the_legs():
+    from app.routing import _Graph
+
+    hoehe = np.zeros((30, 30))
+    graph = _Graph(hoehe, 10.0)
+    start, stopp, ziel = (2, 2), (25, 5), (3, 27)
+    gesamt, teilwege = graph.weg_ueber_punkte([start, stopp, ziel], "energy_min")
+    assert stopp in gesamt
+    assert len(teilwege) == 2
+    energie_gesamt = measure_path(gesamt, hoehe, graph.slope, 10.0)[3]
+    energie_teile = sum(measure_path(teil, hoehe, graph.slope, 10.0)[3] for teil in teilwege)
+    assert energie_gesamt == pytest.approx(energie_teile)
+    direkt, _ = graph.kuerzester_weg(start, ziel)
+    assert energie_gesamt > measure_path(direkt, hoehe, graph.slope, 10.0)[3]
+
+
+def test_risk_uses_length_weighted_mean_slope():
+    hoehe = np.zeros((10, 10))
+    slope = np.zeros((10, 10))
+    slope[0, 0] = 6.0
+    slope[0, 1] = 6.0
+    slope[0, 2] = 0.0
+    weg_kurz = [(0, 0), (0, 1)]
+    mittel, spitze = __import__("app.routing", fromlist=["path_statistics"]).path_statistics(weg_kurz, slope)
+    assert mittel == pytest.approx(6.0) and spitze == pytest.approx(6.0)
+    weg_lang = [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4)]
+    mittel_lang, spitze_lang = __import__("app.routing", fromlist=["path_statistics"]).path_statistics(weg_lang, slope)
+    assert spitze_lang == pytest.approx(6.0)
+    assert mittel_lang < 6.0

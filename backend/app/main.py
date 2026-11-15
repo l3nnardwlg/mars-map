@@ -1,3 +1,4 @@
+import os
 import threading
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -8,20 +9,27 @@ from fastapi.staticfiles import StaticFiles
 
 from app.data import SCIENCE_POINTS, kachelordner, layer_liste, terrain_metadaten
 from app.mission import MissingElevationError, simulate
-from app.routing import NoRouteError
-from app.terrain import DemUnavailableError, OutsideTerrainError, plan_route, plan_routes, vorwaermen
 from app.models import (
     AlternativesRequest,
     Layer,
     MarsRoute,
     MissionEstimate,
     MissionRequest,
+    PlanRequest,
     RouteRequest,
     SciencePoint,
     TerrainMetadata,
 )
+from app.routing import NoRouteError
+from app.terrain import DemUnavailableError, OutsideTerrainError, dem_pfad, plan_objectives, plan_route, plan_routes, vorwaermen
 
 api = APIRouter(prefix="/api")
+
+
+def _routenfehler(fehler: Exception) -> HTTPException:
+    if isinstance(fehler, DemUnavailableError):
+        return HTTPException(status_code=503, detail=str(fehler))
+    return HTTPException(status_code=422, detail=str(fehler))
 
 
 @api.get("/terrain/metadata", response_model=TerrainMetadata, response_model_by_alias=True)
@@ -46,12 +54,8 @@ def calculate_route(request: RouteRequest) -> MarsRoute:
             (request.start.latitude, request.start.longitude),
             (request.end.latitude, request.end.longitude),
         )
-    except DemUnavailableError as fehler:
-        raise HTTPException(status_code=503, detail=str(fehler)) from fehler
-    except OutsideTerrainError as fehler:
-        raise HTTPException(status_code=422, detail=str(fehler)) from fehler
-    except NoRouteError as fehler:
-        raise HTTPException(status_code=422, detail=str(fehler)) from fehler
+    except (DemUnavailableError, OutsideTerrainError, NoRouteError) as fehler:
+        raise _routenfehler(fehler) from fehler
     return MarsRoute(id=str(uuid4()), **ergebnis)
 
 
@@ -63,10 +67,31 @@ def calculate_alternatives(request: AlternativesRequest) -> list[MarsRoute]:
             (request.end.latitude, request.end.longitude),
             request.count,
         )
-    except DemUnavailableError as fehler:
-        raise HTTPException(status_code=503, detail=str(fehler)) from fehler
-    except (OutsideTerrainError, NoRouteError) as fehler:
-        raise HTTPException(status_code=422, detail=str(fehler)) from fehler
+    except (DemUnavailableError, OutsideTerrainError, NoRouteError) as fehler:
+        raise _routenfehler(fehler) from fehler
+    return [MarsRoute(id=str(uuid4()), **ergebnis) for ergebnis in ergebnisse]
+
+
+@api.post("/routes/plan", response_model=list[MarsRoute], response_model_by_alias=True)
+def plan_objective_routes(request: PlanRequest) -> list[MarsRoute]:
+    if len(set(request.objectives)) != len(request.objectives):
+        raise HTTPException(status_code=422, detail="Jedes Ziel darf nur einmal vorkommen.")
+    stopps: list[tuple[float, float, str | None]] = []
+    for stopp_id in request.science_point_ids:
+        punkt = next((p for p in SCIENCE_POINTS if p.id == stopp_id), None)
+        if punkt is None:
+            raise HTTPException(status_code=422, detail=f"Unbekannter Science Point: {stopp_id}")
+        stopps.append((punkt.location.latitude, punkt.location.longitude, stopp_id))
+    stopps += [(v.latitude, v.longitude, None) for v in request.via]
+    try:
+        ergebnisse = plan_objectives(
+            (request.start.latitude, request.start.longitude),
+            (request.end.latitude, request.end.longitude),
+            stopps,
+            list(request.objectives),
+        )
+    except (DemUnavailableError, OutsideTerrainError, NoRouteError) as fehler:
+        raise _routenfehler(fehler) from fehler
     return [MarsRoute(id=str(uuid4()), **ergebnis) for ergebnis in ergebnisse]
 
 
@@ -84,10 +109,16 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Mars Map API", version="0.1.0", lifespan=lifespan)
+def _erlaubte_herkuenfte() -> list[str]:
+    standard = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    zusaetzlich = [e.strip() for e in os.environ.get("MARS_CORS_ORIGINS", "").split(",") if e.strip()]
+    return standard + zusaetzlich
+
+
+app = FastAPI(title="Mars Map API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=_erlaubte_herkuenfte(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -100,3 +131,15 @@ if kachelordner().is_dir():
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready() -> dict[str, str]:
+    probleme = []
+    if not dem_pfad().is_file():
+        probleme.append("Geländemodell fehlt")
+    if not (kachelordner() / "ctx_dem" / "metadata.json").is_file():
+        probleme.append("Kacheln ctx_dem fehlen")
+    if probleme:
+        raise HTTPException(status_code=503, detail=probleme)
+    return {"status": "ready"}

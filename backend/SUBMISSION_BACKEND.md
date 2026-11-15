@@ -4,7 +4,7 @@ NASA Space Apps Challenge 2026, "Interplanetary Survival Guide: Martian Map". Te
 
 ## What the backend does
 
-The backend turns public NASA and USGS Mars data into a layered, route-ready map of Jezero Crater for a human Marswalk. It serves elevation, imagery, thermal and geologic layers as map tiles, plans walking routes that minimize the astronaut's metabolic energy, and estimates duration, oxygen use, energy and a radiation reference value for each route. A FastAPI service exposes this through a documented API (`openapi.json`).
+The backend turns public NASA and USGS Mars data into a layered, route-ready map of Jezero Crater for a human Marswalk. It serves elevation, imagery, thermal and geologic layers as map tiles, plans walking routes for three explicit objectives (metabolic energy, distance, slope hazard) with optional science-target stops, and estimates duration, oxygen use, energy and a radiation reference value for each route. A FastAPI service exposes this through a documented API (`openapi.json`).
 
 ## Data (four kinds of data, all public)
 
@@ -22,7 +22,7 @@ A slope layer is derived from the elevation model, so routing and map use the sa
 ## Methods
 
 - **Tiles.** Each layer is reprojected to latitude and longitude and cut into a 256 px tile pyramid. Measurements are stored as 16 bit PNG, imagery as 8 bit, geology as class codes with a legend.
-- **Routing.** The terrain is a graph of 8 neighbours at 20 m. Cells steeper than 15 degrees are blocked, the steepest section that NASA JSC test subjects walked in the Rock Yard study. The cost of each step is the walking energy from the Pandolf equation as used in NASA's Crew State and Risk Model (Kim et al. 2024), with 80.7 kg body mass (IST-1 subjects) and 3.0 km/h. The search is an exact shortest-path computation, so it returns the same optimum as a classic A* search. Tests compare both on random terrain. Alternative routes come from penalizing a corridor around routes already found.
+- **Routing.** The terrain is a graph of 8 neighbours at 20 m. Cells steeper than 15 degrees are blocked, the steepest section that NASA JSC test subjects walked in the Rock Yard study. The cost of each step is the walking energy from the Pandolf equation as used in NASA's Crew State and Risk Model (Kim et al. 2024), with 80.7 kg body mass (IST-1 subjects) and 3.0 km/h. The search is an exact shortest-path computation, so it returns the same optimum as a classic A* search. Tests compare both on random terrain. Each route is returned with its provenance and limits, and the EVA estimate states its assumptions and validity scope. Each objective is solved exactly on the same terrain mask (diagonal moves only when both neighbouring cells are free). Chosen science targets become forced stops, and every route reports its objective value, constraints, data set, grid resolution and warnings. Alternative routes come from penalizing a corridor around routes already found.
 - **EVA estimate.** Duration and energy follow from the route. Oxygen uses 14.1 MJ per kg of oxygen, taken from the worked example in the Apollo PLSS Performance Report (Carson, NASA MSC). Limits are 8 hours and 350 W average from the xEMU specification (ICES 2026). The radiation value is a reference of 0.21 mGy per day from MSL RAD in Gale Crater (Hassler et al. 2014), multiplied by the duration.
 - **Risk index.** A normalized terrain slope index from 0 to 1, built from mean and peak slope along the route. It is not an accident probability, and its 60 to 40 weighting is our own modelling choice.
 
@@ -30,7 +30,7 @@ A slope layer is derived from the elevation model, so routing and map use the sa
 
 - Elevation models against NASA's own rover positions (independent data): CTX against 708 positions, RMSE 3.3 m. HiRISE against 320 positions, RMSE 1.13 m.
 - CTX against two University of Arizona HiRISE terrain models: RMSE 6.7 m and 6.9 m. The landing site matches NASA's elevation within 3 m.
-- 53 automated tests, an OpenAPI contract test, 10 integration scenarios against the running server, and a CI run that builds and starts the whole stack in containers.
+- 74 automated tests (59 run without the geodata, 15 more use it), an OpenAPI contract test, 10 integration scenarios against the running server, and a CI run that builds and starts the whole stack in containers.
 - A route takes 0.1 to 0.7 s, three alternatives 0.5 to 1.2 s.
 
 ## Limitations

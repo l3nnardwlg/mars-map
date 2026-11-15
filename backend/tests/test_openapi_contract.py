@@ -7,11 +7,13 @@ SPEC_PFAD = Path(__file__).resolve().parent.parent / "openapi.json"
 
 PFADE = {
     "/health": {"get"},
+    "/ready": {"get"},
     "/api/terrain/metadata": {"get"},
     "/api/layers": {"get"},
     "/api/science-points": {"get"},
     "/api/routes/calculate": {"post"},
     "/api/routes/alternatives": {"post"},
+    "/api/routes/plan": {"post"},
     "/api/mission/simulate": {"post"},
 }
 
@@ -20,6 +22,7 @@ PFLICHTFELDER = {
     "MarsRoute": {"id", "waypoints", "distanceMeters", "estimatedDurationSeconds", "riskScore"},
     "SciencePoint": {"id", "name", "location", "description", "nasaSourceUrl"},
     "RouteRequest": {"start", "end"},
+    "PlanRequest": {"start", "end"},
 }
 
 
@@ -46,6 +49,12 @@ def test_optional_fields_are_not_required():
     schemas = app.openapi()["components"]["schemas"]
     assert "elevationMeters" in schemas["MarsCoordinate"]["properties"]
     assert "elevationMeters" not in schemas["MarsCoordinate"]["required"]
-    for feld in ("energyJoules", "averagePowerWatts"):
+    for feld in ("energyJoules", "averagePowerWatts", "objective", "datasetId", "routingGridResolutionMeters", "warnings", "legs", "visitedSciencePointIds"):
         assert feld in schemas["MarsRoute"]["properties"]
         assert feld not in schemas["MarsRoute"]["required"]
+
+
+def test_plan_request_offers_objectives_and_stops_as_optional_fields():
+    schema = app.openapi()["components"]["schemas"]["PlanRequest"]
+    assert {"objectives", "sciencePointIds", "via"} <= set(schema["properties"])
+    assert not ({"objectives", "sciencePointIds", "via"} & set(schema.get("required", [])))

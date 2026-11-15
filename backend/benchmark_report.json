@@ -1,0 +1,123 @@
+{
+  "zeitpunkt_utc": "2026-11-15 10:21",
+  "commit": "3d9dde6",
+  "branch": "feature/nasa-data",
+  "dem": {
+    "datei": "M20_JezeroCrater_CTXDEM_20m.tif",
+    "bytes": 90345300,
+    "sha256": "ba7f706ea1b5d63a562f28a7dcf7a7f3c79bce7f048e6974b57e8a33c30d1ba2"
+  },
+  "pytest": {
+    "zusammenfassung": "74 passed, 2 warnings in 7.06s",
+    "passed": 74
+  },
+  "szenarien": [
+    {
+      "name": "Benchmark-Strecke, drei Ziele",
+      "eingabe": {
+        "start": {
+          "latitude": 18.38,
+          "longitude": 77.58
+        },
+        "end": {
+          "latitude": 18.44,
+          "longitude": 77.45
+        }
+      },
+      "status": 200,
+      "sekunden": 0.58,
+      "routen": [
+        {
+          "ziel": "energy_min",
+          "distanz_m": 8777,
+          "energie_MJ": 2.433,
+          "risiko": 0.327,
+          "max_steigung_grad": 9.05,
+          "mittlere_steigung_grad": 2.14,
+          "zielwert": 2432895.14,
+          "einheit": "J",
+          "raster_m": 20.0,
+          "wegpunkte": 185,
+          "wegpunkte_laenge_abweichung_prozent": -0.773
+        },
+        {
+          "ziel": "distance_min",
+          "distanz_m": 8776,
+          "energie_MJ": 2.437,
+          "risiko": 0.329,
+          "max_steigung_grad": 9.05,
+          "mittlere_steigung_grad": 2.2,
+          "zielwert": 8776.47,
+          "einheit": "m",
+          "raster_m": 20.0,
+          "wegpunkte": 185,
+          "wegpunkte_laenge_abweichung_prozent": -0.61
+        },
+        {
+          "ziel": "slope_hazard_min",
+          "distanz_m": 8891,
+          "energie_MJ": 2.521,
+          "risiko": 0.238,
+          "max_steigung_grad": 6.83,
+          "mittlere_steigung_grad": 1.41,
+          "zielwert": 555.74,
+          "einheit": "m",
+          "raster_m": 20.0,
+          "wegpunkte": 187,
+          "wegpunkte_laenge_abweichung_prozent": -1.244
+        }
+      ]
+    },
+    {
+      "name": "Kurze Strecke (etwa 400 m)",
+      "status": 200,
+      "sekunden": 0.1,
+      "routen": [
+        {
+          "ziel": "energy_min",
+          "distanz_m": 416,
+          "energie_MJ": 0.105,
+          "risiko": 0.132
+        }
+      ]
+    },
+    {
+      "name": "Science-Stopp Probe 14 und 15",
+      "status": 200,
+      "sekunden": 0.53,
+      "besucht": [
+        "probe-14-15"
+      ],
+      "teilstrecken": [
+        {
+          "bis": "probe-14-15",
+          "distanz_m": 11782,
+          "energie_MJ": 3.303
+        },
+        {
+          "bis": "Ziel",
+          "distanz_m": 3006,
+          "energie_MJ": 0.766
+        }
+      ],
+      "gesamt_energie_MJ": 4.069
+    }
+  ],
+  "fehlerfaelle": [
+    {
+      "fall": "Start auf zu steilem Gelände",
+      "status": 422,
+      "text": "Der Startpunkt liegt auf zu steilem Gelände (über 15 Grad). Bitte einen flacheren Punkt wählen."
+    },
+    {
+      "fall": "Punkt außerhalb des Modells",
+      "status": 422,
+      "text": "Der Startpunkt liegt außerhalb des Geländemodells von Jezero."
+    },
+    {
+      "fall": "Geländemodell fehlt",
+      "status": 503,
+      "text": "Das Geländemodell ist nicht vorhanden."
+    }
+  ]
+}

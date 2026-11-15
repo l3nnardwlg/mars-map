@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Mars Map API",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "paths": {
     "/api/terrain/metadata": {
@@ -147,6 +147,48 @@
         }
       }
     },
+    "/api/routes/plan": {
+      "post": {
+        "summary": "Plan Objective Routes",
+        "operationId": "plan_objective_routes_api_routes_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MarsRoute"
+                  },
+                  "type": "array",
+                  "title": "Response Plan Objective Routes Api Routes Plan Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/mission/simulate": {
       "post": {
         "summary": "Simulate Mission",
@@ -200,6 +242,28 @@
                   },
                   "type": "object",
                   "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Ready",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Ready Ready Get"
                 }
               }
             }
@@ -330,6 +394,11 @@
             "title": "Available",
             "default": false
           },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "not-built"
+          },
           "legend": {
             "anyOf": [
               {
@@ -343,6 +412,60 @@
               }
             ],
             "title": "Legend"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoundingBox"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "zoomMin": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoommin"
+          },
+          "zoomMax": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoommax"
+          },
+          "codec": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codec"
+          },
+          "nativeResolutionMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nativeresolutionmeters"
           }
         },
         "type": "object",
@@ -474,6 +597,177 @@
             },
             "type": "array",
             "title": "Tags"
+          },
+          "objective": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective"
+          },
+          "objectiveValue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectivevalue"
+          },
+          "objectiveUnit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectiveunit"
+          },
+          "constraints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Constraints"
+          },
+          "visitedSciencePointIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Visitedsciencepointids"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/RouteLeg"
+            },
+            "type": "array",
+            "title": "Legs"
+          },
+          "maxSlopeDeg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxslopedeg"
+          },
+          "meanSlopeDeg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meanslopedeg"
+          },
+          "datasetId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datasetid"
+          },
+          "nativeResolutionMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nativeresolutionmeters"
+          },
+          "routingGridResolutionMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Routinggridresolutionmeters"
+          },
+          "heightDatum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heightdatum"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "sourceMode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcemode"
+          },
+          "waypointCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waypointcount"
+          },
+          "waypointLengthDifferencePercent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waypointlengthdifferencepercent"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
           }
         },
         "type": "object",
@@ -485,6 +779,69 @@
           "riskScore"
         ],
         "title": "MarsRoute"
+      },
+      "MissionAssumptions": {
+        "properties": {
+          "bodyMassKg": {
+            "type": "number",
+            "title": "Bodymasskg"
+          },
+          "suitLoadKg": {
+            "type": "number",
+            "title": "Suitloadkg"
+          },
+          "walkingSpeedMetersPerSecond": {
+            "type": "number",
+            "title": "Walkingspeedmeterspersecond"
+          },
+          "terrainFactor": {
+            "type": "number",
+            "title": "Terrainfactor"
+          },
+          "gravityTreatment": {
+            "type": "string",
+            "title": "Gravitytreatment"
+          },
+          "downhillTreatment": {
+            "type": "string",
+            "title": "Downhilltreatment"
+          },
+          "maxSlopeDegrees": {
+            "type": "number",
+            "title": "Maxslopedegrees"
+          },
+          "evaTimeLimitSeconds": {
+            "type": "number",
+            "title": "Evatimelimitseconds"
+          },
+          "averageMetabolicRateLimitWatts": {
+            "type": "number",
+            "title": "Averagemetabolicratelimitwatts"
+          },
+          "peakMetabolicRateLimitWatts": {
+            "type": "number",
+            "title": "Peakmetabolicratelimitwatts"
+          },
+          "oxygenJoulesPerKilogram": {
+            "type": "number",
+            "title": "Oxygenjoulesperkilogram"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bodyMassKg",
+          "suitLoadKg",
+          "walkingSpeedMetersPerSecond",
+          "terrainFactor",
+          "gravityTreatment",
+          "downhillTreatment",
+          "maxSlopeDegrees",
+          "evaTimeLimitSeconds",
+          "averageMetabolicRateLimitWatts",
+          "peakMetabolicRateLimitWatts",
+          "oxygenJoulesPerKilogram"
+        ],
+        "title": "MissionAssumptions"
       },
       "MissionEstimate": {
         "properties": {
@@ -520,6 +877,28 @@
             "type": "boolean",
             "title": "Withinaveragemetabolicrate"
           },
+          "peakPowerWatts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakpowerwatts"
+          },
+          "withinPeakMetabolicRate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withinpeakmetabolicrate"
+          },
           "radiationDoseMilligray": {
             "anyOf": [
               {
@@ -541,6 +920,34 @@
               }
             ],
             "title": "Radiationbasis"
+          },
+          "validityScope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validityscope"
+          },
+          "assumptions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MissionAssumptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
           }
         },
         "type": "object",
@@ -574,6 +981,89 @@
           "crewSize"
         ],
         "title": "MissionRequest"
+      },
+      "PlanRequest": {
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "end": {
+            "$ref": "#/components/schemas/MarsCoordinate"
+          },
+          "objectives": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "energy_min",
+                "distance_min",
+                "slope_hazard_min"
+              ]
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Objectives"
+          },
+          "sciencePointIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Sciencepointids"
+          },
+          "via": {
+            "items": {
+              "$ref": "#/components/schemas/MarsCoordinate"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Via"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "PlanRequest"
+      },
+      "RouteLeg": {
+        "properties": {
+          "toId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toid"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Distancemeters"
+          },
+          "energyJoules": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Energyjoules"
+          },
+          "estimatedDurationSeconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Estimateddurationseconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "distanceMeters",
+          "energyJoules",
+          "estimatedDurationSeconds"
+        ],
+        "title": "RouteLeg"
       },
       "RouteRequest": {
         "properties": {

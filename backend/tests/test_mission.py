@@ -60,3 +60,18 @@ def test_radiation_reference_scales_with_duration():
     erwartet = 0.210 * antwort["durationSeconds"] / 86400.0
     assert antwort["radiationDoseMilligray"] == pytest.approx(erwartet)
     assert "Gale" in antwort["radiationBasis"]
+
+
+def test_mission_states_assumptions_scope_and_peak_power():
+    flach = [(18.4, 77.5, -2500), (18.4 + 0.0001, 77.5, -2500)]
+    steil = [(18.4, 77.5, -2500), (18.4 + 0.0001, 77.5, -2480)]
+    antwort_flach = client.post("/api/mission/simulate", json={"route": route(flach), "crewSize": 1}).json()
+    antwort_steil = client.post("/api/mission/simulate", json={"route": route(steil), "crewSize": 1}).json()
+    assert "nicht sicherheitszertifiziert" in antwort_flach["validityScope"]
+    annahmen = antwort_flach["assumptions"]
+    assert annahmen["bodyMassKg"] == 80.7 and annahmen["suitLoadKg"] == 0.0
+    assert "Mars-Schwerkraft" in annahmen["gravityTreatment"]
+    assert antwort_steil["peakPowerWatts"] > antwort_flach["peakPowerWatts"]
+    assert antwort_flach["withinPeakMetabolicRate"] is True
+    assert antwort_steil["withinPeakMetabolicRate"] is False
+    assert any("530 W" in w for w in antwort_steil["warnings"])
