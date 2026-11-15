@@ -1,5 +1,6 @@
 # MARS PATHFINDER — Advanced 3D Mars Mission & Traverse Optimization Engine
-
+## PROJECT LIVE DEMO
+## https://nasa.lennardwlg.de/
 [![Frontend CI](https://github.com/l3nnardwlg/mars-map/actions/workflows/frontend.yml/badge.svg)](https://github.com/l3nnardwlg/mars-map/actions/workflows/frontend.yml)
 [![Backend CI](https://github.com/l3nnardwlg/mars-map/actions/workflows/backend.yml/badge.svg)](https://github.com/l3nnardwlg/mars-map/actions/workflows/backend.yml)
 [![NASA Space Apps Challenge](https://img.shields.io/badge/NASA%20Space%20Apps-Challenge%202026-orange.svg)](https://www.spaceappschallenge.org/)
