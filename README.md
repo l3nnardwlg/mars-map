@@ -135,7 +135,12 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    - Processing: USGS Astrogeology Science Center controlled DEM mosaic of Jezero Crater.
 3. **MRO HiRISE (High Resolution Imaging Science Experiment):**
    - Reference: McEwen, A. S., et al. (2007). Mars Reconnaissance Orbiter's High Resolution Imaging Science Experiment (HiRISE). *J. Geophys. Res.*, 112, E05S02.
-4. **Bio-energetic Metabolic Modeling:**
+4. **NASA / USGS Viking Mars Global Color Mosaic (`mars_color.jpg`):**
+   - Reference: USGS Astrogeology Science Center / NASA JPL-Caltech Viking Mars Digital Image Mosaic (MDIM 2.1).
+   - Source: NASA Planetary Data System (PDS) Cartography Node.
+5. **NASA GSFC MOLA Global Topography Bump Map (`mars_bump.jpg`):**
+   - Reference: NASA Goddard Space Flight Center MOLA Science Team global relief displacement model tied to MOLA areoid.
+6. **Bio-energetic Metabolic Modeling:**
    - Pandolf, K. B., Givoni, B., & Goldman, R. F. (1977). *Predicting energy expenditure with loads while walking on level and inclined ground.* Journal of Applied Physiology, 43(4), 577-581.
    - Santee, W. R., et al. (2001). *Metabolic rate prediction for human locomotion over variable terrain.*
 

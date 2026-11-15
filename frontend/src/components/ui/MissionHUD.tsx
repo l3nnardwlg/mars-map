@@ -962,6 +962,16 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   Simulates astronaut metabolic energy expenditure W = 1.5W + ηW(1.5V² + 0.35VG), 80.7 kg suited mass (Integrated Suit Test 1), 3.0 km/h walking speed, oxygen consumption rates, and the 8-hour maximum safe EVA constraint.
                 </p>
               </div>
+
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-purple-300">
+                  <span>5. Global Mars Planetary Globe Textures</span>
+                  <span className="text-[10px] bg-purple-950 text-purple-400 border border-purple-800 px-1.5 py-0.5 rounded">NASA / USGS / JPL</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  8K planetary albedo mosaic from NASA/USGS Viking MDIM 2.1 (mars_color.jpg) and global topographic relief bump displacement from NASA GSFC MOLA altimetry (mars_bump.jpg).
+                </p>
+              </div>
             </div>
 
             <div className="mt-5 flex justify-end">
