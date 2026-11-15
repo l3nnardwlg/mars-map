@@ -92,8 +92,12 @@ def find_path_astar(
                 continue
             if d_row and d_col and not (passable[n_row, col] and passable[row, n_col]):
                 continue
+            flat = length * cell_meters
             rise = float(elevation[n_row, n_col] - elevation[row, col])
-            step = step_energy_joule(length * cell_meters, rise)
+            # B1 / B2-P0-01: Absolute edge slope limit of 15° between adjacent cells
+            if not math.isfinite(rise) or (abs(rise) / flat > math.tan(math.radians(MAX_SLOPE_DEGREES))):
+                continue
+            step = step_energy_joule(flat, rise)
             if penalty is not None:
                 step *= 1.0 + 0.5 * (penalty[row, col] + penalty[n_row, n_col])
             new_cost = cost + step
@@ -133,6 +137,10 @@ class _Graph:
                     frei &= self.passable[row_z, col_q] & self.passable[row_q, col_z]
                 flat = length * cell_meters
                 rise = elevation[row_z, col_z] - elevation[row_q, col_q]
+                # B1 / B2-P0-01: Absolute edge slope limit of 15° between adjacent cells
+                tan_max_slope = math.tan(math.radians(MAX_SLOPE_DEGREES))
+                edge_passable = np.isfinite(rise) & (np.abs(rise) / flat <= tan_max_slope)
+                frei &= edge_passable
                 laenge = np.hypot(flat, rise)
                 energie = pandolf_watt_array(rise / flat * 100.0) * laenge / GEHTEMPO_METER_PRO_SEKUNDE
                 mittlere_steigung = 0.5 * (self.slope[row_q, col_q] + self.slope[row_z, col_z])
@@ -216,24 +224,51 @@ def path_statistics(
     return mittlere_steigung, float(zellen.max())
 
 
+def path_edge_statistics(
+    path: list[tuple[int, int]],
+    elevation: np.ndarray,
+    cell_meters: float,
+) -> tuple[float, float]:
+    if len(path) <= 1:
+        return 0.0, 0.0
+    laengen = []
+    edge_slopes = []
+    for (r1, c1), (r2, c2) in zip(path, path[1:]):
+        flat = math.hypot(r2 - r1, c2 - c1) * cell_meters
+        rise = float(elevation[r2, c2] - elevation[r1, c1])
+        edge_len = math.hypot(flat, rise)
+        deg = math.degrees(math.atan2(abs(rise), flat)) if flat > 0 else 0.0
+        laengen.append(edge_len)
+        edge_slopes.append(deg)
+    gesamt = sum(laengen)
+    mean_edge = float(np.dot(laengen, edge_slopes) / gesamt) if gesamt > 0 else 0.0
+    return mean_edge, float(max(edge_slopes)) if edge_slopes else 0.0
+
+
 def measure_path(
     path: list[tuple[int, int]],
     elevation: np.ndarray,
     slope: np.ndarray,
     cell_meters: float,
-) -> tuple[float, float, float, float]:
+    return_peak: bool = False,
+) -> tuple[float, float, float, float] | tuple[float, float, float, float, float]:
     distance = 0.0
     energy = 0.0
+    peak_power = 0.0
     for (r1, c1), (r2, c2) in zip(path, path[1:]):
         flat = math.hypot(r2 - r1, c2 - c1) * cell_meters
         rise = float(elevation[r2, c2] - elevation[r1, c1])
         distance += math.hypot(flat, rise)
         energy += step_energy_joule(flat, rise)
+        step_power = pandolf_watt(rise / flat * 100.0) if flat > 0 else 0.0
+        peak_power = max(peak_power, float(step_power))
     duration = distance / GEHTEMPO_METER_PRO_SEKUNDE
     mean_slope, max_slope = path_statistics(path, slope)
     fraction_mean = mean_slope / MAX_SLOPE_DEGREES
     fraction_peak = max_slope / MAX_SLOPE_DEGREES
     risk = float(np.clip(RISK_WEIGHT_MEAN * fraction_mean + RISK_WEIGHT_PEAK * fraction_peak, 0.0, 1.0))
+    if return_peak:
+        return distance, duration, risk, energy, peak_power
     return distance, duration, risk, energy
 
 

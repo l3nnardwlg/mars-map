@@ -41,8 +41,21 @@ def test_layers_report_availability_from_tile_sets(monkeypatch, tmp_path):
         ' "meterProPixelFeinsteStufe": 87.0}',
         encoding="utf-8",
     )
+    # B2-P0-04: metadata.json alone must NOT mark layer as ready or available
+    layers = client.get("/api/layers").json()
+    ti_layer = next(l for l in layers if l["id"] == "thermal_inertia")
+    assert ti_layer["status"] == "partial"
+    assert ti_layer["available"] is False
+
+    # Once actual tile PNG exists, status becomes ready and available is True
+    tile_file = ordner / "0" / "0" / "0.png"
+    tile_file.parent.mkdir(parents=True)
+    tile_file.write_bytes(b"\x89PNG\r\n\x1a\n")
+
     verfuegbar = {layer["id"] for layer in client.get("/api/layers").json() if layer["available"]}
     assert verfuegbar == {"thermal_inertia"}
+    ti_layer_ready = next(l for l in client.get("/api/layers").json() if l["id"] == "thermal_inertia")
+    assert ti_layer_ready["status"] == "ready"
 
 
 def test_science_points_are_inside_jezero_with_nasa_sources():
@@ -144,6 +157,9 @@ def test_geology_layer_carries_legend_from_tile_metadata(monkeypatch, tmp_path):
         ' "legende": [{"klasse": 1, "name": "Eolian bedform unit", "symbol": "Aeb", "farbe": "#e6194b"}]}',
         encoding="utf-8",
     )
+    tile_file = ordner / "0" / "0" / "0.png"
+    tile_file.parent.mkdir(parents=True)
+    tile_file.write_bytes(b"\x89PNG\r\n\x1a\n")
     monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
     geologie = next(layer for layer in client.get("/api/layers").json() if layer["id"] == "geology")
     assert geologie["available"] is True
@@ -168,6 +184,9 @@ def test_layer_carries_coverage_zoom_range_and_codec(monkeypatch, tmp_path):
         ' "minZoom": 0, "maxZoom": 5, "kodierung": "uint16 PNG", "meterProPixelFeinsteStufe": 12.4}',
         encoding="utf-8",
     )
+    tile_file = ordner / "0" / "0" / "0.png"
+    tile_file.parent.mkdir(parents=True)
+    tile_file.write_bytes(b"\x89PNG\r\n\x1a\n")
     monkeypatch.setenv("MARS_TILES_DIR", str(tmp_path))
     layer = next(l for l in client.get("/api/layers").json() if l["id"] == "ctx_dem")
     assert layer["status"] == "ready" and layer["available"] is True

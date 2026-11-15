@@ -38,6 +38,9 @@ class MarsRoute(ApiModel):
     legs: list[RouteLeg] = Field(default_factory=list)
     max_slope_deg: float | None = None
     mean_slope_deg: float | None = None
+    max_edge_slope_deg: float | None = None
+    mean_edge_slope_deg: float | None = None
+    peak_power_watts: float | None = None
     dataset_id: str | None = None
     native_resolution_meters: float | None = None
     routing_grid_resolution_meters: float | None = None

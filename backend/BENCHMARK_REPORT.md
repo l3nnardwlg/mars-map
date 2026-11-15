@@ -1,13 +1,13 @@
 # Benchmark-Bericht Backend
 
-Erzeugt mit `python scripts/benchmark_report.py` am 2026-11-15 10:21 UTC, Branch `feature/nasa-data`, Commit `3d9dde6`.
+Erzeugt mit `python scripts/benchmark_report.py` am 2026-11-15 16:03 UTC, Branch `main`, Commit `1ad7d3b`.
 
 - Geländemodell: `M20_JezeroCrater_CTXDEM_20m.tif`, 90345300 Byte, SHA-256 `ba7f706ea1b5d63a562f28a7dcf7a7f3c79bce7f048e6974b57e8a33c30d1ba2`
-- Tests: 74 passed, 2 warnings in 7.06s (bestanden 74, uebersprungen 0, fehlgeschlagen 0)
+- Tests: 77 passed, 2 warnings in 6.08s (bestanden 77, uebersprungen 0, fehlgeschlagen 0)
 
 ## Benchmark-Strecke, drei Ziele
 
-HTTP 200, kalt gerechnet in 0.58 s.
+HTTP 200, kalt gerechnet in 0.56 s.
 
 | Ziel | Distanz (m) | Energie (MJ) | Risiko | max. Steigung | mittl. Steigung | Zielwert | Raster (m) | Wegpunkte | Abweichung Wegpunkte |
 |---|---|---|---|---|---|---|---|---|---|

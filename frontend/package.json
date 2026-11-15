@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:science": "node scripts/verify_scientific_data.mjs",
     "test:contract": "node scripts/verify_api_contracts.mjs",
-    "test:e2e": "node scripts/test_e2e_mission.mjs"
+    "test:e2e": "node scripts/test_browser_playwright.mjs",
+    "test:mock": "node scripts/test_e2e_mission.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "playwright": "^1.65.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5"
   },

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useMissionStore } from '@/store/useMissionStore';
 import { jezeroLatLonToLocal } from '@/utils/coordinates';
 import { initDemSampler, getSurfaceZ } from '@/utils/demSampler';
-import { MarsCoordinate } from '@/types/mars';
+import { MarsCoordinate, RouteProfile } from '@/types/mars';
 import { Html } from '@react-three/drei';
 
 interface RouteMeshProps {
@@ -58,19 +58,31 @@ export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
     return buildPathGeometry(currentRoute.waypoints, planeSize, terrainExaggeration, 0.018);
   }, [currentRoute, planeSize, terrainExaggeration, demLoaded]);
 
-  // Secondary Inactive Alternative Geometries (for visual route comparison)
+  // Secondary Inactive Alternative Geometries (for visual route comparison across 4 profiles)
   const secondaryGeometries = useMemo(() => {
     if (!demLoaded) return [];
     const list: { geo: THREE.TubeGeometry; color: string; profile: string }[] = [];
 
-    (['direct', 'safe', 'science'] as const).forEach((prof) => {
-      if (prof !== selectedRouteProfile && alternativeRoutes[prof]) {
-        const altRoute = alternativeRoutes[prof];
+    const profiles: { key: RouteProfile; color: string }[] = [
+      { key: 'distance_min', color: '#38bdf8' },
+      { key: 'energy_min', color: '#10b981' },
+      { key: 'slope_hazard_min', color: '#f59e0b' },
+      { key: 'science_detour', color: '#c084fc' },
+    ];
+
+    profiles.forEach(({ key, color }) => {
+      const isSelected =
+        selectedRouteProfile === key ||
+        (key === 'distance_min' && selectedRouteProfile === 'direct') ||
+        (key === 'energy_min' && selectedRouteProfile === 'safe') ||
+        (key === 'slope_hazard_min' && selectedRouteProfile === 'science');
+
+      if (!isSelected && alternativeRoutes[key]) {
+        const altRoute = alternativeRoutes[key];
         if (altRoute && altRoute.waypoints.length > 1) {
           const geo = buildPathGeometry(altRoute.waypoints, planeSize, terrainExaggeration, 0.009);
           if (geo) {
-            const color = prof === 'safe' ? '#10b981' : prof === 'science' ? '#f59e0b' : '#38bdf8';
-            list.push({ geo, color, profile: prof });
+            list.push({ geo, color, profile: key });
           }
         }
       }
@@ -119,12 +131,24 @@ export default function RouteMesh({ planeSize = 8 }: RouteMeshProps) {
     return new THREE.Vector3(localX, localY, surfaceZ + 0.025);
   }, [hoveredRoutePoint, planeSize, terrainExaggeration, demLoaded]);
 
-  // Active color based on profile
-  const activeColor = selectedRouteProfile === 'safe' 
-    ? '#22c55e' 
-    : selectedRouteProfile === 'science' 
-    ? '#f59e0b' 
-    : '#00f5ff';
+  // Active color based on explicit 4 profiles
+  const activeColor = useMemo(() => {
+    switch (selectedRouteProfile) {
+      case 'distance_min':
+      case 'direct':
+        return '#38bdf8'; // Sky
+      case 'energy_min':
+      case 'safe':
+        return '#10b981'; // Emerald
+      case 'slope_hazard_min':
+        return '#f59e0b'; // Amber
+      case 'science_detour':
+      case 'science':
+        return '#c084fc'; // Purple
+      default:
+        return '#38bdf8';
+    }
+  }, [selectedRouteProfile]);
 
   return (
     <group renderOrder={999}>

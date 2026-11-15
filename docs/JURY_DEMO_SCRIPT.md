@@ -47,7 +47,7 @@
 ### Step 4: NASA Perseverance Sample Return Objectives (1:25 – 1:45)
 * **Visual:** Science route pulls a trajectory detour towards Perseverance sample core locations (e.g. `probe-14-15`).
 * **Spoken Script:**
-  > "Science return is the primary purpose of exploration. We've integrated all 36 verified Perseverance sample cache locations.  
+  > "Science return is the primary purpose of exploration. We've integrated all 36 verified Perseverance exploration targets (22 sample core cache locations + 14 regional geologic features).  
   > The solver automatically computes an exact multi-leg detour ($11,782\text{ meters} + 3,006\text{ meters} = 14,788\text{ meters}$, $4.069\text{ MJ}$) to inspect and collect cached sample cores, while our NASA Pandolf model validates that total EVA duration remains well under the 8-hour safety ceiling."
 * **Action:** Click a science sample point on the map and click **"Plan Route Here"**.
 
@@ -67,7 +67,7 @@
 * **Spoken Script:**
   > "Every calculation you see is defensible:
   > - $0.0\text{ meters}$ variation across visual 3D exaggeration.
-  > - 3,155 locally tiled 1-meter HiRISE topography tiles.
+  > - NASA PDS Context Camera (CTX) controlled 20m DEM tied to MOLA areoid (with deep HiRISE micro-DEM integration ready).
   > - Verifiable USGS and NASA PDS product IDs.
   > 
   > MARS Pathfinder transforms raw planetary data into an actionable, life-saving mission planning system for humanity's next giant leap. Thank you, and we welcome your questions."

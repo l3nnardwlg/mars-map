@@ -11,7 +11,15 @@ from rasterio.enums import Resampling
 from rasterio.warp import transform
 from rasterio.windows import Window
 
-from app.routing import NoRouteError, _Graph, find_alternatives, measure_path, objective_value, path_statistics
+from app.routing import (
+    NoRouteError,
+    _Graph,
+    find_alternatives,
+    measure_path,
+    objective_value,
+    path_edge_statistics,
+    path_statistics,
+)
 
 MARS_GEOGRAPHIC = CRS.from_string("+proj=longlat +R=3396190 +no_defs")
 DEM_STANDARD = Path(__file__).resolve().parent.parent / "data" / "raw" / "M20_JezeroCrater_CTXDEM_20m.tif"
@@ -92,8 +100,9 @@ def _linienlaenge(zellen, elevation, cell_meters) -> float:
 
 
 def _route_dict(path, slope, elevation, cell_meters, native_meters, win_transform, crs, erzwungen_indizes: set[int] | None = None) -> dict:
-    distance, duration, risk, energy = measure_path(path, elevation, slope, cell_meters)
+    distance, duration, risk, energy, peak_power = measure_path(path, elevation, slope, cell_meters, return_peak=True)
     mean_slope, max_slope = path_statistics(path, slope)
+    mean_edge_slope, max_edge_slope = path_edge_statistics(path, elevation, cell_meters)
     indizes = _gewaehlte_indizes(path, slope, erzwungen_indizes or set())
     gewaehlt = [path[i] for i in indizes]
     xs = [win_transform.a * (c + 0.5) + win_transform.b * (r + 0.5) + win_transform.c for r, c in gewaehlt]
@@ -120,8 +129,11 @@ def _route_dict(path, slope, elevation, cell_meters, native_meters, win_transfor
         "risk_score": risk,
         "energy_joules": energy,
         "average_power_watts": energy / duration if duration > 0 else 0.0,
+        "peak_power_watts": round(peak_power, 2),
         "max_slope_deg": round(max_slope, 2),
         "mean_slope_deg": round(mean_slope, 2),
+        "max_edge_slope_deg": round(max_edge_slope, 2),
+        "mean_edge_slope_deg": round(mean_edge_slope, 2),
         "dataset_id": DATASET_ID,
         "native_resolution_meters": native_meters,
         "routing_grid_resolution_meters": round(cell_meters, 2),
@@ -237,7 +249,7 @@ def _plan_objectives_cached(art, start_lat, start_lon, end_lat, end_lon, stops, 
                 weg_distanz, weg_dauer, _, weg_energie = measure_path(teil, elevation, graph.slope, cell_meters)
                 legs.append({"to_id": punkte[index + 1][3], "distance_meters": weg_distanz, "energy_joules": weg_energie, "estimated_duration_seconds": weg_dauer})
             route["legs"] = legs
-            route["constraints"] = ["Zellen über 15 Grad gesperrt, Diagonalen nur bei freien Nachbarzellen"]
+            route["constraints"] = ["Zellen und Übergangskanten über 15 Grad gesperrt, Diagonalen nur bei freien Nachbarzellen"]
             ergebnisse.append(route)
         energie_min = next((r for r in ergebnisse if r["objective"] == "energy_min"), None)
         if energie_min is None:
@@ -246,9 +258,9 @@ def _plan_objectives_cached(art, start_lat, start_lon, end_lat, end_lon, stops, 
             if route["objective"] == "slope_hazard_min":
                 faktor = route["energy_joules"] / energie_min["energy_joules"] if energie_min["energy_joules"] > 0 else 1.0
                 zustand = "erfüllt" if faktor <= HAZARD_ENERGY_BUDGET_FACTOR else "überschritten"
-                route["constraints"].append(f"Energiebudget {HAZARD_ENERGY_BUDGET_FACTOR:.1f}-fach des Energie-Optimums: {faktor:.2f}-fach, {zustand}")
+                route["constraints"].append(f"Informativ: Energiebudget-Trade-off gegenüber Energie-Optimum (Referenzfaktor {HAZARD_ENERGY_BUDGET_FACTOR:.1f}x): {faktor:.2f}x, {zustand}")
                 if zustand == "überschritten":
-                    route["warnings"].append("Die hangärmste Route braucht mehr als die doppelte Energie der energieärmsten Route.")
+                    route["warnings"].append("Hinweis (informativer Trade-off): Die hangminimierte Route benötigt mehr als das 2,0-fache der minimalen Energie.")
     return ergebnisse
 
 

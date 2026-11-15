@@ -16,6 +16,8 @@ export default function GuidedJuryTour() {
   const isAstronautMode = useMissionStore((state) => state.isAstronautMode);
   const calculateRoute = useMissionStore((state) => state.calculateRoute);
   const setTerrainColorMode = useMissionStore((state) => state.setTerrainColorMode);
+  const sciencePoints = useMissionStore((state) => state.sciencePoints);
+  const selectSciencePoint = useMissionStore((state) => state.selectSciencePoint);
 
   const tourSteps = useMemo(() => [
     {
@@ -35,35 +37,49 @@ export default function GuidedJuryTour() {
       step: 2,
       badge: 'TERRAIN HYPSOMETRY',
       title: 'Descent to Jezero Crater CTX/MOLA Topography',
-      narrative: 'Transitioning to the surface: 384×384 3D mesh displaced by USGS NASA PDS CTX Digital Elevation Model (20m native resolution, MOLA Areoid datum from -2,583m basin floor to -1,280m rim).',
+      narrative: 'Transitioning to the surface: 384×384 3D mesh displaced by USGS NASA PDS CTX Digital Elevation Model (20m native resolution, MOLA Areoid datum from -2,583m basin floor to -1,280m rim). Loading Western Delta benchmark traverse.',
       evidence: 'M20_JezeroCrater_CTXDEM_20m • Invariant MOLA Datum • Physical Metric Step: dx=349m, dy=396m',
       action: () => {
         if (isAstronautMode) toggleAstronautMode();
         setActiveView('terrain_prototype');
         setTerrainColorMode('hypsometric');
-        calculateRoute();
+        useMissionStore.setState({
+          routeStart: { latitude: 18.38, longitude: 77.58, elevationMeters: -2534 },
+          routeEnd: { latitude: 18.44, longitude: 77.45, elevationMeters: -2444 },
+          selectedSciencePoint: null,
+        });
+        calculateRoute(null);
       },
     },
     {
       step: 3,
       badge: 'THE CORE DISCOVERY',
-      title: 'Multi-Objective Solvers: Direct vs. Safe Traverses',
-      narrative: 'CRITICAL FINDING (Western Delta Benchmark): The shortest Euclidean traverse (8,776 m) encounters steeper terrain (max 9.05°, risk 0.329). The Slope Hazard-Minimal traverse contours along low-gradient alluvial terraces, reducing peak incline to 6.83° and lowering the Slope Hazard Index to 0.238 (a ~28% risk reduction) with only 115 m of added distance.',
+      title: 'Multi-Objective Solvers: Distance-Min vs. Hazard-Min',
+      narrative: 'CRITICAL FINDING (Western Delta Benchmark): The shortest Euclidean traverse (8,776 m) encounters steeper terrain (max 9.05°, risk index 0.329). The Slope Hazard-Minimal traverse contours along low-gradient alluvial terraces, reducing peak incline to 6.83° and lowering the Slope Hazard Index to 0.238 (a ~28% risk reduction) with only 115 m of added distance.',
       evidence: 'Benchmark (18.38°N, 77.58°E → 18.44°N, 77.45°E) • NASA JSC Rock Yard 15.0° Gate • BENCHMARK_REPORT.md',
       action: () => {
         setTerrainColorMode('slope');
-        selectRouteProfile('safe');
+        selectRouteProfile('slope_hazard_min');
       },
     },
     {
       step: 4,
       badge: 'SAMPLE RETURN CACHE',
       title: 'NASA Perseverance Ground-Truth Samples',
-      narrative: 'Mars 2020 Perseverance science sample return cores (e.g. probe-14-15) are accurately anchored to the CTX DEM. The multi-objective solver calculates exact waypoint stops with segmented legs (11,782 m + 3,006 m = 14,788 m, 4.069 MJ) within the 8-hour EVA limit.',
-      evidence: 'NASA MMGIS Sample Registry • M20_SAMPLE_v3.json (36 Cores) • Multi-Leg Routing (POST /api/routes/plan)',
-      action: () => {
+      narrative: 'Mars 2020 Perseverance science sample return cores (e.g. probe-14-15) are accurately anchored to the CTX DEM. The multi-objective solver calculates an exact detour with segmented legs (11,782 m + 3,006 m = 14,788 m, 4.069 MJ) within the 8-hour EVA limit.',
+      evidence: 'NASA MMGIS Sample Registry • 36 Science Points (22 Sample Cores + 14 Regional Features) • Multi-Leg Routing (POST /api/routes/plan)',
+      action: async () => {
         setTerrainColorMode('satellite');
-        selectRouteProfile('science');
+        const probe = sciencePoints.find((p) => p.id === 'probe-14-15') || {
+          id: 'probe-14-15',
+          name: 'Sample Core: Atsah (Probe 14-15)',
+          location: { latitude: 18.455, longitude: 77.402, elevationMeters: -2480 },
+          description: 'Perseverance sample core Atsah collected at Western Delta front',
+          nasaSourceUrl: 'https://mars.nasa.gov/mars2020/mission/science/samples/',
+        };
+        selectSciencePoint(probe);
+        await calculateRoute(probe);
+        selectRouteProfile('science_detour');
       },
     },
     {
@@ -80,15 +96,15 @@ export default function GuidedJuryTour() {
       step: 6,
       badge: 'SCIENTIFIC INTEGRITY',
       title: 'Scientific Traceability & Global Award Readiness',
-      narrative: 'Every elevation is tied to MOLA Areoid datum. Display exaggeration has 0.0% effect on physical calculations. High-resolution HiRISE 1m tiles cached locally. Rigorous automated test suite passing all mathematical assertions.',
-      evidence: '100% Exaggeration Invariance • 3,155 HiRISE Tiles • NASA PDS & USGS Provenance',
+      narrative: 'Every elevation is tied to MOLA Areoid datum. Display exaggeration has 0.0% effect on physical calculations. Transparent dataset provenance with reproducible benchmarks and automated mathematical assertions.',
+      evidence: '100% Exaggeration Invariance • USGS CTX DEM (SHA-256 ba7f706) • SciPy Dijkstra Solver • Pandolf Bio-Model',
       action: () => {
         if (isAstronautMode) toggleAstronautMode();
         setActiveView('terrain_prototype');
         setTerrainColorMode('satellite');
       },
     },
-  ], [isAstronautMode, toggleAstronautMode, setActiveView, selectLandmark, calculateRoute, selectRouteProfile, setTerrainColorMode]);
+  ], [isAstronautMode, toggleAstronautMode, setActiveView, selectLandmark, calculateRoute, selectRouteProfile, setTerrainColorMode, sciencePoints, selectSciencePoint]);
 
   // Execute step action on step change
   useEffect(() => {

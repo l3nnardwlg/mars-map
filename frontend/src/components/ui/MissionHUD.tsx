@@ -606,20 +606,21 @@ Datum: IAU Mars 2000 / MOLA Areoid
                   </div>
                 </div>
 
-                {/* Phase 3: Route Profile Alternatives Switcher */}
+                {/* Phase 3: Route Profile Alternatives Switcher (4 Explicit Profiles) */}
                 <div>
                   <span className="text-[10px] text-zinc-400 block uppercase tracking-wider mb-1">
-                    Route Alternatives
+                    Route Alternatives (4 Profiles)
                   </span>
-                  <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[11px]">
+                    {/* 1. Distance-Min */}
                     <button
-                      onClick={() => alternativeRoutes.direct && selectRouteProfile('direct')}
-                      disabled={!alternativeRoutes.direct}
+                      onClick={() => (alternativeRoutes.distance_min || alternativeRoutes.direct) && selectRouteProfile('distance_min')}
+                      disabled={!(alternativeRoutes.distance_min || alternativeRoutes.direct)}
                       className={`p-1.5 rounded border text-left transition ${
-                        !alternativeRoutes.direct
+                        !(alternativeRoutes.distance_min || alternativeRoutes.direct)
                           ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
-                          : selectedRouteProfile === 'direct'
-                          ? 'border-sky-400 bg-sky-950/80 text-sky-200 cursor-pointer'
+                          : selectedRouteProfile === 'distance_min' || selectedRouteProfile === 'direct'
+                          ? 'border-sky-400 bg-sky-950/80 text-sky-200 cursor-pointer shadow-sm shadow-sky-900/50'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
@@ -627,18 +628,21 @@ Datum: IAU Mars 2000 / MOLA Areoid
                         <Navigation className="w-3 h-3 text-sky-400" /> Distance-Min
                       </div>
                       <div className="text-[9px] text-zinc-500">
-                        {alternativeRoutes.direct ? `${(alternativeRoutes.direct.distanceMeters / 1000).toFixed(1)} km` : 'N/A'}
+                        {(alternativeRoutes.distance_min || alternativeRoutes.direct)
+                          ? `${(((alternativeRoutes.distance_min || alternativeRoutes.direct)!.distanceMeters) / 1000).toFixed(1)} km`
+                          : 'N/A'}
                       </div>
                     </button>
 
+                    {/* 2. Energy-Min */}
                     <button
-                      onClick={() => alternativeRoutes.safe && selectRouteProfile('safe')}
-                      disabled={!alternativeRoutes.safe}
+                      onClick={() => (alternativeRoutes.energy_min || alternativeRoutes.safe) && selectRouteProfile('energy_min')}
+                      disabled={!(alternativeRoutes.energy_min || alternativeRoutes.safe)}
                       className={`p-1.5 rounded border text-left transition ${
-                        !alternativeRoutes.safe
+                        !(alternativeRoutes.energy_min || alternativeRoutes.safe)
                           ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
-                          : selectedRouteProfile === 'safe'
-                          ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200 cursor-pointer'
+                          : selectedRouteProfile === 'energy_min' || selectedRouteProfile === 'safe'
+                          ? 'border-emerald-400 bg-emerald-950/80 text-emerald-200 cursor-pointer shadow-sm shadow-emerald-900/50'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
@@ -646,26 +650,54 @@ Datum: IAU Mars 2000 / MOLA Areoid
                         <ShieldCheck className="w-3 h-3 text-emerald-400" /> Energy-Min
                       </div>
                       <div className="text-[9px] text-zinc-500">
-                        {alternativeRoutes.safe?.energyJoules ? `${((alternativeRoutes.safe.energyJoules || 0) / 1e6).toFixed(2)} MJ` : alternativeRoutes.safe ? 'Optimal' : 'N/A'}
+                        {(alternativeRoutes.energy_min || alternativeRoutes.safe)?.energyJoules
+                          ? `${(((alternativeRoutes.energy_min || alternativeRoutes.safe)!.energyJoules || 0) / 1e6).toFixed(2)} MJ`
+                          : (alternativeRoutes.energy_min || alternativeRoutes.safe) ? 'Optimal' : 'N/A'}
                       </div>
                     </button>
 
+                    {/* 3. Hazard-Min */}
                     <button
-                      onClick={() => alternativeRoutes.science && selectRouteProfile('science')}
-                      disabled={!alternativeRoutes.science}
+                      onClick={() => (alternativeRoutes.slope_hazard_min || alternativeRoutes.science) && selectRouteProfile('slope_hazard_min')}
+                      disabled={!(alternativeRoutes.slope_hazard_min || alternativeRoutes.science)}
                       className={`p-1.5 rounded border text-left transition ${
-                        !alternativeRoutes.science
+                        !(alternativeRoutes.slope_hazard_min || alternativeRoutes.science)
                           ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
-                          : selectedRouteProfile === 'science'
-                          ? 'border-amber-400 bg-amber-950/80 text-amber-200 cursor-pointer'
+                          : selectedRouteProfile === 'slope_hazard_min'
+                          ? 'border-amber-400 bg-amber-950/80 text-amber-200 cursor-pointer shadow-sm shadow-amber-900/50'
                           : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
                       }`}
                     >
                       <div className="font-semibold flex items-center gap-1">
-                        <FlaskConical className="w-3 h-3 text-amber-400" /> Hazard-Min
+                        <AlertTriangle className="w-3 h-3 text-amber-400" /> Hazard-Min
                       </div>
                       <div className="text-[9px] text-zinc-500">
-                        {alternativeRoutes.science ? `Risk ${(alternativeRoutes.science.riskScore * 100).toFixed(0)}%` : 'N/A'}
+                        {(alternativeRoutes.slope_hazard_min || alternativeRoutes.science)
+                          ? `Risk ${(((alternativeRoutes.slope_hazard_min || alternativeRoutes.science)!.riskScore) * 100).toFixed(0)}%`
+                          : 'N/A'}
+                      </div>
+                    </button>
+
+                    {/* 4. Science-Detour */}
+                    <button
+                      onClick={() => alternativeRoutes.science_detour && selectRouteProfile('science_detour')}
+                      disabled={!alternativeRoutes.science_detour}
+                      className={`p-1.5 rounded border text-left transition ${
+                        !alternativeRoutes.science_detour
+                          ? 'opacity-40 border-zinc-850 bg-zinc-950 text-zinc-600 cursor-not-allowed'
+                          : selectedRouteProfile === 'science_detour'
+                          ? 'border-purple-400 bg-purple-950/80 text-purple-200 cursor-pointer shadow-sm shadow-purple-900/50'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white cursor-pointer'
+                      }`}
+                      title={!alternativeRoutes.science_detour ? 'Science-Stop im Gelände wählen, um Detour zu berechnen' : 'Wissenschafts-Zwischenstopp'}
+                    >
+                      <div className="font-semibold flex items-center gap-1">
+                        <FlaskConical className="w-3 h-3 text-purple-400" /> Science-Detour
+                      </div>
+                      <div className="text-[9px] text-zinc-500">
+                        {alternativeRoutes.science_detour
+                          ? `${(alternativeRoutes.science_detour.distanceMeters / 1000).toFixed(1)} km`
+                          : 'Kein Stop'}
                       </div>
                     </button>
                   </div>
@@ -960,6 +992,16 @@ Datum: IAU Mars 2000 / MOLA Areoid
                 </div>
                 <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
                   Simulates astronaut metabolic energy expenditure W = 1.5W + ηW(1.5V² + 0.35VG), 80.7 kg suited mass (Integrated Suit Test 1), 3.0 km/h walking speed, oxygen consumption rates, and the 8-hour maximum safe EVA constraint.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-zinc-900/70 border border-zinc-800 p-3.5">
+                <div className="flex items-center justify-between font-semibold text-purple-300">
+                  <span>5. Global Mars Planetary Globe Textures</span>
+                  <span className="text-[10px] bg-purple-950 text-purple-400 border border-purple-800 px-1.5 py-0.5 rounded">NASA / USGS / JPL</span>
+                </div>
+                <p className="mt-1 text-zinc-400 text-[11px] leading-relaxed">
+                  8K planetary albedo mosaic from NASA/USGS Viking MDIM 2.1 (mars_color.jpg) and global topographic relief bump displacement from NASA GSFC MOLA altimetry (mars_bump.jpg).
                 </p>
               </div>
             </div>

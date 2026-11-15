@@ -317,3 +317,45 @@ def test_risk_uses_length_weighted_mean_slope():
     mittel_lang, spitze_lang = __import__("app.routing", fromlist=["path_statistics"]).path_statistics(weg_lang, slope)
     assert spitze_lang == pytest.approx(6.0)
     assert mittel_lang < 6.0
+
+
+def test_edge_grade_over_limit_is_blocked_even_if_both_cells_pass():
+    # B1 / B2-P0-01 test case:
+    # 2D raster with elevation row [0, 0, 10, 10] m at cell_meters=20.0
+    # Cell slope at (0, 1) and (0, 2): central difference = 10 / (2*20) = 0.25 -> 14.04° <= 15.0° (passable cell)
+    # But transition edge from col 1 to col 2: rise = 10m over flat = 20m -> atan(10/20) = 26.57° > 15.0°
+    # The edge must be blocked by the graph and by find_path_astar!
+    elevation = np.array([
+        [0.0, 0.0, 10.0, 10.0],
+        [0.0, 0.0, 10.0, 10.0],
+    ])
+    cell_meters = 20.0
+    slope = slope_degrees(elevation, cell_meters)
+    # Check that cells themselves pass the 15° cell slope test
+    assert slope[0, 1] <= MAX_SLOPE_DEGREES
+    assert slope[0, 2] <= MAX_SLOPE_DEGREES
+
+    # Graph shortest path must raise NoRouteError because the edge exceeds 15°
+    with pytest.raises(NoRouteError):
+        find_path(elevation, cell_meters, (0, 0), (0, 3))
+
+    # A* must also reject the illegal edge transition
+    with pytest.raises(NoRouteError):
+        find_path_astar(elevation, cell_meters, (0, 0), (0, 3))
+
+
+def test_path_edge_statistics_tracks_max_and_mean_edge_slopes():
+    from app.routing import path_edge_statistics
+
+    elevation = np.array([
+        [0.0, 2.0, 4.0],
+        [0.0, 2.0, 4.0],
+    ])
+    cell_meters = 10.0
+    path = [(0, 0), (0, 1), (0, 2)]
+    # Each step rise = 2m over flat = 10m -> grade = 0.2 -> 11.31°
+    mean_edge, max_edge = path_edge_statistics(path, elevation, cell_meters)
+    expected_deg = np.degrees(np.arctan(2.0 / 10.0))
+    assert mean_edge == pytest.approx(expected_deg)
+    assert max_edge == pytest.approx(expected_deg)
+    assert max_edge <= MAX_SLOPE_DEGREES

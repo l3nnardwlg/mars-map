@@ -126,28 +126,28 @@ async function runE2EMissionTest() {
   } else {
     logStep('Offline Reference Mode', 'Loading verified Western Delta Scarp reference benchmark');
     missionState.currentRoute = {
-      id: 'benchmark-direct-001',
-      profile: 'direct',
+      id: 'benchmark-distance-min',
+      profile: 'distance_min',
       waypoints: [
-        { latitude: 18.3800, longitude: 77.5800, elevationMeters: -2583 },
-        { latitude: 18.4100, longitude: 77.5150, elevationMeters: -2410 },
-        { latitude: 18.4400, longitude: 77.4500, elevationMeters: -2560 },
+        { latitude: 18.3800, longitude: 77.5800, elevationMeters: -2534 },
+        { latitude: 18.4100, longitude: 77.5150, elevationMeters: -2480 },
+        { latitude: 18.4400, longitude: 77.4500, elevationMeters: -2444 },
       ],
-      distanceMeters: 7420,
-      estimatedDurationSeconds: 8904,
-      meanSlopeDeg: 11.8,
-      maxSlopeDeg: 18.5,
-      // Exact formula: clip(0.6 * (11.8 / 15) + 0.4 * (18.5 / 15), 0, 1) = 0.965
-      riskScore: 0.965,
-      energyJoules: 1755000,
-      averagePowerWatts: 385,
-      tags: ['shortest'],
-      elevationGainMeters: 173,
-      dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
+      distanceMeters: 8776,
+      estimatedDurationSeconds: 10531,
+      meanSlopeDeg: 2.20,
+      maxSlopeDeg: 9.05,
+      // Exact formula: clip(0.6 * (2.20 / 15) + 0.4 * (9.05 / 15), 0, 1) = 0.329
+      riskScore: 0.329,
+      energyJoules: 2437000,
+      averagePowerWatts: 231,
+      tags: ['shortest', 'offline_reference_benchmark'],
+      elevationGainMeters: 90,
+      dataSource: 'NASA/USGS PDS CTX Jezero Model [Offline Benchmark Reference]',
       elevationProfile: [
-        { distanceKm: 0.0, elevationM: -2583, slopeDeg: 3.2 },
-        { distanceKm: 3.7, elevationM: -2410, slopeDeg: 18.5 },
-        { distanceKm: 7.4, elevationM: -2560, slopeDeg: 4.1 },
+        { distanceKm: 0.0, elevationM: -2534, slopeDeg: 2.1 },
+        { distanceKm: 4.4, elevationM: -2480, slopeDeg: 9.05 },
+        { distanceKm: 8.8, elevationM: -2444, slopeDeg: 1.8 },
       ],
     };
   }
@@ -156,40 +156,62 @@ async function runE2EMissionTest() {
   assert(missionState.currentRoute.distanceMeters > 0, 'Distance must be > 0');
   assert(missionState.currentRoute.riskScore >= 0 && missionState.currentRoute.riskScore <= 1, 'Risk score out of bounds');
 
-  // Step 7: Display Route Alternatives
-  logStep('Multi-Objective Alternatives', 'Comparing Direct vs. Safe vs. Science profiles');
+  // Step 7: Display Route Alternatives (4 Explicit Profiles)
+  logStep('Multi-Objective Alternatives', 'Comparing Distance-Min vs. Energy-Min vs. Hazard-Min vs. Science-Detour');
   missionState.alternativeRoutes = {
+    distance_min: missionState.currentRoute,
+    energy_min: {
+      id: 'benchmark-energy-min',
+      profile: 'energy_min',
+      distanceMeters: 8777,
+      estimatedDurationSeconds: 10532,
+      meanSlopeDeg: 2.14,
+      maxSlopeDeg: 9.05,
+      // Exact formula: clip(0.6 * (2.14 / 15) + 0.4 * (9.05 / 15), 0, 1) = 0.327
+      riskScore: 0.327,
+      energyJoules: 2433000,
+      averagePowerWatts: 230.9,
+      tags: ['energy_optimal', 'offline_reference_benchmark'],
+      elevationGainMeters: 88,
+      dataSource: 'NASA/USGS PDS CTX Jezero Model [Offline Benchmark Reference]',
+    },
+    slope_hazard_min: {
+      id: 'benchmark-slope-hazard-min',
+      profile: 'slope_hazard_min',
+      distanceMeters: 8891,
+      estimatedDurationSeconds: 10669,
+      meanSlopeDeg: 1.41,
+      maxSlopeDeg: 6.83,
+      // Exact formula: clip(0.6 * (1.41 / 15) + 0.4 * (6.83 / 15), 0, 1) = 0.238
+      riskScore: 0.238,
+      energyJoules: 2521000,
+      averagePowerWatts: 235.8,
+      tags: ['lowest_hazard', 'offline_reference_benchmark'],
+      elevationGainMeters: 75,
+      dataSource: 'NASA/USGS PDS CTX Jezero Model [Offline Benchmark Reference]',
+    },
+    science_detour: {
+      id: 'benchmark-science-detour-probe-14-15',
+      profile: 'science_detour',
+      distanceMeters: 14788,
+      estimatedDurationSeconds: 17746,
+      meanSlopeDeg: 2.05,
+      maxSlopeDeg: 8.90,
+      riskScore: 0.312,
+      energyJoules: 4069000,
+      averagePowerWatts: 229.4,
+      tags: ['science_detour', 'offline_reference_benchmark'],
+      visitedSciencePointIds: ['probe-14-15'],
+      elevationGainMeters: 110,
+      dataSource: 'NASA/USGS PDS CTX Jezero Model [Offline Benchmark Reference]',
+    },
+    // Aliases
     direct: missionState.currentRoute,
-    safe: {
-      id: 'benchmark-safe-001',
-      profile: 'safe',
-      distanceMeters: 8950,
-      estimatedDurationSeconds: 10740,
-      meanSlopeDeg: 4.2,
-      maxSlopeDeg: 7.8,
-      // Exact formula: clip(0.6 * (4.2 / 15) + 0.4 * (7.8 / 15), 0, 1) = 0.376
-      riskScore: 0.376,
-      energyJoules: 1202000,
-      averagePowerWatts: 217,
-      tags: ['energy_optimal', 'lowest_risk'],
-      elevationGainMeters: 45,
-      dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
-    },
-    science: {
-      id: 'benchmark-science-001',
-      profile: 'science',
-      distanceMeters: 9600,
-      estimatedDurationSeconds: 11520,
-      meanSlopeDeg: 5.5,
-      maxSlopeDeg: 9.2,
-      riskScore: 0.465,
-      energyJoules: 1380000,
-      averagePowerWatts: 225,
-      tags: ['science_detour'],
-      elevationGainMeters: 65,
-      dataSource: 'Precomputed Reference Benchmark [Jezero Delta Scarp]',
-    },
+    safe: null,
+    science: null,
   };
+  missionState.alternativeRoutes.safe = missionState.alternativeRoutes.energy_min;
+  missionState.alternativeRoutes.science = missionState.alternativeRoutes.slope_hazard_min;
 
   if (isLiveBackend) {
     const sichersteRoute = liveRoutes.find((r) => r.tags && r.tags.includes('lowest_risk')) || liveRoutes[0];
@@ -204,8 +226,18 @@ async function runE2EMissionTest() {
       'Lowest-risk route must not have a higher risk score than the energy-optimal route'
     );
   } else {
-    assert(missionState.alternativeRoutes.safe.riskScore < missionState.alternativeRoutes.direct.riskScore, 'Safe route must reduce risk score');
-    assert(missionState.alternativeRoutes.safe.maxSlopeDeg < missionState.alternativeRoutes.direct.maxSlopeDeg, 'Safe route must reduce peak slope');
+    assert(
+      missionState.alternativeRoutes.slope_hazard_min.riskScore < missionState.alternativeRoutes.distance_min.riskScore,
+      'Hazard-min route must reduce risk score'
+    );
+    assert(
+      missionState.alternativeRoutes.slope_hazard_min.maxSlopeDeg < missionState.alternativeRoutes.distance_min.maxSlopeDeg,
+      'Hazard-min route must reduce peak slope'
+    );
+    assert(
+      missionState.alternativeRoutes.energy_min.energyJoules <= missionState.alternativeRoutes.distance_min.energyJoules,
+      'Energy-min route must have minimal energy'
+    );
   }
 
   // Step 8: Inspect Elevation Profile
@@ -215,10 +247,10 @@ async function runE2EMissionTest() {
   assert(prof[0].elevationM < 0, 'Jezero elevations must be negative relative to MOLA Areoid 0m');
 
   // Step 9: Select Route Profile
-  logStep('Select Safe Traverse', 'Switching active profile from Direct to Safe to contour delta scarp');
-  missionState.selectedRouteProfile = 'safe';
-  missionState.currentRoute = missionState.alternativeRoutes.safe;
-  assert.strictEqual(missionState.currentRoute.profile, 'safe');
+  logStep('Select Hazard-Min Traverse', 'Switching active profile from Distance-Min to Hazard-Min to contour delta scarp');
+  missionState.selectedRouteProfile = 'slope_hazard_min';
+  missionState.currentRoute = missionState.alternativeRoutes.slope_hazard_min;
+  assert.strictEqual(missionState.currentRoute.profile, 'slope_hazard_min');
 
   // Step 10: Run Mission Simulation
   logStep('Mission Simulation Execution', 'Running NASA JSC Pandolf metabolic & oxygen consumption model');

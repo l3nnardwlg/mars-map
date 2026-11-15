@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMissionStore } from '@/store/useMissionStore';
 import { Mountain, Layers } from 'lucide-react';
+import { RouteProfile, ElevationPoint } from '@/types/mars';
 
 export default function ElevationProfileChart() {
   const currentRoute = useMissionStore((state) => state.currentRoute);
@@ -27,12 +28,13 @@ export default function ElevationProfileChart() {
   // Global scale across compared routes for common metric scale
   const allComparedRoutes = [
     currentRoute,
-    alternativeRoutes.direct,
-    alternativeRoutes.safe,
-    alternativeRoutes.science,
+    alternativeRoutes.distance_min || alternativeRoutes.direct,
+    alternativeRoutes.energy_min || alternativeRoutes.safe,
+    alternativeRoutes.slope_hazard_min,
+    alternativeRoutes.science_detour || alternativeRoutes.science,
   ].filter((r): r is NonNullable<typeof r> => Boolean(r && r.elevationProfile && r.elevationProfile.length > 0));
 
-  const allElevations = allComparedRoutes.flatMap((r) => r.elevationProfile!.map((p) => p.elevationM));
+  const allElevations = allComparedRoutes.flatMap((r) => r.elevationProfile!.map((p: ElevationPoint) => p.elevationM));
   const minElev = Math.min(...allElevations);
   const maxElev = Math.max(...allElevations);
   const elevDelta = Math.max(1, maxElev - minElev);
@@ -63,15 +65,26 @@ export default function ElevationProfileChart() {
   const pathD = `M ${currentCoords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
   const areaD = `M 0,${svgHeight - padBottom} L ${currentCoords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')} L ${currentCoords[currentCoords.length - 1]?.x.toFixed(1) || svgWidth},${svgHeight - padBottom} Z`;
 
-  // Secondary alternative route lines for multi-comparison
-  const altLines = (['direct', 'safe', 'science'] as const).map((prof) => {
+  // Secondary alternative route lines for multi-comparison (4 Profiles)
+  const profilesToCompare: { prof: RouteProfile; stroke: string }[] = [
+    { prof: 'distance_min', stroke: '#38bdf8' },
+    { prof: 'energy_min', stroke: '#10b981' },
+    { prof: 'slope_hazard_min', stroke: '#f59e0b' },
+    { prof: 'science_detour', stroke: '#c084fc' },
+  ];
+
+  const altLines = profilesToCompare.map(({ prof, stroke }) => {
+    const isSelected =
+      selectedRouteProfile === prof ||
+      (prof === 'distance_min' && selectedRouteProfile === 'direct') ||
+      (prof === 'energy_min' && selectedRouteProfile === 'safe') ||
+      (prof === 'slope_hazard_min' && selectedRouteProfile === 'science');
     const alt = alternativeRoutes[prof];
-    if (!alt || !alt.elevationProfile || alt.elevationProfile.length < 2 || prof === selectedRouteProfile) {
+    if (!alt || !alt.elevationProfile || alt.elevationProfile.length < 2 || isSelected) {
       return null;
     }
     const coords = getSvgCoords(alt.elevationProfile, globalMaxDistKm);
     const d = `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
-    const stroke = prof === 'safe' ? '#10b981' : prof === 'science' ? '#f59e0b' : '#38bdf8';
     return { prof, d, stroke, route: alt };
   }).filter(Boolean);
 
