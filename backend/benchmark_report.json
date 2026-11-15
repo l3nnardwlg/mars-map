@@ -1,15 +1,15 @@
 {
-  "zeitpunkt_utc": "2026-11-15 16:03",
-  "commit": "1ad7d3b",
-  "branch": "main",
+  "zeitpunkt_utc": "2026-11-15 19:39",
+  "commit": "d031f75",
+  "branch": "integration/final-map",
   "dem": {
     "datei": "M20_JezeroCrater_CTXDEM_20m.tif",
     "bytes": 90345300,
     "sha256": "ba7f706ea1b5d63a562f28a7dcf7a7f3c79bce7f048e6974b57e8a33c30d1ba2"
   },
   "pytest": {
-    "zusammenfassung": "77 passed, 2 warnings in 6.08s",
-    "passed": 77
+    "zusammenfassung": "84 passed, 2 warnings in 9.27s",
+    "passed": 84
   },
   "szenarien": [
     {
@@ -25,7 +25,7 @@
         }
       },
       "status": 200,
-      "sekunden": 0.56,
+      "sekunden": 0.78,
       "routen": [
         {
           "ziel": "energy_min",
@@ -71,7 +71,7 @@
     {
       "name": "Kurze Strecke (etwa 400 m)",
       "status": 200,
-      "sekunden": 0.1,
+      "sekunden": 0.14,
       "routen": [
         {
           "ziel": "energy_min",
@@ -84,7 +84,7 @@
     {
       "name": "Science-Stopp Probe 14 und 15",
       "status": 200,
-      "sekunden": 0.53,
+      "sekunden": 0.78,
       "besucht": [
         "probe-14-15"
       ],

@@ -227,6 +227,370 @@
         }
       }
     },
+    "/api/places": {
+      "get": {
+        "summary": "Places",
+        "operationId": "places_api_places_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Place"
+                  },
+                  "type": "array",
+                  "title": "Response Places Api Places Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terrain/sample": {
+      "get": {
+        "summary": "Terrain Sample",
+        "operationId": "terrain_sample_api_terrain_sample_get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitude"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 360,
+              "minimum": -180,
+              "title": "Longitude"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerrainSample"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terrain/patch": {
+      "get": {
+        "summary": "Terrain Patch",
+        "operationId": "terrain_patch_api_terrain_patch_get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitude"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 360,
+              "minimum": -180,
+              "title": "Longitude"
+            }
+          },
+          {
+            "name": "halfMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 45000.0,
+              "minimum": 200.0,
+              "default": 2500.0,
+              "title": "Halfmeters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerrainPatch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terrain/patch-image": {
+      "get": {
+        "summary": "Terrain Patch Image",
+        "operationId": "terrain_patch_image_api_terrain_patch_image_get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitude"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 360,
+              "minimum": -180,
+              "title": "Longitude"
+            }
+          },
+          {
+            "name": "halfMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 45000.0,
+              "minimum": 200.0,
+              "default": 2500.0,
+              "title": "Halfmeters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/routes/profile": {
+      "post": {
+        "summary": "Route Profile",
+        "operationId": "route_profile_api_routes_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terrain/hirise-patch": {
+      "get": {
+        "summary": "Hirise Patch",
+        "operationId": "hirise_patch_api_terrain_hirise_patch_get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitude"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 360,
+              "minimum": -180,
+              "title": "Longitude"
+            }
+          },
+          {
+            "name": "halfMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1500.0,
+              "minimum": 100.0,
+              "default": 600.0,
+              "title": "Halfmeters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerrainPatch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terrain/hirise-image": {
+      "get": {
+        "summary": "Hirise Image",
+        "operationId": "hirise_image_api_terrain_hirise_image_get",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitude"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 360,
+              "minimum": -180,
+              "title": "Longitude"
+            }
+          },
+          {
+            "name": "halfMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1500.0,
+              "minimum": 100.0,
+              "default": 600.0,
+              "title": "Halfmeters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -1015,6 +1379,54 @@
         ],
         "title": "MissionRequest"
       },
+      "Place": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "diameterKm": {
+            "type": "number",
+            "title": "Diameterkm"
+          },
+          "official": {
+            "type": "boolean",
+            "title": "Official"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "title": "Sourceurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "latitude",
+          "longitude",
+          "kind",
+          "diameterKm",
+          "official",
+          "origin",
+          "sourceUrl"
+        ],
+        "title": "Place"
+      },
       "PlanRequest": {
         "properties": {
           "start": {
@@ -1061,6 +1473,24 @@
         ],
         "title": "PlanRequest"
       },
+      "ProfileRequest": {
+        "properties": {
+          "waypoints": {
+            "items": {
+              "$ref": "#/components/schemas/MarsCoordinate"
+            },
+            "type": "array",
+            "maxItems": 400,
+            "minItems": 2,
+            "title": "Waypoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "waypoints"
+        ],
+        "title": "ProfileRequest"
+      },
       "RouteLeg": {
         "properties": {
           "toId": {
@@ -1097,6 +1527,54 @@
           "estimatedDurationSeconds"
         ],
         "title": "RouteLeg"
+      },
+      "RouteProfile": {
+        "properties": {
+          "cumulativeMeters": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Cumulativemeters"
+          },
+          "cumulativeSeconds": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Cumulativeseconds"
+          },
+          "cumulativeJoules": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Cumulativejoules"
+          },
+          "slopeDegrees": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Slopedegrees"
+          },
+          "powerWatts": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Powerwatts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cumulativeMeters",
+          "cumulativeSeconds",
+          "cumulativeJoules",
+          "slopeDegrees",
+          "powerWatts"
+        ],
+        "title": "RouteProfile"
       },
       "RouteRequest": {
         "properties": {
@@ -1185,6 +1663,191 @@
           "availableTiles"
         ],
         "title": "TerrainMetadata"
+      },
+      "TerrainPatch": {
+        "properties": {
+          "rows": {
+            "type": "integer",
+            "title": "Rows"
+          },
+          "cols": {
+            "type": "integer",
+            "title": "Cols"
+          },
+          "cellMeters": {
+            "type": "number",
+            "title": "Cellmeters"
+          },
+          "westX": {
+            "type": "number",
+            "title": "Westx"
+          },
+          "northY": {
+            "type": "number",
+            "title": "Northy"
+          },
+          "sphereRadiusMeters": {
+            "type": "number",
+            "title": "Sphereradiusmeters"
+          },
+          "cosStandardParallel": {
+            "type": "number",
+            "title": "Cosstandardparallel"
+          },
+          "minElevationMeters": {
+            "type": "number",
+            "title": "Minelevationmeters"
+          },
+          "maxElevationMeters": {
+            "type": "number",
+            "title": "Maxelevationmeters"
+          },
+          "gapFraction": {
+            "type": "number",
+            "title": "Gapfraction"
+          },
+          "elevationsBase64": {
+            "type": "string",
+            "title": "Elevationsbase64"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "cols",
+          "cellMeters",
+          "westX",
+          "northY",
+          "sphereRadiusMeters",
+          "cosStandardParallel",
+          "minElevationMeters",
+          "maxElevationMeters",
+          "gapFraction",
+          "elevationsBase64"
+        ],
+        "title": "TerrainPatch"
+      },
+      "TerrainSample": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "hasData": {
+            "type": "boolean",
+            "title": "Hasdata"
+          },
+          "elevationMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elevationmeters"
+          },
+          "slopeDegrees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slopedegrees"
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset"
+          },
+          "validated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated"
+          },
+          "aspectDegrees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspectdegrees"
+          },
+          "aspectCompass": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aspectcompass"
+          },
+          "thermalInertia": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thermalinertia"
+          },
+          "geologyUnit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geologyunit"
+          },
+          "distanceToLandingMeters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancetolandingmeters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude",
+          "hasData"
+        ],
+        "title": "TerrainSample"
       },
       "ValidationError": {
         "properties": {
